@@ -21,6 +21,8 @@ public:
 
     int Run();
 
+    Engine& GetEngine();
+
 private:
     void Update();
     void Render();
@@ -28,4 +30,6 @@ private:
 private:
     std::unique_ptr<WinWindow> m_window;
     std::unique_ptr<Engine> m_engine;
+
+    bool m_comInitialized = false;
 };

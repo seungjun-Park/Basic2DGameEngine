@@ -1,9 +1,11 @@
 #include "DX11Renderer.h"
 
 #include <cassert>
+#include <d3dcompiler.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 bool DX11Renderer::Initialize(
     HWND hwnd,
@@ -22,6 +24,22 @@ bool DX11Renderer::Initialize(
     {
         return false;
     }
+
+    D3D11_VIEWPORT viewport{};
+
+    viewport.Width =
+        static_cast<float>(width);
+
+    viewport.Height =
+        static_cast<float>(height);
+
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+
+    m_context->RSSetViewports(
+        1,
+        &viewport
+    );
 
     return true;
 }
