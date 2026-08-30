@@ -26,27 +26,28 @@ Vive coding basic 2D game engine project with "Game Engine Architecture 3rd Edit
 ## Architecture
 
 [Architecture Diagram]
-                Application
-                     │
-                     ▼
-                   Engine
-      ┌──────────────┼──────────────┐
-      │              │              │
-      ▼              ▼              ▼
-   Window          Scene         Renderer
-      │              │              │
-    Input          Entity      SpriteRenderer
-                     │              │
-            ┌────────┼───────┐      ▼
-            ▼        ▼       ▼    DX11
-        Transform  Sprite  Collider
-                     │
-                     ▼
-               ResourceManager
-                     │
-                     ▼
-                  Texture
+```mermaid
+flowchart TD
+    Application --> Engine
 
+    Engine --> Window
+    Engine --> Scene
+    Engine --> Renderer
+
+    Window --> Input
+
+    Scene --> Entity
+    Entity --> Transform
+    Entity --> Sprite
+    Entity --> Collider
+
+    Sprite --> ResourceManager
+    ResourceManager --> Texture
+
+    Renderer --> DX11Renderer
+    Renderer --> SpriteRenderer
+    SpriteRenderer -. uses .-> DX11Renderer
+```
 ## Rendering Pipeline
 
 Sprite
