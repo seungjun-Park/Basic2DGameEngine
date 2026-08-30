@@ -103,6 +103,8 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(projectdir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -118,6 +120,8 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(projectdir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,20 +129,59 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Application.h" />
-    <ClInclude Include="Core\Engine.h" />
-    <ClInclude Include="Core\Time.h" />
-    <ClInclude Include="Platform\Windows\WinWindow.h" />
-    <ClInclude Include="Renderer\DX11Renderer.h" />
-    <ClInclude Include="Renderer\IRenderer.h" />
+    <ClInclude Include="Engine\Collision\Collider.h" />
+    <ClInclude Include="Engine\Collision\Collision.h" />
+    <ClInclude Include="Engine\Components\Sprite.h" />
+    <ClInclude Include="Engine\Components\Transform.h" />
+    <ClInclude Include="Engine\Core\Application.h" />
+    <ClInclude Include="Engine\Core\Engine.h" />
+    <ClInclude Include="Engine\Core\Time.h" />
+    <ClInclude Include="Engine\Graphics\Texture.h" />
+    <ClInclude Include="Engine\Platform\Windows\WinInput.h" />
+    <ClInclude Include="Engine\Platform\Windows\WinWindow.h" />
+    <ClInclude Include="Engine\Renderer\Camera.h" />
+    <ClInclude Include="Engine\Renderer\DX11Renderer.h" />
+    <ClInclude Include="Engine\Renderer\IRenderer.h" />
+    <ClInclude Include="Engine\Renderer\SpriteRenderer.h" />
+    <ClInclude Include="Engine\Resource\ResourceManager.h" />
+    <ClInclude Include="Engine\Scene\Entity.h" />
+    <ClInclude Include="Engine\Scene\Scene.h" />
+    <ClInclude Include="Game\Enemy.h" />
+    <ClInclude Include="Game\GameScene.h" />
+    <ClInclude Include="Game\Player.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Core\Application.cpp" />
-    <ClCompile Include="Core\Engine.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Core\Time.cpp" />
-    <ClCompile Include="Platform\Windows\WinWindow.cpp" />
-    <ClCompile Include="Renderer\DX11Renderer.cpp" />
+    <ClCompile Include="Engine\Collision\Collision.cpp" />
+    <ClCompile Include="Engine\Core\Application.cpp" />
+    <ClCompile Include="Engine\Core\Engine.cpp" />
+    <ClCompile Include="Engine\Core\Time.cpp" />
+    <ClCompile Include="Engine\Graphics\Texture.cpp" />
+    <ClCompile Include="Engine\Platform\Windows\WinInput.cpp" />
+    <ClCompile Include="Engine\Platform\Windows\WinWindow.cpp" />
+    <ClCompile Include="Engine\Renderer\Camera.cpp" />
+    <ClCompile Include="Engine\Renderer\DX11Renderer.cpp" />
+    <ClCompile Include="Engine\Renderer\SprtieRenderer.cpp" />
+    <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
+    <ClCompile Include="Engine\Scene\Entity.cpp" />
+    <ClCompile Include="Engine\Scene\Scene.cpp" />
+    <ClCompile Include="Game\Enemy.cpp" />
+    <ClCompile Include="Game\GameScene.cpp" />
+    <ClCompile Include="Game\Player.cpp" />
+    <ClCompile Include="Game\Main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Engine\Assets\Shaders\SpritePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Engine\Assets\Shaders\SpriteVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
