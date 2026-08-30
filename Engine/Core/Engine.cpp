@@ -9,6 +9,8 @@
 #include "Engine/Resource/ResourceManager.h"
 #include "Engine/Scene/Scene.h"
 #include "Engine/Renderer/Camera.h"
+#include "Engine/Debug/DebugRenderer.h"
+#include "Engine/Platform/Windows/WinInput.h"
 
 Engine::Engine() = default;
 
@@ -64,6 +66,20 @@ bool Engine::Initialize(
             )
     );
 
+    m_debugRenderer =
+        std::make_unique<DebugRenderer>();
+
+    Texture* whiteTexture =
+        m_resourceManager->LoadTexture(
+            L"Engine/Assets/Textures/white.png"
+        );
+
+    if (!m_debugRenderer->Initialize(
+        whiteTexture))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -90,6 +106,12 @@ void Engine::Update()
     if (!m_scene)
         return;
 
+    if (WinInput::IsKeyPressed(VK_F1))
+    {
+        m_showDebug =
+            !m_showDebug;
+    }
+
     m_scene->Update(
         Time::DeltaTime()
     );
@@ -111,7 +133,25 @@ void Engine::Render()
             *m_spriteRenderer
         );
 
+#ifdef _DEBUG
+        if (m_showDebug)
+        {
+            m_scene->DebugRender(
+                *m_spriteRenderer,
+                *m_debugRenderer
+            );
+        }
+#endif
+
         m_spriteRenderer->End();
+
+        m_debugStats.entityCount =
+            static_cast<int>(
+                m_scene->GetEntityCount()
+                );
+
+        m_debugStats.drawCalls =
+            m_spriteRenderer->GetDrawCallCount();
     }
 
     m_renderer->EndFrame();

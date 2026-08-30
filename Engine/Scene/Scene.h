@@ -7,6 +7,7 @@
 
 class Entity;
 class SpriteRenderer;
+class DebugRenderer;
 
 class Scene
 {
@@ -52,6 +53,17 @@ public:
 
         return result;
     }
+
+
+    size_t GetEntityCount() const
+    {
+        return m_entities.size();
+    }
+
+    virtual void DebugRender(
+        SpriteRenderer& renderer,
+        DebugRenderer& debugRenderer
+    );
 
 protected:
     std::vector<

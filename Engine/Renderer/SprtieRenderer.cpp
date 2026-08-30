@@ -353,6 +353,8 @@ bool SpriteRenderer::CreateSampler()
 
 void SpriteRenderer::Begin()
 {
+    m_drawCallCount = 0;
+
     auto* context =
         m_renderer->GetContext();
 
@@ -428,34 +430,11 @@ void SpriteRenderer::Draw(
         m_renderer->GetContext();
 
     // 좌상단 중심
-    /*XMMATRIX world =
-        XMMatrixScaling(
-            transform.scale.x,
-            transform.scale.y,
-            1.0f
-        )
-        *
-        XMMatrixRotationZ(
-            transform.rotation
-        )
-        *
-        XMMatrixTranslation(
-            transform.position.x,
-            transform.position.y,
-            0.0f
-        );*/
-    // 중심
     XMMATRIX world =
         XMMatrixScaling(
             transform.scale.x,
             transform.scale.y,
             1.0f
-        )
-        *
-        XMMatrixTranslation(
-            -0.5f,
-            -0.5f,
-            0.0f
         )
         *
         XMMatrixRotationZ(
@@ -467,6 +446,29 @@ void SpriteRenderer::Draw(
             transform.position.y,
             0.0f
         );
+    // 중심
+    /*XMMATRIX world =
+        XMMatrixScaling(
+            transform.scale.x,
+            transform.scale.y,
+            1.0f
+        )
+        *
+        XMMatrixTranslation(
+            -0.5f,
+            -0.5f,
+            0.0f
+        )
+        *
+        XMMatrixRotationZ(
+            transform.rotation
+        )
+        *
+        XMMatrixTranslation(
+            transform.position.x,
+            transform.position.y,
+            0.0f
+        );*/
 
     SpriteConstantBuffer buffer{};
 
@@ -531,6 +533,8 @@ void SpriteRenderer::Draw(
         0,
         0
     );
+
+    ++m_drawCallCount;
 }
 
 bool SpriteRenderer::CreateBlendState()

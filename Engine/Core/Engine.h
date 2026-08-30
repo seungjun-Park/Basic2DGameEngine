@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "Engine/Debug/DebugStats.h"
 
 class WinWindow;
 class IRenderer;
@@ -8,6 +9,7 @@ class SpriteRenderer;
 class ResourceManager;
 class Scene;
 class Camera;
+class DebugRenderer;
 
 
 class Engine
@@ -31,6 +33,11 @@ public:
         std::unique_ptr<Scene> scene
     );
 
+    DebugStats& GetDebugStats()
+    {
+        return m_debugStats;
+    }
+
     ResourceManager& GetResourceManager();
     Camera& GetCamera();
 
@@ -49,4 +56,10 @@ private:
 
     std::unique_ptr<Camera>
         m_camera;
+
+    std::unique_ptr<DebugRenderer>
+        m_debugRenderer;
+
+    DebugStats m_debugStats;
+    bool m_showDebug = true;
 };

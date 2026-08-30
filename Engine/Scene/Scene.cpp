@@ -2,6 +2,7 @@
 
 #include "Entity.h"
 #include "Engine/Renderer/SpriteRenderer.h"
+#include "Engine/Debug/DebugRenderer.h"
 
 #include <algorithm>
 
@@ -39,4 +40,33 @@ void Scene::Update(
             return entity->IsDestroyed();
         }
     );
+}
+
+void Scene::DebugRender(
+    SpriteRenderer& renderer,
+    DebugRenderer& debugRenderer)
+{
+    for (auto& entity : m_entities)
+    {
+        if (!entity->active)
+            continue;
+
+        if (!entity->collider.enabled)
+            continue;
+
+        DirectX::XMFLOAT2 center
+        {
+            entity->transform.position.x +
+                entity->collider.offset.x,
+
+            entity->transform.position.y +
+                entity->collider.offset.y
+        };
+
+        debugRenderer.DrawRect(
+            renderer,
+            center,
+            entity->collider.size
+        );
+    }
 }

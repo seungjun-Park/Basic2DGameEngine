@@ -72,6 +72,33 @@ int Application::Run()
         Render();
     }
 
+    static float titleTimer = 0.0f;
+
+    titleTimer += Time::DeltaTime();
+
+    if (titleTimer >= 0.5f)
+    {
+        titleTimer = 0.0f;
+
+        auto& stats =
+            m_engine->GetDebugStats();
+
+        wchar_t title[256];
+
+        swprintf_s(
+            title,
+            L"Dobi2D | FPS: %.1f | Entities: %d | Draw Calls: %d",
+            Time::FPS(),
+            stats.entityCount,
+            stats.drawCalls
+        );
+
+        SetWindowTextW(
+            m_window->GetHandle(),
+            title
+        );
+    }
+
     return 0;
 }
 

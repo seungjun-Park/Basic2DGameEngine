@@ -40,6 +40,11 @@ public:
         const Camera& camera
     );
 
+    int GetDrawCallCount() const
+    {
+        return m_drawCallCount;
+    }
+
 private:
     bool CreateShaders();
     bool CreateInputLayout();
@@ -87,4 +92,6 @@ private:
 
     int m_screenWidth = 0;
     int m_screenHeight = 0;
+
+    int m_drawCallCount = 0;
 };

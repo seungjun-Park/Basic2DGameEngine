@@ -136,6 +136,8 @@
     <ClInclude Include="Engine\Core\Application.h" />
     <ClInclude Include="Engine\Core\Engine.h" />
     <ClInclude Include="Engine\Core\Time.h" />
+    <ClInclude Include="Engine\Debug\DebugRenderer.h" />
+    <ClInclude Include="Engine\Debug\DebugStats.h" />
     <ClInclude Include="Engine\Graphics\Texture.h" />
     <ClInclude Include="Engine\Platform\Windows\WinInput.h" />
     <ClInclude Include="Engine\Platform\Windows\WinWindow.h" />
@@ -155,6 +157,7 @@
     <ClCompile Include="Engine\Core\Application.cpp" />
     <ClCompile Include="Engine\Core\Engine.cpp" />
     <ClCompile Include="Engine\Core\Time.cpp" />
+    <ClCompile Include="Engine\Debug\DebugRenderer.cpp" />
     <ClCompile Include="Engine\Graphics\Texture.cpp" />
     <ClCompile Include="Engine\Platform\Windows\WinInput.cpp" />
     <ClCompile Include="Engine\Platform\Windows\WinWindow.cpp" />
