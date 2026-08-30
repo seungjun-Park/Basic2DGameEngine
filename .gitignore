@@ -430,3 +430,4 @@ FodyWeavers.xsd
 *.jpg
 *.png
 vcpkg_installed/*
+vcpkg*
