@@ -6,6 +6,7 @@ class ResourceManager;
 class Player;
 class Camera;
 class PhysicsSystem;
+class TileMap;
 
 class GameScene :
     public Scene
@@ -32,4 +33,5 @@ private:
     Player* m_player = nullptr;
     Camera& m_camera;
     PhysicsSystem& m_physics;
+    TileMap* m_tileMap = nullptr;
 };

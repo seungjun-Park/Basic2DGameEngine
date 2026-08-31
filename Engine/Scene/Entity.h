@@ -2,12 +2,12 @@
 
 #include "Engine/Components/Transform.h"
 #include "Engine/Components/Sprite.h"
-#include "Engine/Collision/Collider.h"
 
 #include <memory>
 
 class SpriteRenderer;
 class PhysicsBody;
+class RenderQueue;
 
 class Entity
 {
@@ -35,8 +35,8 @@ public:
     {
     }
 
-    virtual void Render(
-        SpriteRenderer& renderer
+    virtual void SubmitRender(
+        RenderQueue& renderQueue
     );
 
     void Destroy();

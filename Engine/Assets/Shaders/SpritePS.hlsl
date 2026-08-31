@@ -8,6 +8,11 @@ struct PSInput
     float2 UV : TEXCOORD0;
 };
 
+cbuffer UVBuffer : register(b1)
+{
+    float4 gUVRect;
+};
+
 float4 main(PSInput input) : SV_TARGET
 {
     return SpriteTexture.Sample(

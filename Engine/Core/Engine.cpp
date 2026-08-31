@@ -12,6 +12,7 @@
 #include "Engine/Debug/DebugRenderer.h"
 #include "Engine/Platform/Windows/WinInput.h"
 #include "Engine/Physics/PhysicsSystem.h"
+#include "Engine/Renderer/RenderQueue.h"
 
 #include <algorithm>
 
@@ -22,6 +23,9 @@ Engine::~Engine() = default;
 bool Engine::Initialize(
     WinWindow& window)
 {
+    m_renderQueue =
+        std::make_unique<RenderQueue>();
+
     m_renderer =
         std::make_unique<DX11Renderer>();
 
@@ -187,9 +191,17 @@ void Engine::Render(
             *m_camera
         );
 
+        m_renderQueue->Clear();
+
+        m_scene->SubmitRender(
+            *m_renderQueue
+        );
+
+        m_renderQueue->Sort();
+
         m_spriteRenderer->Begin();
 
-        m_scene->Render(
+        m_renderQueue->Execute(
             *m_spriteRenderer
         );
 
@@ -210,6 +222,12 @@ void Engine::Render(
         m_debugStats.entityCount =
             static_cast<int>(
                 m_scene->GetEntityCount()
+                );
+
+        m_debugStats.renderCommands =
+            static_cast<int>(
+                m_renderQueue->
+                GetCommandCount()
                 );
 
         m_debugStats.drawCalls =

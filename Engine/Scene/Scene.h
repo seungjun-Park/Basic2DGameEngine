@@ -8,6 +8,7 @@
 class Entity;
 class SpriteRenderer;
 class DebugRenderer;
+class RenderQueue;
 
 class Scene
 {
@@ -34,8 +35,8 @@ public:
         float deltaTime
     );
 
-    virtual void Render(
-        SpriteRenderer& renderer
+    virtual void SubmitRender(
+        RenderQueue& renderQueue
     );
 
     virtual void DebugRender(

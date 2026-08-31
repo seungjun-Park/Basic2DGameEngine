@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Engine/Tile/TileTypes.h"
+#include "Engine/Renderer/RenderTypes.h"
+
 class Texture;
 
 struct Sprite
@@ -8,16 +11,20 @@ struct Sprite
 
     bool visible = true;
 
-    int layer = 0;
+    RenderLayer layer =
+        RenderLayer::World;
 
-    DirectX::XMFLOAT2 uvMin
+    float zIndex = 0.0f;
+
+    bool useYSort = false;
+
+    BlendMode blendMode =
+        BlendMode::Alpha;
+
+    UVRect uv
     {
         0.0f,
-        0.0f
-    };
-
-    DirectX::XMFLOAT2 uvMax
-    {
+        0.0f,
         1.0f,
         1.0f
     };

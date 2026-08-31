@@ -431,3 +431,4 @@ FodyWeavers.xsd
 *.png
 vcpkg_installed/*
 vcpkg*
+*.json

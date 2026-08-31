@@ -6,6 +6,7 @@
 #include <DirectXMath.h>
 
 #include "Engine/Components/Transform.h"
+#include "RenderTypes.h"
 
 class DX11Renderer;
 class Texture;
@@ -45,6 +46,10 @@ public:
         return m_drawCallCount;
     }
 
+    void SetBlendMode(
+        BlendMode mode
+    );
+
 private:
     bool CreateShaders();
     bool CreateInputLayout();
@@ -58,7 +63,7 @@ private:
         Microsoft::WRL::ComPtr<ID3DBlob>& blob
     );
 
-    bool CreateBlendState();
+    bool CreateBlendStates();
 
 private:
     DX11Renderer* m_renderer = nullptr;
@@ -94,4 +99,16 @@ private:
     int m_screenHeight = 0;
 
     int m_drawCallCount = 0;
+
+private:
+    Microsoft::WRL::ComPtr<
+        ID3D11BlendState
+    > m_alphaBlendState;
+
+    Microsoft::WRL::ComPtr<
+        ID3D11BlendState
+    > m_opaqueBlendState;
+
+    BlendMode m_currentBlendMode =
+        BlendMode::Alpha;
 };

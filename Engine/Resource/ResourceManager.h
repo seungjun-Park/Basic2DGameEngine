@@ -5,7 +5,10 @@
 #include <unordered_map>
 
 class Texture;
+class Tileset;
+class TileMap;
 class DX11Renderer;
+
 
 class ResourceManager
 {
@@ -24,6 +27,14 @@ public:
         const std::wstring& path
     );
 
+    Tileset* LoadTileset(
+        const std::wstring& path
+    );
+
+    TileMap* LoadTileMap(
+        const std::wstring& path
+    );
+
     void Clear();
 
 private:
@@ -33,4 +44,14 @@ private:
         std::wstring,
         std::unique_ptr<Texture>
     > m_textures;
+
+    std::unordered_map<
+        std::wstring,
+        std::unique_ptr<Tileset>
+    > m_tilesets;
+
+    std::unordered_map<
+        std::wstring,
+        std::unique_ptr<TileMap>
+    > m_tileMaps;
 };

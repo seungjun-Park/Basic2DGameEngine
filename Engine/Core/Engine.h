@@ -12,6 +12,7 @@ class Scene;
 class Camera;
 class DebugRenderer;
 class PhysicsSystem;
+class RenderQueue;
 
 
 class Engine
@@ -76,6 +77,9 @@ private:
 
     std::unique_ptr<PhysicsSystem>
         m_physicsSystem;
+
+    std::unique_ptr<RenderQueue>
+        m_renderQueue;
 
     std::unique_ptr<DebugRenderer>
         m_debugRenderer;

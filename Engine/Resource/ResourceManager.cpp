@@ -2,6 +2,8 @@
 
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Renderer/DX11Renderer.h"
+#include "Engine/Tile/TilesetLoader.h"
+#include "Engine/Tile/TileMapLoader.h"
 
 ResourceManager::ResourceManager() = default;
 ResourceManager::~ResourceManager() = default;
@@ -56,5 +58,85 @@ Texture* ResourceManager::LoadTexture(
 
 void ResourceManager::Clear()
 {
+    m_tileMaps.clear();
+
+    m_tilesets.clear();
+
     m_textures.clear();
+}
+
+Tileset*
+ResourceManager::LoadTileset(
+    const std::wstring& path)
+{
+    auto it =
+        m_tilesets.find(
+            path
+        );
+
+    if (it !=
+        m_tilesets.end())
+    {
+        return
+            it->second.get();
+    }
+
+    auto tileset =
+        TilesetLoader::Load(
+            path,
+            *this
+        );
+
+    if (!tileset)
+    {
+        return nullptr;
+    }
+
+    Tileset* result =
+        tileset.get();
+
+    m_tilesets.emplace(
+        path,
+        std::move(tileset)
+    );
+
+    return result;
+}
+
+TileMap*
+ResourceManager::LoadTileMap(
+    const std::wstring& path)
+{
+    auto it =
+        m_tileMaps.find(
+            path
+        );
+
+    if (it !=
+        m_tileMaps.end())
+    {
+        return
+            it->second.get();
+    }
+
+    auto tileMap =
+        TileMapLoader::Load(
+            path,
+            *this
+        );
+
+    if (!tileMap)
+    {
+        return nullptr;
+    }
+
+    TileMap* result =
+        tileMap.get();
+
+    m_tileMaps.emplace(
+        path,
+        std::move(tileMap)
+    );
+
+    return result;
 }

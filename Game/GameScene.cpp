@@ -6,7 +6,6 @@
 #include "Engine/Resource/ResourceManager.h"
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Renderer/Camera.h"
-#include "Engine/Collision/Collision.h"
 
 GameScene::GameScene(
     ResourceManager& resources,
@@ -31,6 +30,20 @@ void GameScene::Initialize()
             L"Engine/Assets/Textures/2.jpg"
         );
 
+    m_tileMap =
+        m_resources.LoadTileMap(
+            L"Engine/Assets/Maps/testmap.json"
+        );
+
+    if (!m_tileMap)
+    {
+        OutputDebugStringA(
+            "[GameScene] Failed to load TileMap.\n"
+        );
+
+        return;
+    }
+
     if (!playerTexture)
     {
         return;
@@ -53,6 +66,14 @@ void GameScene::Initialize()
         96.0f,
         96.0f
     };
+
+    m_player->sprite.layer =
+        RenderLayer::World;
+    
+    m_player->sprite.zIndex =
+        10.0f;
+
+    m_player->sprite.useYSort = true;
 
     m_player->Initialize();
 
@@ -79,6 +100,14 @@ void GameScene::Initialize()
         enemy->SetTarget(
             m_player
         );
+
+        enemy->sprite.layer =
+            RenderLayer::World;
+
+        enemy->sprite.zIndex =
+            5.0f;
+
+        enemy->sprite.useYSort = true;
 
         enemy->Initialize();
     }
@@ -142,15 +171,6 @@ void GameScene::Update(
 
         if (!enemy)
             continue;
-
-       /* if (Collision::CheckAABB(
-            *m_player,
-            *enemy))
-        {
-            OutputDebugStringA(
-                "[Collision] Player hit Enemy\n"
-            );
-        }*/
     }
 }
 

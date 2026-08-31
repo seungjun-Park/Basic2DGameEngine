@@ -22,4 +22,6 @@ struct DebugStats
 
     // 0 == Unlimited
     std::uint32_t targetFPS = 0;
+
+    int renderCommands = 0;
 };

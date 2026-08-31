@@ -68,7 +68,7 @@ bool SpriteRenderer::Initialize(
     if (!CreateSampler())
         return false;
 
-    if (!CreateBlendState())
+    if (!CreateBlendStates())
         return false;
 
     return true;
@@ -403,6 +403,9 @@ void SpriteRenderer::Begin()
         m_samplerState.GetAddressOf()
     );
 
+    m_currentBlendMode =
+        BlendMode::Alpha;
+
     float blendFactor[4] =
     {
         0.0f,
@@ -412,7 +415,7 @@ void SpriteRenderer::Begin()
     };
 
     context->OMSetBlendState(
-        m_blendState.Get(),
+        m_alphaBlendState.Get(),
         blendFactor,
         0xffffffff
     );
@@ -537,38 +540,64 @@ void SpriteRenderer::Draw(
     ++m_drawCallCount;
 }
 
-bool SpriteRenderer::CreateBlendState()
+bool SpriteRenderer::CreateBlendStates()
 {
-    D3D11_BLEND_DESC blendDesc{};
+    D3D11_BLEND_DESC alphaDesc{};
 
-    blendDesc.RenderTarget[0].BlendEnable =
+    alphaDesc.RenderTarget[0].BlendEnable =
         TRUE;
 
-    blendDesc.RenderTarget[0].SrcBlend =
+    alphaDesc.RenderTarget[0].SrcBlend =
         D3D11_BLEND_SRC_ALPHA;
 
-    blendDesc.RenderTarget[0].DestBlend =
+    alphaDesc.RenderTarget[0].DestBlend =
         D3D11_BLEND_INV_SRC_ALPHA;
 
-    blendDesc.RenderTarget[0].BlendOp =
+    alphaDesc.RenderTarget[0].BlendOp =
         D3D11_BLEND_OP_ADD;
 
-    blendDesc.RenderTarget[0].SrcBlendAlpha =
+    alphaDesc.RenderTarget[0].SrcBlendAlpha =
         D3D11_BLEND_ONE;
 
-    blendDesc.RenderTarget[0].DestBlendAlpha =
+    alphaDesc.RenderTarget[0].DestBlendAlpha =
         D3D11_BLEND_INV_SRC_ALPHA;
 
-    blendDesc.RenderTarget[0].BlendOpAlpha =
+    alphaDesc.RenderTarget[0].BlendOpAlpha =
         D3D11_BLEND_OP_ADD;
 
-    blendDesc.RenderTarget[0].RenderTargetWriteMask =
+    alphaDesc.RenderTarget[0].
+        RenderTargetWriteMask =
         D3D11_COLOR_WRITE_ENABLE_ALL;
 
     HRESULT hr =
-        m_renderer->GetDevice()->CreateBlendState(
-            &blendDesc,
-            m_blendState.GetAddressOf()
+        m_renderer->GetDevice()->
+        CreateBlendState(
+            &alphaDesc,
+            m_alphaBlendState.
+            GetAddressOf()
+        );
+
+    if (FAILED(hr))
+    {
+        return false;
+    }
+
+    D3D11_BLEND_DESC opaqueDesc{};
+
+    opaqueDesc.RenderTarget[0].
+        BlendEnable =
+        FALSE;
+
+    opaqueDesc.RenderTarget[0].
+        RenderTargetWriteMask =
+        D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    hr =
+        m_renderer->GetDevice()->
+        CreateBlendState(
+            &opaqueDesc,
+            m_opaqueBlendState.
+            GetAddressOf()
         );
 
     return SUCCEEDED(hr);
@@ -582,4 +611,53 @@ void SpriteRenderer::SetCamera(
 
     m_projectionMatrix =
         camera.GetProjectionMatrix();
+}
+
+void SpriteRenderer::SetBlendMode(
+    BlendMode mode)
+{
+    if (m_currentBlendMode ==
+        mode)
+    {
+        return;
+    }
+
+    m_currentBlendMode =
+        mode;
+
+    float blendFactor[4] =
+    {
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f
+    };
+
+    ID3D11BlendState* state =
+        nullptr;
+
+    switch (mode)
+    {
+    case BlendMode::Opaque:
+
+        state =
+            m_opaqueBlendState.Get();
+
+        break;
+
+    case BlendMode::Alpha:
+    default:
+
+        state =
+            m_alphaBlendState.Get();
+
+        break;
+    }
+
+    m_renderer->GetContext()->
+        OMSetBlendState(
+            state,
+            blendFactor,
+            0xffffffff
+        );
 }

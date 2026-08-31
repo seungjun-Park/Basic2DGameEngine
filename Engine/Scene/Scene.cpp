@@ -6,16 +6,19 @@
 
 #include <algorithm>
 
-void Scene::Render(
-    SpriteRenderer& renderer)
+void Scene::SubmitRender(
+    RenderQueue& renderQueue)
 {
-    for (auto& entity : m_entities)
+    for (auto& entity :
+        m_entities)
     {
         if (!entity->active)
+        {
             continue;
+        }
 
-        entity->Render(
-            renderer
+        entity->SubmitRender(
+            renderQueue
         );
     }
 }

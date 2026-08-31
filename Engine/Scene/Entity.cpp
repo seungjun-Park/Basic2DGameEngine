@@ -3,22 +3,19 @@
 #include "Engine/Renderer/SpriteRenderer.h"
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Physics/PhysicsBody.h"
+#include "Engine/Renderer/RenderQueue.h"
 
 Entity::~Entity() = default;
 
-void Entity::Render(
-    SpriteRenderer& renderer)
+void Entity::SubmitRender(
+    RenderQueue& renderQueue)
 {
     if (!active)
+    {
         return;
+    }
 
-    if (!sprite.visible)
-        return;
-
-    if (!sprite.texture)
-        return;
-
-    renderer.Draw(
+    renderQueue.Submit(
         sprite,
         transform
     );
