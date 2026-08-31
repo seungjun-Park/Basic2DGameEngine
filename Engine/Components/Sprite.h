@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Graphics/UVRect.h"
 #include "Engine/Renderer/RenderTypes.h"
 
 class Texture;
@@ -19,4 +20,12 @@ struct Sprite
 
     BlendMode blendMode =
         BlendMode::Alpha;
+
+    UVRect uv
+    {
+        0.0f,
+        0.0f,
+        1.0f,
+        1.0f
+    };
 };

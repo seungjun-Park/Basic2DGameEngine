@@ -29,6 +29,16 @@ namespace
         XMMATRIX view;
         XMMATRIX projection;
     };
+
+    struct SpriteUVConstantBuffer
+    {
+        XMFLOAT4 uvRect;
+    };
+
+    static_assert(
+        sizeof(SpriteUVConstantBuffer) % 16 == 0,
+        "Constant buffer size must be a multiple of 16 bytes."
+        );
 }
 
 bool SpriteRenderer::Initialize(
@@ -316,6 +326,37 @@ bool SpriteRenderer::CreateBuffers()
     if (FAILED(hr))
         return false;
 
+    // --------------------------------------------------
+    // Pixel Shader UV Constant Buffer
+    // --------------------------------------------------
+
+    D3D11_BUFFER_DESC
+        uvConstantBufferDesc{};
+
+    uvConstantBufferDesc.Usage =
+        D3D11_USAGE_DYNAMIC;
+
+    uvConstantBufferDesc.ByteWidth =
+        sizeof(SpriteUVConstantBuffer);
+
+    uvConstantBufferDesc.BindFlags =
+        D3D11_BIND_CONSTANT_BUFFER;
+
+    uvConstantBufferDesc.CPUAccessFlags =
+        D3D11_CPU_ACCESS_WRITE;
+
+    hr =
+        m_renderer->GetDevice()->CreateBuffer(
+            &uvConstantBufferDesc,
+            nullptr,
+            m_uvConstantBuffer.GetAddressOf()
+        );
+
+    if (FAILED(hr))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -401,6 +442,12 @@ void SpriteRenderer::Begin()
         0,
         1,
         m_samplerState.GetAddressOf()
+    );
+
+    context->PSSetConstantBuffers(
+        0,
+        1,
+        m_uvConstantBuffer.GetAddressOf()
     );
 
     m_currentBlendMode =
@@ -518,6 +565,53 @@ void SpriteRenderer::Draw(
         1,
         m_constantBuffer.GetAddressOf()
     );
+
+    // --------------------------------------------------
+    // Update Sprite UV Constant Buffer
+    // --------------------------------------------------
+
+    SpriteUVConstantBuffer
+        uvBuffer{};
+
+    uvBuffer.uvRect =
+    {
+        sprite.uv.u0,
+        sprite.uv.v0,
+        sprite.uv.u1,
+        sprite.uv.v1
+    };
+
+    D3D11_MAPPED_SUBRESOURCE
+        uvMapped{};
+
+    hr =
+        context->Map(
+            m_uvConstantBuffer.Get(),
+            0,
+            D3D11_MAP_WRITE_DISCARD,
+            0,
+            &uvMapped
+        );
+
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    memcpy(
+        uvMapped.pData,
+        &uvBuffer,
+        sizeof(uvBuffer)
+    );
+
+    context->Unmap(
+        m_uvConstantBuffer.Get(),
+        0
+    );
+
+    // --------------------------------------------------
+    // Texture
+    // --------------------------------------------------
 
     if (!sprite.texture)
         return;

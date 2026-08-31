@@ -6,6 +6,12 @@
 #include "Engine/Resource/ResourceManager.h"
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Renderer/Camera.h"
+#include "Engine/Physics/PhysicsBody.h"
+
+//temp
+#include "Engine/Scene/Entity.h"
+#include "Engine/Tile/TileMap.h"
+#include "Engine/Tile/Tileset.h"
 
 GameScene::GameScene(
     ResourceManager& resources,
@@ -42,6 +48,71 @@ void GameScene::Initialize()
         );
 
         return;
+    }
+
+    //temp
+
+    Tileset* testTileset =
+        m_tileMap->GetTileset();
+
+    if (testTileset &&
+        testTileset->GetTexture())
+    {
+        constexpr TileId
+            testTileIds[] =
+        {
+            1,
+            2,
+            3,
+            4
+        };
+
+        for (int i = 0; i < 4; ++i)
+        {
+            const TileId tileId =
+                testTileIds[i];
+
+            if (!testTileset->
+                IsValidTileId(
+                    tileId))
+            {
+                continue;
+            }
+
+            Entity* testSprite =
+                CreateEntity<Entity>();
+
+            testSprite->sprite.texture =
+                testTileset->GetTexture();
+
+            testSprite->sprite.uv =
+                testTileset->
+                GetTileUV(
+                    tileId
+                );
+
+            testSprite->sprite.layer =
+                RenderLayer::Foreground;
+
+            testSprite->sprite.zIndex =
+                0.0f;
+
+            testSprite->transform.position =
+            {
+                100.0f +
+                    static_cast<float>(
+                        i
+                    ) * 80.0f,
+
+                100.0f
+            };
+
+            testSprite->transform.scale =
+            {
+                64.0f,
+                64.0f
+            };
+        }
     }
 
     if (!playerTexture)

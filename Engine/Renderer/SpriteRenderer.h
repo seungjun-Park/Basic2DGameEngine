@@ -86,6 +86,9 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Buffer>
         m_constantBuffer;
 
+    Microsoft::WRL::ComPtr<ID3D11Buffer>
+        m_uvConstantBuffer;
+
     Microsoft::WRL::ComPtr<ID3D11SamplerState>
         m_samplerState;
 

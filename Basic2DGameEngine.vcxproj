@@ -142,6 +142,7 @@
     <ClInclude Include="Engine\Debug\DebugRenderer.h" />
     <ClInclude Include="Engine\Debug\DebugStats.h" />
     <ClInclude Include="Engine\Graphics\Texture.h" />
+    <ClInclude Include="Engine\Graphics\UVRect.h" />
     <ClInclude Include="Engine\Physics\PhysicsBody.h" />
     <ClInclude Include="Engine\Physics\PhysicsSystem.h" />
     <ClInclude Include="Engine\Physics\PhysicsTypes.h" />
