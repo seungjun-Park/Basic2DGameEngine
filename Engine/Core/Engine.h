@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "Engine/Debug/DebugStats.h"
+#include "EngineConfig.h"
 
 class WinWindow;
 class IRenderer;
@@ -10,6 +11,7 @@ class ResourceManager;
 class Scene;
 class Camera;
 class DebugRenderer;
+class PhysicsSystem;
 
 
 class Engine
@@ -25,23 +27,59 @@ public:
         WinWindow& window
     );
 
-    void Update();
+    void FixedUpdate(
+        float fixedDeltaTime
+    );
 
-    void Render();
+    void Update(
+        float deltaTime
+    );
+
+    void LateUpdate(
+        float deltaTime
+    );
+
+    void Render(
+        bool vsync
+    );
+
+    void Resize(
+        int width,
+        int height
+    );
+
+    void SetInterpolationAlpha(
+        float alpha
+    );
+
+    float GetInterpolationAlpha() const;
+
+    DebugStats& GetDebugStats();
 
     void SetScene(
         std::unique_ptr<Scene> scene
     );
 
-    DebugStats& GetDebugStats()
-    {
-        return m_debugStats;
-    }
-
     ResourceManager& GetResourceManager();
+
     Camera& GetCamera();
 
+    PhysicsSystem&
+        GetPhysicsSystem();
+
 private:
+    std::unique_ptr<Scene>
+        m_scene;
+
+    std::unique_ptr<Camera>
+        m_camera;
+
+    std::unique_ptr<PhysicsSystem>
+        m_physicsSystem;
+
+    std::unique_ptr<DebugRenderer>
+        m_debugRenderer;
+
     std::unique_ptr<IRenderer>
         m_renderer;
 
@@ -51,15 +89,10 @@ private:
     std::unique_ptr<ResourceManager>
         m_resourceManager;
 
-    std::unique_ptr<Scene>
-        m_scene;
-
-    std::unique_ptr<Camera>
-        m_camera;
-
-    std::unique_ptr<DebugRenderer>
-        m_debugRenderer;
+    EngineConfig m_config;
 
     DebugStats m_debugStats;
     bool m_showDebug = true;
+
+    float m_interpolationAlpha = 0.0f;
 };

@@ -10,9 +10,12 @@
 
 GameScene::GameScene(
     ResourceManager& resources,
-    Camera& camera)
-    : m_resources(resources),
-    m_camera(camera)
+    Camera& camera,
+    PhysicsSystem& physics)
+    :
+    m_resources(resources),
+    m_camera(camera),
+    m_physics(physics)
 {
 }
 
@@ -20,7 +23,7 @@ void GameScene::Initialize()
 {
     Texture* playerTexture =
         m_resources.LoadTexture(
-            L"Engine/Assets/Textures/1.jpg"
+            L"Engine/Assets/Textures/Qingxiao.png"
         );
 
     Texture* enemyTexture =
@@ -34,7 +37,7 @@ void GameScene::Initialize()
     }
 
     m_player =
-        CreateEntity<Player>();
+        CreateEntity<Player>(m_physics);
 
     m_player->sprite.texture =
         playerTexture;
@@ -51,18 +54,12 @@ void GameScene::Initialize()
         96.0f
     };
 
-    m_player->collider.size =
-    {
-        64.0f,
-        64.0f
-    };
-
     m_player->Initialize();
 
     for (int i = 0; i < 5; ++i)
     {
         Enemy* enemy =
-            CreateEntity<Enemy>();
+            CreateEntity<Enemy>(m_physics);
 
         enemy->sprite.texture =
             enemyTexture;
@@ -79,12 +76,6 @@ void GameScene::Initialize()
             80.0f
         };
 
-        enemy->collider.size =
-        {
-            64.0f,
-            64.0f
-        };
-
         enemy->SetTarget(
             m_player
         );
@@ -99,14 +90,6 @@ void GameScene::Update(
     Scene::Update(
         deltaTime
     );
-
-    if (m_player)
-    {
-        m_camera.SetPosition(
-            m_player->transform.position.x,
-            m_player->transform.position.y
-        );
-    }
 
     if (m_player &&
         m_player->IsAttacking())
@@ -160,13 +143,29 @@ void GameScene::Update(
         if (!enemy)
             continue;
 
-        if (Collision::CheckAABB(
+       /* if (Collision::CheckAABB(
             *m_player,
             *enemy))
         {
             OutputDebugStringA(
                 "[Collision] Player hit Enemy\n"
             );
-        }
+        }*/
     }
+}
+
+void GameScene::LateUpdate(
+    float deltaTime)
+{
+    if (m_player)
+    {
+        m_camera.SetPosition(
+            m_player->transform.position.x,
+            m_player->transform.position.y
+        );
+    }
+
+    Scene::LateUpdate(
+        deltaTime
+    );
 }

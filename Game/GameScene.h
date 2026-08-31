@@ -5,6 +5,7 @@
 class ResourceManager;
 class Player;
 class Camera;
+class PhysicsSystem;
 
 class GameScene :
     public Scene
@@ -12,7 +13,8 @@ class GameScene :
 public:
     explicit GameScene(
         ResourceManager& resources,
-        Camera& camera
+        Camera& camera,
+        PhysicsSystem& physics
     );
 
     void Initialize() override;
@@ -21,8 +23,13 @@ public:
         float deltaTime
     ) override;
 
+    void LateUpdate(
+        float deltaTime
+    ) override;
+
 private:
     ResourceManager& m_resources;
     Player* m_player = nullptr;
     Camera& m_camera;
+    PhysicsSystem& m_physics;
 };

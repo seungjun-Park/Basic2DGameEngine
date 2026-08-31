@@ -193,17 +193,58 @@ LRESULT CALLBACK WinWindow::WindowProc(
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
-
-    case WM_SIZE:
+    case WM_ACTIVATEAPP:
+    {
         if (window)
         {
-            window->m_width =
-                LOWORD(lParam);
-
-            window->m_height =
-                HIWORD(lParam);
+            window->m_isActive =
+                (wParam != FALSE);
         }
+
         return 0;
+    }
+    case WM_SIZE:
+    {
+        if (!window)
+        {
+            return 0;
+        }
+
+        if (wParam == SIZE_MINIMIZED)
+        {
+            window->m_isMinimized = true;
+
+            return 0;
+        }
+
+        window->m_isMinimized = false;
+
+        const int width =
+            static_cast<int>(
+                LOWORD(lParam)
+                );
+
+        const int height =
+            static_cast<int>(
+                HIWORD(lParam)
+                );
+
+        if (width <= 0 ||
+            height <= 0)
+        {
+            return 0;
+        }
+
+        window->m_width = width;
+        window->m_height = height;
+
+        window->m_pendingWidth = width;
+        window->m_pendingHeight = height;
+
+        window->m_hasPendingResize = true;
+
+        return 0;
+    }
     }
 
     return DefWindowProcW(
@@ -212,4 +253,25 @@ LRESULT CALLBACK WinWindow::WindowProc(
         wParam,
         lParam
     );
+}
+
+bool WinWindow::ConsumeResize(
+    int& width,
+    int& height)
+{
+    if (!m_hasPendingResize)
+    {
+        return false;
+    }
+
+    width =
+        m_pendingWidth;
+
+    height =
+        m_pendingHeight;
+
+    m_hasPendingResize =
+        false;
+
+    return true;
 }

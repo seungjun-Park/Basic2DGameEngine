@@ -59,3 +59,20 @@ Camera::GetProjectionMatrix() const
             1.0f
         );
 }
+
+void Camera::Resize(
+    float screenWidth,
+    float screenHeight)
+{
+    if (screenWidth <= 0.0f ||
+        screenHeight <= 0.0f)
+    {
+        return;
+    }
+
+    m_screenWidth =
+        screenWidth;
+
+    m_screenHeight =
+        screenHeight;
+}

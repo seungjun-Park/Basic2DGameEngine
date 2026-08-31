@@ -22,13 +22,31 @@ public:
     {
     }
 
+    virtual void FixedUpdate(
+        float fixedDeltaTime
+    );
+
     virtual void Update(
+        float deltaTime
+    );
+
+    virtual void LateUpdate(
         float deltaTime
     );
 
     virtual void Render(
         SpriteRenderer& renderer
     );
+
+    virtual void DebugRender(
+        SpriteRenderer& renderer,
+        DebugRenderer& debugRenderer
+    );
+
+    std::size_t GetEntityCount() const
+    {
+        return m_entities.size();
+    }
 
     template<typename T, typename... Args>
     T* CreateEntity(
@@ -54,16 +72,10 @@ public:
         return result;
     }
 
+    virtual void SyncPhysicsTransforms();
 
-    size_t GetEntityCount() const
-    {
-        return m_entities.size();
-    }
-
-    virtual void DebugRender(
-        SpriteRenderer& renderer,
-        DebugRenderer& debugRenderer
-    );
+protected:
+    void RemoveDestroyedEntities();
 
 protected:
     std::vector<

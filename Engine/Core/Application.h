@@ -1,7 +1,12 @@
 #pragma once
 
 #include <Windows.h>
+
 #include <memory>
+#include <cstdint>
+
+#include "EngineConfig.h"
+#include "FrameLimiter.h"
 
 class WinWindow;
 class Engine;
@@ -12,24 +17,70 @@ public:
     Application();
     ~Application();
 
-    Application(const Application&) = delete;
-    Application& operator=(const Application&) = delete;
+    Application(
+        const Application&
+    ) = delete;
+
+    Application&
+        operator=(
+            const Application&
+            ) = delete;
 
     bool Initialize(
-        HINSTANCE hInstance
+        HINSTANCE hInstance,
+        const EngineConfig& config
     );
 
     int Run();
 
     Engine& GetEngine();
 
-private:
-    void Update();
-    void Render();
+    void SetTargetFPS(
+        std::uint32_t fps
+    );
+
+    std::uint32_t GetTargetFPS() const;
+
+    void SetVSync(
+        bool enabled
+    );
+
+    void SetPaused(
+        bool paused
+    );
+
+    bool IsPaused() const;
+
+    const EngineConfig&
+        GetConfig() const;
 
 private:
-    std::unique_ptr<WinWindow> m_window;
-    std::unique_ptr<Engine> m_engine;
+    void ProcessPendingResize();
+
+    void UpdateRuntimeStats(
+        std::uint32_t fixedSteps
+    );
+
+    void UpdateWindowTitle();
+
+private:
+    std::unique_ptr<WinWindow>
+        m_window;
+
+    std::unique_ptr<Engine>
+        m_engine;
+
+    EngineConfig m_config;
+
+    FrameLimiter m_frameLimiter;
+
+    float m_fixedAccumulator = 0.0f;
+
+    float m_titleUpdateTimer = 0.0f;
 
     bool m_comInitialized = false;
+
+    bool m_isPaused = false;
+
+    float m_prePauseTimeScale = 1.0f;
 };

@@ -2,11 +2,15 @@
 
 #include "Engine/Scene/Entity.h"
 
+class PhysicsSystem;
+
 class Player :
     public Entity
 {
 public:
-    Player() = default;
+    explicit Player(
+        PhysicsSystem& physics
+    );
     ~Player() override = default;
 
     void Initialize() override;
@@ -15,12 +19,32 @@ public:
         float deltaTime
     ) override;
 
+    void FixedUpdate(
+        float fixedDeltaTime
+    ) override;
+
     bool IsAttacking() const;
 
     float GetAttackRange() const;
 
+    void OnCollisionEnter(
+        Entity& other) override;
+
+    void OnCollisionExit(
+        Entity& other) override;
+
 private:
-    float m_speed = 200.0f;
+    PhysicsSystem& m_physics;
+
+    DirectX::XMFLOAT2
+        m_moveDirection
+    {
+        0.0f,
+        0.0f
+    };
+
+    float m_speed =
+        220.0f;
 
     bool m_isAttacking = false;
 

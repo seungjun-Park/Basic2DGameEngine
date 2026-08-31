@@ -20,24 +20,67 @@ void Scene::Render(
     }
 }
 
+void Scene::FixedUpdate(
+    float fixedDeltaTime)
+{
+    for (auto& entity :
+        m_entities)
+    {
+        if (!entity->active)
+        {
+            continue;
+        }
+
+        entity->FixedUpdate(
+            fixedDeltaTime
+        );
+    }
+}
+
 void Scene::Update(
     float deltaTime)
 {
-    for (auto& entity : m_entities)
+    for (auto& entity :
+        m_entities)
     {
         if (!entity->active)
+        {
             continue;
+        }
 
         entity->Update(
             deltaTime
         );
     }
+}
 
+void Scene::LateUpdate(
+    float deltaTime)
+{
+    for (auto& entity :
+        m_entities)
+    {
+        if (!entity->active)
+        {
+            continue;
+        }
+
+        entity->LateUpdate(
+            deltaTime
+        );
+    }
+
+    RemoveDestroyedEntities();
+}
+
+void Scene::RemoveDestroyedEntities()
+{
     std::erase_if(
         m_entities,
         [](const std::unique_ptr<Entity>& entity)
         {
-            return entity->IsDestroyed();
+            return
+                entity->IsDestroyed();
         }
     );
 }
@@ -50,23 +93,20 @@ void Scene::DebugRender(
     {
         if (!entity->active)
             continue;
+    }
+}
 
-        if (!entity->collider.enabled)
-            continue;
-
-        DirectX::XMFLOAT2 center
+void Scene::SyncPhysicsTransforms()
+{
+    for (auto& entity :
+        m_entities)
+    {
+        if (!entity->active)
         {
-            entity->transform.position.x +
-                entity->collider.offset.x,
+            continue;
+        }
 
-            entity->transform.position.y +
-                entity->collider.offset.y
-        };
-
-        debugRenderer.DrawRect(
-            renderer,
-            center,
-            entity->collider.size
-        );
+        entity->
+            SyncPhysicsTransform();
     }
 }

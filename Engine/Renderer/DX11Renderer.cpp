@@ -25,20 +25,9 @@ bool DX11Renderer::Initialize(
         return false;
     }
 
-    D3D11_VIEWPORT viewport{};
-
-    viewport.Width =
-        static_cast<float>(width);
-
-    viewport.Height =
-        static_cast<float>(height);
-
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
-
-    m_context->RSSetViewports(
-        1,
-        &viewport
+    SetViewport(
+        width,
+        height
     );
 
     return true;
@@ -172,10 +161,114 @@ void DX11Renderer::Clear()
     );
 }
 
-void DX11Renderer::EndFrame()
+void DX11Renderer::EndFrame(
+    bool vsync)
 {
-    m_swapChain->Present(
+    const UINT syncInterval =
+        vsync
+        ? 1
+        : 0;
+
+    HRESULT hr =
+        m_swapChain->Present(
+            syncInterval,
+            0
+        );
+
+#ifdef _DEBUG
+
+    if (FAILED(hr))
+    {
+        OutputDebugStringA(
+            "[DX11Renderer] Present failed.\n"
+        );
+    }
+
+#endif
+}
+
+void DX11Renderer::SetViewport(
+    int width,
+    int height)
+{
+    D3D11_VIEWPORT viewport{};
+
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0f;
+
+    viewport.Width =
+        static_cast<float>(
+            width
+            );
+
+    viewport.Height =
+        static_cast<float>(
+            height
+            );
+
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+
+    m_context->RSSetViewports(
         1,
-        0
+        &viewport
+    );
+}
+
+void DX11Renderer::Resize(
+    int width,
+    int height)
+{
+    if (width <= 0 ||
+        height <= 0)
+    {
+        return;
+    }
+
+    if (!m_swapChain ||
+        !m_context)
+    {
+        return;
+    }
+
+    // BackBuffer 참조 해제
+    m_context->OMSetRenderTargets(
+        0,
+        nullptr,
+        nullptr
+    );
+
+    m_renderTargetView.Reset();
+
+    HRESULT hr =
+        m_swapChain->ResizeBuffers(
+            0,
+            static_cast<UINT>(width),
+            static_cast<UINT>(height),
+            DXGI_FORMAT_UNKNOWN,
+            0
+        );
+
+    if (FAILED(hr))
+    {
+        OutputDebugStringA(
+            "[DX11Renderer] ResizeBuffers failed.\n"
+        );
+
+        return;
+    }
+
+    if (!CreateRenderTarget())
+    {
+        OutputDebugStringA(
+            "[DX11Renderer] Failed to recreate RenderTarget.\n"
+        );
+
+        return;
+    }
+
+    SetViewport(
+        width,
+        height
     );
 }

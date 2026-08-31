@@ -12,16 +12,36 @@ int WINAPI WinMain(
     LPSTR,
     int)
 {
+    EngineConfig config;
+
+    config.windowWidth = 1280;
+    config.windowHeight = 720;
+
+    config.vsync = false;
+
+    // 0ÀÌ¸י Unlimited
+    config.targetFPS = 0;
+
+    config.fixedUpdateHz = 60.0f;
+
+    config.maxFixedSteps = 5;
+
+    config.maxDeltaTime = 0.1f;
+
+    config.pauseWhenUnfocused = true;
+
     Application application;
 
     if (!application.Initialize(
-        hInstance))
+        hInstance,
+        config))
     {
         MessageBoxW(
             nullptr,
             L"Application initialization failed.",
             L"Dobi2D",
-            MB_OK | MB_ICONERROR
+            MB_OK |
+            MB_ICONERROR
         );
 
         return -1;
@@ -33,7 +53,8 @@ int WINAPI WinMain(
     auto gameScene =
         std::make_unique<GameScene>(
             engine.GetResourceManager(),
-            engine.GetCamera()
+            engine.GetCamera(),
+            engine.GetPhysicsSystem()
         );
 
     engine.SetScene(

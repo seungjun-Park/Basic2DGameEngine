@@ -13,9 +13,15 @@ public:
         int height
     ) = 0;
 
+    virtual void Resize(
+        int width,
+        int height
+    ) = 0;
+
+
     virtual void BeginFrame() = 0;
 
-    virtual void EndFrame() = 0;
+    virtual void EndFrame(bool vsync) = 0;
 
     virtual void Clear() = 0;
 };

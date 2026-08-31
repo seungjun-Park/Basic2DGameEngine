@@ -22,9 +22,14 @@ public:
         int height
     ) override;
 
+    void Resize(
+        int width,
+        int height
+    ) override;
+
     void BeginFrame() override;
 
-    void EndFrame() override;
+    void EndFrame(bool vsync) override;
 
     void Clear() override;
 
@@ -46,6 +51,11 @@ private:
     );
 
     bool CreateRenderTarget();
+
+    void SetViewport(
+        int width,
+        int height
+    );
 
 private:
     Microsoft::WRL::ComPtr<

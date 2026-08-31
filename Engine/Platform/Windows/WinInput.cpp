@@ -43,3 +43,9 @@ bool WinInput::IsKeyReleased(int key)
         !s_currentKeys[key] &&
         s_previousKeys[key];
 }
+
+void WinInput::Reset()
+{
+    s_currentKeys.fill(false);
+    s_previousKeys.fill(false);
+}

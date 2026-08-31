@@ -70,6 +70,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -129,16 +132,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Collision\Collider.h" />
-    <ClInclude Include="Engine\Collision\Collision.h" />
     <ClInclude Include="Engine\Components\Sprite.h" />
     <ClInclude Include="Engine\Components\Transform.h" />
     <ClInclude Include="Engine\Core\Application.h" />
     <ClInclude Include="Engine\Core\Engine.h" />
+    <ClInclude Include="Engine\Core\EngineConfig.h" />
+    <ClInclude Include="Engine\Core\FrameLimiter.h" />
     <ClInclude Include="Engine\Core\Time.h" />
     <ClInclude Include="Engine\Debug\DebugRenderer.h" />
     <ClInclude Include="Engine\Debug\DebugStats.h" />
     <ClInclude Include="Engine\Graphics\Texture.h" />
+    <ClInclude Include="Engine\Physics\PhysicsBody.h" />
+    <ClInclude Include="Engine\Physics\PhysicsSystem.h" />
+    <ClInclude Include="Engine\Physics\PhysicsTypes.h" />
+    <ClInclude Include="Engine\Physics\PhysicsUnits.h" />
     <ClInclude Include="Engine\Platform\Windows\WinInput.h" />
     <ClInclude Include="Engine\Platform\Windows\WinWindow.h" />
     <ClInclude Include="Engine\Renderer\Camera.h" />
@@ -153,12 +160,14 @@
     <ClInclude Include="Game\Player.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Collision\Collision.cpp" />
     <ClCompile Include="Engine\Core\Application.cpp" />
     <ClCompile Include="Engine\Core\Engine.cpp" />
+    <ClCompile Include="Engine\Core\FrameLimiter.cpp" />
     <ClCompile Include="Engine\Core\Time.cpp" />
     <ClCompile Include="Engine\Debug\DebugRenderer.cpp" />
     <ClCompile Include="Engine\Graphics\Texture.cpp" />
+    <ClCompile Include="Engine\Physics\PhysicsBody.cpp" />
+    <ClCompile Include="Engine\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="Engine\Platform\Windows\WinInput.cpp" />
     <ClCompile Include="Engine\Platform\Windows\WinWindow.cpp" />
     <ClCompile Include="Engine\Renderer\Camera.cpp" />

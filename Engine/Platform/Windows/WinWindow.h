@@ -35,6 +35,21 @@ public:
         return m_height;
     }
 
+    bool IsActive() const
+    {
+        return m_isActive;
+    }
+
+    bool IsMinimized() const
+    {
+        return m_isMinimized;
+    }
+
+    bool ConsumeResize(
+        int& width,
+        int& height
+    );
+
 private:
     static LRESULT CALLBACK WindowProc(
         HWND hwnd,
@@ -55,4 +70,12 @@ private:
 
     const wchar_t* m_title = L"Dobi2D";
     const wchar_t* m_className = L"Dobi2DWindowClass";
+
+    bool m_isActive = true;
+    bool m_isMinimized = false;
+
+    bool m_hasPendingResize = false;
+
+    int m_pendingWidth = 0;
+    int m_pendingHeight = 0;
 };

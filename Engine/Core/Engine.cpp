@@ -11,6 +11,9 @@
 #include "Engine/Renderer/Camera.h"
 #include "Engine/Debug/DebugRenderer.h"
 #include "Engine/Platform/Windows/WinInput.h"
+#include "Engine/Physics/PhysicsSystem.h"
+
+#include <algorithm>
 
 Engine::Engine() = default;
 
@@ -51,6 +54,14 @@ bool Engine::Initialize(
 
     if (!m_resourceManager->Initialize(
         *dx11))
+    {
+        return false;
+    }
+
+    m_physicsSystem =
+        std::make_unique<PhysicsSystem>();
+
+    if (!m_physicsSystem->Initialize())
     {
         return false;
     }
@@ -101,23 +112,72 @@ Engine::GetResourceManager()
     return *m_resourceManager;
 }
 
-void Engine::Update()
+void Engine::FixedUpdate(
+    float fixedDeltaTime)
 {
     if (!m_scene)
+    {
         return;
+    }
 
-    if (WinInput::IsKeyPressed(VK_F1))
+    // 1.
+    // 게임 로직이 velocity / force를 Physics에 전달
+    m_scene->FixedUpdate(
+        fixedDeltaTime
+    );
+
+    // 2.
+    // 실제 Box2D simulation
+    m_physicsSystem->Step(
+        fixedDeltaTime
+    );
+
+    // 3.
+    // Box2D 결과를 render Transform으로 반영
+    m_scene->
+        SyncPhysicsTransforms();
+
+    // 4.
+    // contact event 전달
+    m_physicsSystem->
+        DispatchContactEvents();
+}
+
+void Engine::Update(
+    float deltaTime)
+{
+    if (WinInput::IsKeyPressed(
+        VK_F1))
     {
         m_showDebug =
             !m_showDebug;
     }
 
+    if (!m_scene)
+    {
+        return;
+    }
+
     m_scene->Update(
-        Time::DeltaTime()
+        deltaTime
     );
 }
 
-void Engine::Render()
+void Engine::LateUpdate(
+    float deltaTime)
+{
+    if (!m_scene)
+    {
+        return;
+    }
+
+    m_scene->LateUpdate(
+        deltaTime
+    );
+}
+
+void Engine::Render(
+    bool vsync)
 {
     m_renderer->BeginFrame();
 
@@ -134,6 +194,7 @@ void Engine::Render()
         );
 
 #ifdef _DEBUG
+
         if (m_showDebug)
         {
             m_scene->DebugRender(
@@ -141,6 +202,7 @@ void Engine::Render()
                 *m_debugRenderer
             );
         }
+
 #endif
 
         m_spriteRenderer->End();
@@ -151,13 +213,69 @@ void Engine::Render()
                 );
 
         m_debugStats.drawCalls =
-            m_spriteRenderer->GetDrawCallCount();
+            m_spriteRenderer->
+            GetDrawCallCount();
     }
 
-    m_renderer->EndFrame();
+    m_renderer->EndFrame(
+        vsync
+    );
+}
+
+void Engine::Resize(
+    int width,
+    int height)
+{
+    if (width <= 0 ||
+        height <= 0)
+    {
+        return;
+    }
+
+    m_renderer->Resize(
+        width,
+        height
+    );
+
+    m_camera->Resize(
+        static_cast<float>(
+            width
+            ),
+        static_cast<float>(
+            height
+            )
+    );
+}
+
+void Engine::SetInterpolationAlpha(
+    float alpha)
+{
+    m_interpolationAlpha =
+        std::clamp(
+            alpha,
+            0.0f,
+            1.0f
+        );
+}
+
+float Engine::GetInterpolationAlpha() const
+{
+    return m_interpolationAlpha;
 }
 
 Camera& Engine::GetCamera()
 {
     return *m_camera;
+}
+
+DebugStats&
+Engine::GetDebugStats()
+{
+    return m_debugStats;
+}
+
+PhysicsSystem&
+Engine::GetPhysicsSystem()
+{
+    return *m_physicsSystem;
 }
