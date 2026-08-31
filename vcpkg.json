@@ -1,0 +1,6 @@
+{
+  "dependencies": [
+    "box2d",
+    "nlohmann-json"
+  ]
+}

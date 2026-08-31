@@ -1,45 +1,114 @@
 #include "TileMapLoader.h"
 
+#include "TileMap.h"
 #include "Tileset.h"
 
 #include "Engine/Resource/ResourceManager.h"
 
 #include <nlohmann/json.hpp>
 
+#include <Windows.h>
+
 #include <filesystem>
 #include <fstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace
 {
-    RenderLayer ParseRenderLayer(
-        const std::string& value)
+    void LogTileMapError(
+        const char* message)
     {
-        if (value == "Background")
-            return RenderLayer::Background;
+        OutputDebugStringA(
+            "[TileMapLoader] "
+        );
 
-        if (value == "Effect")
-            return RenderLayer::Effect;
+        OutputDebugStringA(
+            message
+        );
 
-        if (value == "Foreground")
-            return RenderLayer::Foreground;
-
-        if (value == "UI")
-            return RenderLayer::UI;
-
-        return RenderLayer::World;
+        OutputDebugStringA(
+            "\n"
+        );
     }
 
-    TileLayerType ParseLayerType(
-        const std::string& value)
+    bool TryParseRenderLayer(
+        const std::string& value,
+        RenderLayer& result)
     {
-        if (value == "Collision")
+        if (value == "Background")
         {
-            return
-                TileLayerType::Collision;
+            result =
+                RenderLayer::Background;
+
+            return true;
         }
 
-        return
-            TileLayerType::Render;
+        if (value == "World")
+        {
+            result =
+                RenderLayer::World;
+
+            return true;
+        }
+
+        if (value == "Effect")
+        {
+            result =
+                RenderLayer::Effect;
+
+            return true;
+        }
+
+        if (value == "Foreground")
+        {
+            result =
+                RenderLayer::Foreground;
+
+            return true;
+        }
+
+        if (value == "UI")
+        {
+            result =
+                RenderLayer::UI;
+
+            return true;
+        }
+
+        if (value == "Debug")
+        {
+            result =
+                RenderLayer::Debug;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool TryParseLayerType(
+        const std::string& value,
+        TileLayerType& result)
+    {
+        if (value == "Render")
+        {
+            result =
+                TileLayerType::Render;
+
+            return true;
+        }
+
+        if (value == "Collision")
+        {
+            result =
+                TileLayerType::Collision;
+
+            return true;
+        }
+
+        return false;
     }
 }
 
@@ -48,7 +117,8 @@ TileMapLoader::Load(
     const std::wstring& path,
     ResourceManager& resources)
 {
-    std::ifstream file{
+    std::ifstream file
+    {
         std::filesystem::path(
             path
         )
@@ -56,159 +126,280 @@ TileMapLoader::Load(
 
     if (!file.is_open())
     {
+        LogTileMapError(
+            "Failed to open file."
+        );
+
         return nullptr;
     }
-
-    nlohmann::json json;
 
     try
     {
+        nlohmann::json json;
+
         file >> json;
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
 
-    const int width =
-        json.value(
-            "width",
-            0
-        );
-
-    const int height =
-        json.value(
-            "height",
-            0
-        );
-
-    const int tileWidth =
-        json.value(
-            "tileWidth",
-            0
-        );
-
-    const int tileHeight =
-        json.value(
-            "tileHeight",
-            0
-        );
-
-    const std::string tilesetPath =
-        json.value(
-            "tileset",
-            ""
-        );
-
-    if (width <= 0 ||
-        height <= 0 ||
-        tileWidth <= 0 ||
-        tileHeight <= 0 ||
-        tilesetPath.empty())
-    {
-        return nullptr;
-    }
-
-    const std::wstring tilesetWide(
-        tilesetPath.begin(),
-        tilesetPath.end()
-    );
-
-    Tileset* tileset =
-        resources.LoadTileset(
-            tilesetWide
-        );
-
-    if (!tileset)
-    {
-        return nullptr;
-    }
-
-    auto tileMap =
-        std::make_unique<TileMap>();
-
-    tileMap->SetSize(
-        width,
-        height
-    );
-
-    tileMap->SetTileSize(
-        tileWidth,
-        tileHeight
-    );
-
-    tileMap->SetTileset(
-        tileset
-    );
-
-    if (!json.contains("layers") ||
-        !json["layers"].is_array())
-    {
-        return nullptr;
-    }
-
-    for (const auto& layerJson :
-        json["layers"])
-    {
-        TileLayer layer;
-
-        layer.name =
-            layerJson.value(
-                "name",
-                "Unnamed"
+        if (!json.is_object())
+        {
+            LogTileMapError(
+                "Root must be a JSON object."
             );
 
-        layer.type =
-            ParseLayerType(
+            return nullptr;
+        }
+
+        const int width =
+            json.value(
+                "width",
+                0
+            );
+
+        const int height =
+            json.value(
+                "height",
+                0
+            );
+
+        const int tileWidth =
+            json.value(
+                "tileWidth",
+                0
+            );
+
+        const int tileHeight =
+            json.value(
+                "tileHeight",
+                0
+            );
+
+        const std::string tilesetPath =
+            json.value(
+                "tileset",
+                ""
+            );
+
+        if (width <= 0 ||
+            height <= 0)
+        {
+            LogTileMapError(
+                "Invalid map size."
+            );
+
+            return nullptr;
+        }
+
+        if (tileWidth <= 0 ||
+            tileHeight <= 0)
+        {
+            LogTileMapError(
+                "Invalid tile size."
+            );
+
+            return nullptr;
+        }
+
+        if (tilesetPath.empty())
+        {
+            LogTileMapError(
+                "Tileset path is empty."
+            );
+
+            return nullptr;
+        }
+
+        if (!json.contains("layers") ||
+            !json["layers"].is_array())
+        {
+            LogTileMapError(
+                "Missing layers array."
+            );
+
+            return nullptr;
+        }
+
+        const std::wstring
+            tilesetPathWide(
+                tilesetPath.begin(),
+                tilesetPath.end()
+            );
+
+        Tileset* tileset =
+            resources.LoadTileset(
+                tilesetPathWide
+            );
+
+        if (!tileset)
+        {
+            LogTileMapError(
+                "Failed to load tileset."
+            );
+
+            return nullptr;
+        }
+
+        const std::size_t expectedSize =
+            static_cast<std::size_t>(
+                width
+                ) *
+            static_cast<std::size_t>(
+                height
+                );
+
+        auto tileMap =
+            std::make_unique<TileMap>();
+
+        tileMap->SetSize(
+            width,
+            height
+        );
+
+        tileMap->SetTileSize(
+            tileWidth,
+            tileHeight
+        );
+
+        tileMap->SetTileset(
+            tileset
+        );
+
+        for (const auto& layerJson :
+            json["layers"])
+        {
+            if (!layerJson.is_object())
+            {
+                LogTileMapError(
+                    "Layer must be an object."
+                );
+
+                return nullptr;
+            }
+
+            TileLayer layer;
+
+            layer.name =
+                layerJson.value(
+                    "name",
+                    "Unnamed"
+                );
+
+            const std::string
+                typeString =
                 layerJson.value(
                     "type",
-                    "Render"
-                )
-            );
+                    ""
+                );
 
-        layer.renderLayer =
-            ParseRenderLayer(
+            if (!TryParseLayerType(
+                typeString,
+                layer.type))
+            {
+                LogTileMapError(
+                    "Invalid layer type."
+                );
+
+                return nullptr;
+            }
+
+            if (layer.type ==
+                TileLayerType::Render)
+            {
+                const std::string
+                    renderLayerString =
+                    layerJson.value(
+                        "renderLayer",
+                        ""
+                    );
+
+                if (!TryParseRenderLayer(
+                    renderLayerString,
+                    layer.renderLayer))
+                {
+                    LogTileMapError(
+                        "Invalid render layer."
+                    );
+
+                    return nullptr;
+                }
+            }
+            else
+            {
+                // Collision layer에서는
+                // 렌더 순서가 사용되지 않는다.
+                layer.renderLayer =
+                    RenderLayer::World;
+            }
+
+            layer.visible =
                 layerJson.value(
-                    "renderLayer",
-                    "World"
-                )
-            );
+                    "visible",
+                    true
+                );
 
-        layer.visible =
-            layerJson.value(
-                "visible",
-                true
-            );
+            if (!layerJson.contains(
+                "tiles") ||
+                !layerJson["tiles"].
+                is_array())
+            {
+                LogTileMapError(
+                    "Layer is missing tile array."
+                );
 
-        if (layerJson.contains("tiles") &&
-            layerJson["tiles"].
-            is_array())
-        {
+                return nullptr;
+            }
+
             layer.tiles =
                 layerJson["tiles"].
                 get<
                 std::vector<TileId>
                 >();
-        }
 
-        const std::size_t expectedSize =
-            static_cast<std::size_t>(
-                width * height
+            if (layer.tiles.size() !=
+                expectedSize)
+            {
+                LogTileMapError(
+                    "Layer tile count does not "
+                    "match map size."
                 );
 
-        if (layer.tiles.size() <
-            expectedSize)
-        {
-            layer.tiles.resize(
-                expectedSize,
-                InvalidTileId
+                return nullptr;
+            }
+
+            for (TileId tileId :
+            layer.tiles)
+            {
+                if (tileId ==
+                    InvalidTileId)
+                {
+                    continue;
+                }
+
+                if (!tileset->
+                    IsValidTileId(
+                        tileId))
+                {
+                    LogTileMapError(
+                        "Layer contains an "
+                        "invalid TileId."
+                    );
+
+                    return nullptr;
+                }
+            }
+
+            tileMap->AddLayer(
+                std::move(layer)
             );
         }
 
-        tileMap->AddLayer(
-            std::move(layer)
-        );
+        return tileMap;
     }
+    catch (
+        const nlohmann::json::exception& e)
+    {
+        LogTileMapError(
+            e.what()
+        );
 
-    return tileMap;
+        return nullptr;
+    }
 }

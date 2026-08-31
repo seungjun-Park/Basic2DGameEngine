@@ -52,33 +52,43 @@ int Tileset::GetRows() const
 UVRect Tileset::GetTileUV(
     TileId tileId) const
 {
-    UVRect result{};
+    // Invalid UV는 모든 값 0.
+    //
+    // 기존 UVRect 기본값은
+    // u1/v1이 1이기 때문에
+    // 단순히 UVRect{}를 반환하면
+    // 전체 texture가 선택될 수 있다.
+    UVRect result
+    {
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f
+    };
 
-    if (tileId == InvalidTileId)
+    if (!IsValidTileId(
+        tileId))
     {
         return result;
     }
 
-    if (m_columns <= 0 ||
-        m_rows <= 0)
-    {
-        return result;
-    }
-
-    // Tile ID는 1부터 시작한다고 가정
     const TileId zeroBased =
         tileId - 1;
 
     const int tileX =
         static_cast<int>(
             zeroBased %
-            m_columns
+            static_cast<TileId>(
+                m_columns
+                )
             );
 
     const int tileY =
         static_cast<int>(
             zeroBased /
-            m_columns
+            static_cast<TileId>(
+                m_columns
+                )
             );
 
     const float invColumns =
@@ -94,11 +104,15 @@ UVRect Tileset::GetTileUV(
             );
 
     result.u0 =
-        tileX *
+        static_cast<float>(
+            tileX
+            ) *
         invColumns;
 
     result.v0 =
-        tileY *
+        static_cast<float>(
+            tileY
+            ) *
         invRows;
 
     result.u1 =
@@ -110,4 +124,27 @@ UVRect Tileset::GetTileUV(
         invRows;
 
     return result;
+}
+
+bool Tileset::IsValidTileId(
+    TileId tileId) const
+{
+    if (tileId == InvalidTileId)
+    {
+        return false;
+    }
+
+    if (m_columns <= 0 ||
+        m_rows <= 0)
+    {
+        return false;
+    }
+
+    const TileId tileCount =
+        static_cast<TileId>(
+            m_columns * m_rows
+            );
+
+    return
+        tileId <= tileCount;
 }

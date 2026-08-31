@@ -18,7 +18,44 @@
 
 Engine::Engine() = default;
 
-Engine::~Engine() = default;
+Engine::~Engine()
+{
+    // Scene을 가장 먼저 제거한다.
+    //
+    // Entity
+    // → PhysicsBody
+    // → b2DestroyBody()
+    //
+    // 가 PhysicsSystem이 살아있는 동안
+    // 수행되어야 한다.
+    m_scene.reset();
+
+    // DebugRenderer는 ResourceManager의
+    // white texture를 raw pointer로 참조하므로
+    // ResourceManager보다 먼저 제거한다.
+    m_debugRenderer.reset();
+
+    // Frame-local command pointer를 보유하는
+    // RenderQueue도 더 이상 필요하지 않다.
+    m_renderQueue.reset();
+
+    // 모든 Entity PhysicsBody가 제거된 뒤
+    // Box2D World를 제거한다.
+    m_physicsSystem.reset();
+
+    m_camera.reset();
+
+    // Texture / Tileset / TileMap을
+    // GPU device가 살아있는 동안 제거한다.
+    m_resourceManager.reset();
+
+    // SpriteRenderer의 D3D resource도
+    // DX11Renderer device보다 먼저 제거한다.
+    m_spriteRenderer.reset();
+
+    // Device / Context / SwapChain은 마지막.
+    m_renderer.reset();
+}
 
 bool Engine::Initialize(
     WinWindow& window)

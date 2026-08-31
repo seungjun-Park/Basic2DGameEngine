@@ -31,6 +31,10 @@ public:
     int GetColumns() const;
     int GetRows() const;
 
+    bool IsValidTileId(
+        TileId tileId
+    ) const;
+
     UVRect GetTileUV(
         TileId tileId
     ) const;
