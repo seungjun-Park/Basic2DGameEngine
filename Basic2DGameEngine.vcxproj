@@ -161,6 +161,7 @@
     <ClInclude Include="Engine\Scene\Scene.h" />
     <ClInclude Include="Engine\Tile\TileMap.h" />
     <ClInclude Include="Engine\Tile\TileMapLoader.h" />
+    <ClInclude Include="Engine\Tile\TileMapRenderer.h" />
     <ClInclude Include="Engine\Tile\Tileset.h" />
     <ClInclude Include="Engine\Tile\TilesetLoader.h" />
     <ClInclude Include="Engine\Tile\TileTypes.h" />
@@ -188,6 +189,7 @@
     <ClCompile Include="Engine\Scene\Scene.cpp" />
     <ClCompile Include="Engine\Tile\TileMap.cpp" />
     <ClCompile Include="Engine\Tile\TileMapLoader.cpp" />
+    <ClCompile Include="Engine\Tile\TileMapRenderer.cpp" />
     <ClCompile Include="Engine\Tile\Tileset.cpp" />
     <ClCompile Include="Engine\Tile\TilesetLoader.cpp" />
     <ClCompile Include="Game\Enemy.cpp" />

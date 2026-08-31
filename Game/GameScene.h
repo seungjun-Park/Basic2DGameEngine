@@ -2,11 +2,15 @@
 
 #include "Engine/Scene/Scene.h"
 
+#include <memory>
+
 class ResourceManager;
 class Player;
 class Camera;
 class PhysicsSystem;
 class TileMap;
+class TileMapRenderer;
+class RenderQueue;
 
 class GameScene :
     public Scene
@@ -18,6 +22,8 @@ public:
         PhysicsSystem& physics
     );
 
+    ~GameScene() override;
+
     void Initialize() override;
 
     void Update(
@@ -28,10 +34,23 @@ public:
         float deltaTime
     ) override;
 
+    void SubmitRender(
+        RenderQueue& renderQueue
+    ) override;
+
 private:
     ResourceManager& m_resources;
-    Player* m_player = nullptr;
+
+    Player* m_player =
+        nullptr;
+
     Camera& m_camera;
+
     PhysicsSystem& m_physics;
-    TileMap* m_tileMap = nullptr;
+
+    TileMap* m_tileMap =
+        nullptr;
+
+    std::unique_ptr<TileMapRenderer>
+        m_tileMapRenderer;
 };

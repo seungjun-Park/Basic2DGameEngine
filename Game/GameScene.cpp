@@ -7,11 +7,7 @@
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Renderer/Camera.h"
 #include "Engine/Physics/PhysicsBody.h"
-
-//temp
-#include "Engine/Scene/Entity.h"
-#include "Engine/Tile/TileMap.h"
-#include "Engine/Tile/Tileset.h"
+#include "Engine/Tile/TileMapRenderer.h"
 
 GameScene::GameScene(
     ResourceManager& resources,
@@ -23,6 +19,8 @@ GameScene::GameScene(
     m_physics(physics)
 {
 }
+
+GameScene::~GameScene() = default;
 
 void GameScene::Initialize()
 {
@@ -50,69 +48,21 @@ void GameScene::Initialize()
         return;
     }
 
-    //temp
+    m_tileMapRenderer =
+        std::make_unique<
+        TileMapRenderer
+        >();
 
-    Tileset* testTileset =
-        m_tileMap->GetTileset();
-
-    if (testTileset &&
-        testTileset->GetTexture())
+    if (!m_tileMapRenderer->Build(
+        *m_tileMap))
     {
-        constexpr TileId
-            testTileIds[] =
-        {
-            1,
-            2,
-            3,
-            4
-        };
+        OutputDebugStringA(
+            "[GameScene] Failed to build TileMapRenderer.\n"
+        );
 
-        for (int i = 0; i < 4; ++i)
-        {
-            const TileId tileId =
-                testTileIds[i];
+        m_tileMapRenderer.reset();
 
-            if (!testTileset->
-                IsValidTileId(
-                    tileId))
-            {
-                continue;
-            }
-
-            Entity* testSprite =
-                CreateEntity<Entity>();
-
-            testSprite->sprite.texture =
-                testTileset->GetTexture();
-
-            testSprite->sprite.uv =
-                testTileset->
-                GetTileUV(
-                    tileId
-                );
-
-            testSprite->sprite.layer =
-                RenderLayer::Foreground;
-
-            testSprite->sprite.zIndex =
-                0.0f;
-
-            testSprite->transform.position =
-            {
-                100.0f +
-                    static_cast<float>(
-                        i
-                    ) * 80.0f,
-
-                100.0f
-            };
-
-            testSprite->transform.scale =
-            {
-                64.0f,
-                64.0f
-            };
-        }
+        return;
     }
 
     if (!playerTexture)
@@ -258,5 +208,32 @@ void GameScene::LateUpdate(
 
     Scene::LateUpdate(
         deltaTime
+    );
+}
+
+void GameScene::SubmitRender(
+    RenderQueue& renderQueue)
+{
+    //
+    // TileMap render data를 먼저 제출한다.
+    //
+    // 실제 그리기 순서는
+    // submission 순서가 아니라
+    // RenderQueue::Sort()가 결정한다.
+    //
+
+    if (m_tileMapRenderer)
+    {
+        m_tileMapRenderer->Submit(
+            renderQueue
+        );
+    }
+
+    //
+    // Player / Enemy 등 Entity 제출
+    //
+
+    Scene::SubmitRender(
+        renderQueue
     );
 }
