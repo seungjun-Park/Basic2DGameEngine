@@ -10,6 +10,7 @@
 void RenderQueue::Clear()
 {
     m_commands.clear();
+
     m_submissionCounter = 0;
 }
 
@@ -29,20 +30,11 @@ void RenderQueue::Submit(
 
     SpriteRenderCommand command;
 
-    command.texture =
-        sprite.texture;
+    command.sprite =
+        &sprite;
 
-    command.position =
-        transform.position;
-
-    command.scale =
-        transform.scale;
-
-    command.rotation =
-        transform.rotation;
-
-    command.uv =
-        sprite.uv;
+    command.transform =
+        &transform;
 
     command.layer =
         sprite.layer;
@@ -62,56 +54,6 @@ void RenderQueue::Submit(
         command
     );
 }
-
-void RenderQueue::Submit(
-    Texture* texture,
-    const DirectX::XMFLOAT2& position,
-    const DirectX::XMFLOAT2& scale,
-    float rotation,
-    const UVRect& uv,
-    RenderLayer layer,
-    float sortZ,
-    BlendMode blendMode)
-{
-    if (!texture)
-    {
-        return;
-    }
-
-    SpriteRenderCommand command;
-
-    command.texture =
-        texture;
-
-    command.position =
-        position;
-
-    command.scale =
-        scale;
-
-    command.rotation =
-        rotation;
-
-    command.uv =
-        uv;
-
-    command.layer =
-        layer;
-
-    command.blendMode =
-        blendMode;
-
-    command.sortZ =
-        sortZ;
-
-    command.submissionOrder =
-        m_submissionCounter++;
-
-    m_commands.emplace_back(
-        command
-    );
-}
-
 
 void RenderQueue::Sort()
 {
@@ -160,12 +102,19 @@ void RenderQueue::Execute(
     for (const auto& command :
         m_commands)
     {
+        if (!command.sprite ||
+            !command.transform)
+        {
+            continue;
+        }
+
         renderer.SetBlendMode(
             command.blendMode
         );
 
         renderer.Draw(
-            command
+            *command.sprite,
+            *command.transform
         );
     }
 }

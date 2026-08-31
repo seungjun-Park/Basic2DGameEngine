@@ -5,10 +5,6 @@
 
 #include <string>
 
-struct UVBuffer
-{
-    DirectX::XMFLOAT4 uvRect;
-};
 
 class Texture
 {
@@ -36,16 +32,11 @@ public:
         return m_height;
     }
 
-    bool CreateUVBuffer();
 
 private:
     Microsoft::WRL::ComPtr<
         ID3D11ShaderResourceView
     > m_shaderResourceView;
-
-    Microsoft::WRL::ComPtr<
-        ID3D11Buffer
-    > m_uvBuffer;
 
     int m_width = 0;
     int m_height = 0;

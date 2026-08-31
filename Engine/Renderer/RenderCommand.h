@@ -1,39 +1,19 @@
 #pragma once
 
 #include "RenderTypes.h"
-#include "Engine/Tile/TileTypes.h"
 
-#include <DirectXMath.h>
 #include <cstdint>
 
-class Texture;
+struct Sprite;
+struct Transform;
 
 struct SpriteRenderCommand
 {
-    Texture* texture = nullptr;
+    const Sprite* sprite =
+        nullptr;
 
-    DirectX::XMFLOAT2 position
-    {
-        0.0f,
-        0.0f
-    };
-
-    DirectX::XMFLOAT2 scale
-    {
-        1.0f,
-        1.0f
-    };
-
-    float rotation =
-        0.0f;
-
-    UVRect uv
-    {
-        0.0f,
-        0.0f,
-        1.0f,
-        1.0f
-    };
+    const Transform* transform =
+        nullptr;
 
     RenderLayer layer =
         RenderLayer::World;
