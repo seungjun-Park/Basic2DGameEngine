@@ -26,6 +26,12 @@ public:
     DirectX::XMMATRIX
         GetProjectionMatrix() const;
 
+    float GetLeft() const;
+    float GetRight() const;
+
+    float GetTop() const;
+    float GetBottom() const;
+
     void Resize(
         float screenWidth,
         float screenHeight

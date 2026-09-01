@@ -7,6 +7,7 @@
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Renderer/Camera.h"
 #include "Engine/Physics/PhysicsBody.h"
+#include "Engine/Debug/DebugStats.h"
 #include "Engine/Tile/TileMapRenderer.h"
 
 GameScene::GameScene(
@@ -225,6 +226,7 @@ void GameScene::SubmitRender(
     if (m_tileMapRenderer)
     {
         m_tileMapRenderer->Submit(
+            m_camera,
             renderQueue
         );
     }
@@ -236,4 +238,77 @@ void GameScene::SubmitRender(
     Scene::SubmitRender(
         renderQueue
     );
+}
+
+void GameScene::CollectDebugStats(
+    DebugStats& stats) const
+{
+    if (!m_tileMapRenderer)
+    {
+        return;
+    }
+
+    const TileMapRenderStats&
+        tileStats =
+        m_tileMapRenderer->
+        GetStats();
+
+    stats.tileRenderItems =
+        static_cast<std::uint32_t>(
+            tileStats.totalRenderItems
+            );
+
+    stats.visibleTiles =
+        static_cast<std::uint32_t>(
+            tileStats.visibleRenderItems
+            );
+
+    stats.culledTiles =
+        static_cast<std::uint32_t>(
+            tileStats.culledRenderItems
+            );
+
+    stats.tileRenderLayers =
+        static_cast<std::uint32_t>(
+            tileStats.renderLayerCount
+            );
+
+    stats.tileMapWidth =
+        tileStats.mapWidth;
+
+    stats.tileMapHeight =
+        tileStats.mapHeight;
+
+    stats.tileWidth =
+        tileStats.tileWidth;
+
+    stats.tileHeight =
+        tileStats.tileHeight;
+
+    stats.visibleTileMinX =
+        tileStats.visibleMinTileX;
+
+    stats.visibleTileMaxX =
+        tileStats.visibleMaxTileX;
+
+    stats.visibleTileMinY =
+        tileStats.visibleMinTileY;
+
+    stats.visibleTileMaxY =
+        tileStats.visibleMaxTileY;
+
+    stats.cameraLeft =
+        tileStats.cameraLeft;
+
+    stats.cameraRight =
+        tileStats.cameraRight;
+
+    stats.cameraTop =
+        tileStats.cameraTop;
+
+    stats.cameraBottom =
+        tileStats.cameraBottom;
+
+    stats.tileMapInView =
+        tileStats.mapInView;
 }

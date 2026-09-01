@@ -38,6 +38,10 @@ public:
         RenderQueue& renderQueue
     ) override;
 
+    void CollectDebugStats(
+        DebugStats& stats
+    ) const override;
+
 private:
     ResourceManager& m_resources;
 

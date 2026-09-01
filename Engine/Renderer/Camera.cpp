@@ -60,6 +60,34 @@ Camera::GetProjectionMatrix() const
         );
 }
 
+float Camera::GetLeft() const
+{
+    return
+        m_position.x -
+        m_screenWidth * 0.5f;
+}
+
+float Camera::GetRight() const
+{
+    return
+        m_position.x +
+        m_screenWidth * 0.5f;
+}
+
+float Camera::GetTop() const
+{
+    return
+        m_position.y -
+        m_screenHeight * 0.5f;
+}
+
+float Camera::GetBottom() const
+{
+    return
+        m_position.y +
+        m_screenHeight * 0.5f;
+}
+
 void Camera::Resize(
     float screenWidth,
     float screenHeight)

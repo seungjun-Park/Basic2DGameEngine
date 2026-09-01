@@ -113,3 +113,8 @@ void Scene::SyncPhysicsTransforms()
             SyncPhysicsTransform();
     }
 }
+
+void Scene::CollectDebugStats(
+    DebugStats& stats) const
+{
+}

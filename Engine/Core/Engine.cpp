@@ -270,6 +270,12 @@ void Engine::Render(
         m_debugStats.drawCalls =
             m_spriteRenderer->
             GetDrawCallCount();
+
+        m_debugStats.ResetTileStats();
+
+        m_scene->CollectDebugStats(
+            m_debugStats
+        );
     }
 
     m_renderer->EndFrame(

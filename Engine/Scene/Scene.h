@@ -9,6 +9,7 @@ class Entity;
 class SpriteRenderer;
 class DebugRenderer;
 class RenderQueue;
+struct DebugStats;
 
 class Scene
 {
@@ -74,6 +75,10 @@ public:
     }
 
     virtual void SyncPhysicsTransforms();
+
+    virtual void CollectDebugStats(
+        DebugStats& stats
+    ) const;
 
 protected:
     void RemoveDestroyedEntities();

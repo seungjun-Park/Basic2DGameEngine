@@ -236,8 +236,9 @@ void Application::UpdateWindowTitle()
     m_titleUpdateTimer +=
         Time::UnscaledDeltaTime();
 
-    // 매 frame마다 WinAPI 문자열 변경하지 않음
-    if (m_titleUpdateTimer < 0.25f)
+    // WinAPI title을 매 frame 갱신하지 않는다.
+    if (m_titleUpdateTimer <
+        0.25f)
     {
         return;
     }
@@ -247,55 +248,75 @@ void Application::UpdateWindowTitle()
     const DebugStats& stats =
         m_engine->GetDebugStats();
 
-    wchar_t title[512]{};
+    wchar_t targetText[32]{};
 
     if (stats.targetFPS == 0)
     {
-        swprintf_s(
-            title,
-            L"Dobi2D | "
-            L"FPS %.1f | "
-            L"Frame %.2f ms | "
-            L"Fixed %.0f Hz (%u) | "
-            L"Entities %d | "
-            L"Draw %d | "
-            L"VSync %s | "
-            L"Target Unlimited",
-            stats.fps,
-            stats.frameTimeMs,
-            stats.fixedUpdateHz,
-            stats.fixedSteps,
-            stats.entityCount,
-            stats.drawCalls,
-            stats.vsync
-            ? L"On"
-            : L"Off"
+        wcscpy_s(
+            targetText,
+            L"Unlimited"
         );
     }
     else
     {
         swprintf_s(
-            title,
-            L"Dobi2D | "
-            L"FPS %.1f | "
-            L"Frame %.2f ms | "
-            L"Fixed %.0f Hz (%u) | "
-            L"Entities %d | "
-            L"Draw %d | "
-            L"VSync %s | "
-            L"Target %u",
-            stats.fps,
-            stats.frameTimeMs,
-            stats.fixedUpdateHz,
-            stats.fixedSteps,
-            stats.entityCount,
-            stats.drawCalls,
-            stats.vsync
-            ? L"On"
-            : L"Off",
+            targetText,
+            L"%u",
             stats.targetFPS
         );
     }
+
+    wchar_t title[512]{};
+
+    swprintf_s(
+        title,
+
+        L"Dobi2D | "
+        L"FPS %.1f | "
+        L"Frame %.2f ms | "
+        L"Fixed %.0f Hz (%u) | "
+        L"Ent %d | "
+        L"Cmd %d | "
+        L"Draw %d | "
+        L"Tiles %u/%u | "
+        L"Cull %u | "
+        L"Range X[%d,%d] Y[%d,%d] | "
+        L"Map %s | "
+        L"VSync %s | "
+        L"Target %s",
+
+        stats.fps,
+        stats.frameTimeMs,
+
+        stats.fixedUpdateHz,
+        stats.fixedSteps,
+
+        stats.entityCount,
+
+        stats.renderCommands,
+        stats.drawCalls,
+
+        stats.visibleTiles,
+        stats.tileRenderItems,
+
+        stats.culledTiles,
+
+        stats.visibleTileMinX,
+        stats.visibleTileMaxX,
+
+        stats.visibleTileMinY,
+        stats.visibleTileMaxY,
+
+        stats.tileMapInView
+        ? L"In"
+        : L"Out",
+
+        stats.vsync
+        ? L"On"
+        : L"Off",
+
+        targetText
+    );
 
     SetWindowTextW(
         m_window->GetHandle(),
