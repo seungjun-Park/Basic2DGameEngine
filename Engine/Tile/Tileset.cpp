@@ -2,62 +2,138 @@
 
 #include "Engine/Graphics/Texture.h"
 
+#include <cstdint>
+
 void Tileset::SetTexture(
     Texture* texture)
 {
-    m_texture = texture;
+    m_texture =
+        texture;
 }
 
 Texture* Tileset::GetTexture() const
 {
-    return m_texture;
+    return
+        m_texture;
 }
 
 void Tileset::SetTileSize(
     int width,
     int height)
 {
-    m_tileWidth = width;
-    m_tileHeight = height;
+    m_tileWidth =
+        width;
+
+    m_tileHeight =
+        height;
 }
 
 void Tileset::SetGridSize(
     int columns,
     int rows)
 {
-    m_columns = columns;
-    m_rows = rows;
+    m_columns =
+        columns;
+
+    m_rows =
+        rows;
+}
+
+void Tileset::SetMargin(
+    int margin)
+{
+    m_margin =
+        margin;
+}
+
+void Tileset::SetSpacing(
+    int spacing)
+{
+    m_spacing =
+        spacing;
 }
 
 int Tileset::GetTileWidth() const
 {
-    return m_tileWidth;
+    return
+        m_tileWidth;
 }
 
 int Tileset::GetTileHeight() const
 {
-    return m_tileHeight;
+    return
+        m_tileHeight;
 }
 
 int Tileset::GetColumns() const
 {
-    return m_columns;
+    return
+        m_columns;
 }
 
 int Tileset::GetRows() const
 {
-    return m_rows;
+    return
+        m_rows;
+}
+
+int Tileset::GetMargin() const
+{
+    return
+        m_margin;
+}
+
+int Tileset::GetSpacing() const
+{
+    return
+        m_spacing;
+}
+
+bool Tileset::IsValidTileId(
+    TileId tileId) const
+{
+    if (tileId ==
+        InvalidTileId)
+    {
+        return false;
+    }
+
+    if (m_columns <= 0 ||
+        m_rows <= 0)
+    {
+        return false;
+    }
+
+    const std::uint64_t
+        tileCount =
+        static_cast<std::uint64_t>(
+            m_columns
+            )
+        *
+        static_cast<std::uint64_t>(
+            m_rows
+            );
+
+    return
+        static_cast<std::uint64_t>(
+            tileId
+            )
+        <=
+        tileCount;
 }
 
 UVRect Tileset::GetTileUV(
     TileId tileId) const
 {
-    // Invalid UV는 모든 값 0.
     //
-    // 기존 UVRect 기본값은
-    // u1/v1이 1이기 때문에
-    // 단순히 UVRect{}를 반환하면
-    // 전체 texture가 선택될 수 있다.
+    // Invalid UV.
+    //
+    // UVRect{}의 기본값은
+    // { 0, 0, 1, 1 }이므로
+    // invalid case에서는 명시적으로
+    // zero rect를 반환해야 한다.
+    //
+
     UVRect result
     {
         0.0f,
@@ -72,79 +148,197 @@ UVRect Tileset::GetTileUV(
         return result;
     }
 
-    const TileId zeroBased =
-        tileId - 1;
+    if (!m_texture)
+    {
+        return result;
+    }
 
-    const int tileX =
-        static_cast<int>(
-            zeroBased %
-            static_cast<TileId>(
-                m_columns
-                )
+    if (m_tileWidth <= 0 ||
+        m_tileHeight <= 0)
+    {
+        return result;
+    }
+
+    if (m_margin < 0 ||
+        m_spacing < 0)
+    {
+        return result;
+    }
+
+    const int textureWidth =
+        m_texture->GetWidth();
+
+    const int textureHeight =
+        m_texture->GetHeight();
+
+    if (textureWidth <= 0 ||
+        textureHeight <= 0)
+    {
+        return result;
+    }
+
+    //
+    // TileId:
+    //
+    // 0 = Empty
+    // 1 = 첫 번째 atlas tile
+    //
+
+    const std::uint64_t
+        zeroBased =
+        static_cast<std::uint64_t>(
+            tileId - 1
             );
 
-    const int tileY =
-        static_cast<int>(
-            zeroBased /
-            static_cast<TileId>(
-                m_columns
-                )
-            );
-
-    const float invColumns =
-        1.0f /
-        static_cast<float>(
+    const std::uint64_t
+        column =
+        zeroBased
+        %
+        static_cast<std::uint64_t>(
             m_columns
             );
 
-    const float invRows =
+    const std::uint64_t
+        row =
+        zeroBased
+        /
+        static_cast<std::uint64_t>(
+            m_columns
+            );
+
+    //
+    // 실제 atlas pixel 좌표.
+    //
+    // margin
+    // +
+    // index * (tileSize + spacing)
+    //
+
+    const std::int64_t
+        strideX =
+        static_cast<std::int64_t>(
+            m_tileWidth
+            )
+        +
+        static_cast<std::int64_t>(
+            m_spacing
+            );
+
+    const std::int64_t
+        strideY =
+        static_cast<std::int64_t>(
+            m_tileHeight
+            )
+        +
+        static_cast<std::int64_t>(
+            m_spacing
+            );
+
+    const std::int64_t
+        pixelX =
+        static_cast<std::int64_t>(
+            m_margin
+            )
+        +
+        static_cast<std::int64_t>(
+            column
+            )
+        *
+        strideX;
+
+    const std::int64_t
+        pixelY =
+        static_cast<std::int64_t>(
+            m_margin
+            )
+        +
+        static_cast<std::int64_t>(
+            row
+            )
+        *
+        strideY;
+
+    const std::int64_t
+        pixelRight =
+        pixelX
+        +
+        static_cast<std::int64_t>(
+            m_tileWidth
+            );
+
+    const std::int64_t
+        pixelBottom =
+        pixelY
+        +
+        static_cast<std::int64_t>(
+            m_tileHeight
+            );
+
+    //
+    // Setters가 public이므로
+    // Loader를 거치지 않고 잘못된 값을
+    // 입력한 경우도 방어한다.
+    //
+
+    if (pixelX < 0 ||
+        pixelY < 0)
+    {
+        return result;
+    }
+
+    if (pixelRight >
+        static_cast<std::int64_t>(
+            textureWidth
+            ) ||
+        pixelBottom >
+        static_cast<std::int64_t>(
+            textureHeight
+            ))
+    {
+        return result;
+    }
+
+    const float
+        inverseTextureWidth =
         1.0f /
         static_cast<float>(
-            m_rows
+            textureWidth
+            );
+
+    const float
+        inverseTextureHeight =
+        1.0f /
+        static_cast<float>(
+            textureHeight
             );
 
     result.u0 =
         static_cast<float>(
-            tileX
-            ) *
-        invColumns;
+            pixelX
+            )
+        *
+        inverseTextureWidth;
 
     result.v0 =
         static_cast<float>(
-            tileY
-            ) *
-        invRows;
+            pixelY
+            )
+        *
+        inverseTextureHeight;
 
     result.u1 =
-        result.u0 +
-        invColumns;
+        static_cast<float>(
+            pixelRight
+            )
+        *
+        inverseTextureWidth;
 
     result.v1 =
-        result.v0 +
-        invRows;
+        static_cast<float>(
+            pixelBottom
+            )
+        *
+        inverseTextureHeight;
 
     return result;
-}
-
-bool Tileset::IsValidTileId(
-    TileId tileId) const
-{
-    if (tileId == InvalidTileId)
-    {
-        return false;
-    }
-
-    if (m_columns <= 0 ||
-        m_rows <= 0)
-    {
-        return false;
-    }
-
-    const TileId tileCount =
-        static_cast<TileId>(
-            m_columns * m_rows
-            );
-
-    return
-        tileId <= tileCount;
 }

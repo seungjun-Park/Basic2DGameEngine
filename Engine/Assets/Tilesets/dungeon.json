@@ -5,5 +5,8 @@
   "tileHeight": 160,
 
   "columns": 8,
-  "rows": 6
+  "rows": 6,
+
+  "margin": 0,
+  "spacing": 0
 }

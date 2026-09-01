@@ -25,11 +25,22 @@ public:
         int rows
     );
 
+    void SetMargin(
+        int margin
+    );
+
+    void SetSpacing(
+        int spacing
+    );
+
     int GetTileWidth() const;
     int GetTileHeight() const;
 
     int GetColumns() const;
     int GetRows() const;
+
+    int GetMargin() const;
+    int GetSpacing() const;
 
     bool IsValidTileId(
         TileId tileId
@@ -47,4 +58,7 @@ private:
 
     int m_columns = 0;
     int m_rows = 0;
+
+    int m_margin = 0;
+    int m_spacing = 0;
 };

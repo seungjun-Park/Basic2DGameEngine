@@ -9,6 +9,7 @@
 
 #include <Windows.h>
 
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 
@@ -97,6 +98,25 @@ TilesetLoader::Load(
                 0
             );
 
+        //
+        // Stage 8:
+        //
+        // 기존 asset과의 호환성을 위해
+        // optional + default 0.
+        //
+
+        const int margin =
+            json.value(
+                "margin",
+                0
+            );
+
+        const int spacing =
+            json.value(
+                "spacing",
+                0
+            );
+
         if (texturePath.empty())
         {
             LogTilesetError(
@@ -126,6 +146,24 @@ TilesetLoader::Load(
             return nullptr;
         }
 
+        if (margin < 0)
+        {
+            LogTilesetError(
+                "Margin cannot be negative."
+            );
+
+            return nullptr;
+        }
+
+        if (spacing < 0)
+        {
+            LogTilesetError(
+                "Spacing cannot be negative."
+            );
+
+            return nullptr;
+        }
+
         const std::wstring
             texturePathWide(
                 texturePath.begin(),
@@ -146,22 +184,86 @@ TilesetLoader::Load(
             return nullptr;
         }
 
-        const int expectedWidth =
-            tileWidth *
-            columns;
+        //
+        // --------------------------------------------------
+        // Stage 8 Layout Validation
+        // --------------------------------------------------
+        //
+        // 더 이상:
+        //
+        // textureWidth ==
+        //     tileWidth * columns
+        //
+        // 을 요구하지 않는다.
+        //
+        // 마지막 tile이 texture 내부에만
+        // 들어오면 유효하다.
+        //
 
-        const int expectedHeight =
-            tileHeight *
-            rows;
+        const std::int64_t
+            strideX =
+            static_cast<std::int64_t>(
+                tileWidth
+                )
+            +
+            static_cast<std::int64_t>(
+                spacing
+                );
 
-        if (texture->GetWidth() !=
-            expectedWidth ||
-            texture->GetHeight() !=
-            expectedHeight)
+        const std::int64_t
+            strideY =
+            static_cast<std::int64_t>(
+                tileHeight
+                )
+            +
+            static_cast<std::int64_t>(
+                spacing
+                );
+
+        const std::int64_t
+            requiredWidth =
+            static_cast<std::int64_t>(
+                margin
+                )
+            +
+            static_cast<std::int64_t>(
+                columns - 1
+                )
+            *
+            strideX
+            +
+            static_cast<std::int64_t>(
+                tileWidth
+                );
+
+        const std::int64_t
+            requiredHeight =
+            static_cast<std::int64_t>(
+                margin
+                )
+            +
+            static_cast<std::int64_t>(
+                rows - 1
+                )
+            *
+            strideY
+            +
+            static_cast<std::int64_t>(
+                tileHeight
+                );
+
+        if (requiredWidth >
+            static_cast<std::int64_t>(
+                texture->GetWidth()
+                ) ||
+            requiredHeight >
+            static_cast<std::int64_t>(
+                texture->GetHeight()
+                ))
         {
             LogTilesetError(
-                "Texture size does not match "
-                "tile grid."
+                "Tileset layout exceeds "
+                "texture bounds."
             );
 
             return nullptr;
@@ -182,6 +284,14 @@ TilesetLoader::Load(
         tileset->SetGridSize(
             columns,
             rows
+        );
+
+        tileset->SetMargin(
+            margin
+        );
+
+        tileset->SetSpacing(
+            spacing
         );
 
         return tileset;
