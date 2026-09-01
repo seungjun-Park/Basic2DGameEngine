@@ -279,6 +279,7 @@ void Application::UpdateWindowTitle()
         L"Cmd %d | "
         L"Draw %d | "
         L"Tiles %u/%u | "
+        L"Cells %u | "
         L"Cull %u | "
         L"Range X[%d,%d] Y[%d,%d] | "
         L"Map %s | "
@@ -298,6 +299,8 @@ void Application::UpdateWindowTitle()
 
         stats.visibleTiles,
         stats.tileRenderItems,
+
+        stats.tileCandidateCells,
 
         stats.culledTiles,
 

@@ -61,6 +61,10 @@ struct DebugStats
 
     bool tileMapInView = false;
 
+    std::uint32_t tileCandidateCells = 0;
+
+    std::uint32_t tileGridCells = 0;
+
     void ResetTileStats()
     {
         tileRenderItems = 0;
@@ -89,5 +93,8 @@ struct DebugStats
         cameraBottom = 0.0f;
 
         tileMapInView = false;
+    
+        tileCandidateCells = 0;
+        tileGridCells = 0;
     }
 };

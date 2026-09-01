@@ -236,6 +236,19 @@ bool TileMapRenderer::Build(
                 layerCache
             )
         );
+
+#ifdef _DEBUG
+
+        for (const auto& renderLayer :
+            m_renderLayers)
+        {
+            assert(
+                renderLayer.cells.size() ==
+                cellCount
+            );
+        }
+
+#endif
     }
 
     m_stats.totalRenderItems =
@@ -255,6 +268,17 @@ bool TileMapRenderer::Build(
 
     m_stats.tileHeight =
         m_tileHeight;
+
+    m_stats.totalGridCells =
+        static_cast<std::size_t>(
+            m_mapWidth
+            )
+        *
+        static_cast<std::size_t>(
+            m_mapHeight
+            )
+        *
+        m_renderLayers.size();
 
     return true;
 }
@@ -280,6 +304,20 @@ TileMapRenderer::GetCellIndex(
     int x,
     int y) const
 {
+#ifdef _DEBUG
+
+    assert(
+        x >= 0 &&
+        x < m_mapWidth
+    );
+
+    assert(
+        y >= 0 &&
+        y < m_mapHeight
+    );
+
+#endif
+
     return
         static_cast<std::size_t>(
             y
@@ -299,7 +337,9 @@ void TileMapRenderer::Submit(
     RenderQueue& renderQueue)
 {
     //
+    // --------------------------------------------
     // Static stats
+    // --------------------------------------------
     //
 
     m_stats.totalRenderItems =
@@ -320,14 +360,30 @@ void TileMapRenderer::Submit(
     m_stats.tileHeight =
         m_tileHeight;
 
+    m_stats.totalGridCells =
+        static_cast<std::size_t>(
+            m_mapWidth
+            )
+        *
+        static_cast<std::size_t>(
+            m_mapHeight
+            )
+        *
+        m_renderLayers.size();
+
     //
-    // Per-frame stats reset
+    // --------------------------------------------
+    // Per-frame stats
+    // --------------------------------------------
     //
 
     m_stats.visibleRenderItems = 0;
 
     m_stats.culledRenderItems =
         m_renderItemCount;
+
+    m_stats.visibleCandidateCells =
+        0;
 
     m_stats.visibleMinTileX = -1;
     m_stats.visibleMaxTileX = -1;
@@ -336,10 +392,6 @@ void TileMapRenderer::Submit(
     m_stats.visibleMaxTileY = -1;
 
     m_stats.mapInView = false;
-
-    //
-    // Camera bounds
-    //
 
     m_stats.cameraLeft =
         camera.GetLeft();
@@ -353,40 +405,136 @@ void TileMapRenderer::Submit(
     m_stats.cameraBottom =
         camera.GetBottom();
 
+    //
+    // --------------------------------------------
+    // Visible bounds
+    // --------------------------------------------
+    //
+
+    const VisibleTileBounds bounds =
+        CalculateVisibleTileBounds(
+            camera
+        );
+
+    if (!bounds.valid)
+    {
+        return;
+    }
+
+    m_stats.mapInView = true;
+
+    m_stats.visibleMinTileX =
+        bounds.minX;
+
+    m_stats.visibleMaxTileX =
+        bounds.maxX;
+
+    m_stats.visibleMinTileY =
+        bounds.minY;
+
+    m_stats.visibleMaxTileY =
+        bounds.maxY;
+
+    const std::size_t
+        visibleCellCountPerLayer =
+        static_cast<std::size_t>(
+            bounds.GetWidth()
+            )
+        *
+        static_cast<std::size_t>(
+            bounds.GetHeight()
+            );
+
+    m_stats.visibleCandidateCells =
+        visibleCellCountPerLayer
+        *
+        m_renderLayers.size();
+
+    //
+    // --------------------------------------------
+    // Submit visible cells
+    // --------------------------------------------
+    //
+
+    for (const auto& layer :
+        m_renderLayers)
+    {
+        for (
+            int y = bounds.minY;
+            y <= bounds.maxY;
+            ++y)
+        {
+            for (
+                int x = bounds.minX;
+                x <= bounds.maxX;
+                ++x)
+            {
+                const std::size_t
+                    cellIndex =
+                    GetCellIndex(
+                        x,
+                        y
+                    );
+
+                const TileRenderItem&
+                    item =
+                    layer.cells[
+                        cellIndex
+                    ];
+
+                if (!item.occupied)
+                {
+                    continue;
+                }
+
+                renderQueue.Submit(
+                    item.sprite,
+                    item.transform
+                );
+
+                ++m_stats.visibleRenderItems;
+            }
+        }
+    }
+
+    //
+    // --------------------------------------------
+    // Final stats
+    // --------------------------------------------
+    //
+
+    if (m_renderItemCount >
+        m_stats.visibleRenderItems)
+    {
+        m_stats.culledRenderItems =
+            m_renderItemCount -
+            m_stats.visibleRenderItems;
+    }
+    else
+    {
+        m_stats.culledRenderItems = 0;
+    }
+}
+
+TileMapRenderer::VisibleTileBounds
+TileMapRenderer::CalculateVisibleTileBounds(
+    const Camera& camera) const
+{
+    VisibleTileBounds bounds;
+
     if (m_mapWidth <= 0 ||
         m_mapHeight <= 0)
     {
-        return;
+        return bounds;
     }
 
     if (m_tileWidth <= 0 ||
         m_tileHeight <= 0)
     {
-        return;
-    }
-
-    if (m_renderLayers.empty())
-    {
-        return;
+        return bounds;
     }
 
     const float left =
-        m_stats.cameraLeft;
-
-    const float right =
-        m_stats.cameraRight;
-
-    const float top =
-        m_stats.cameraTop;
-
-    const float bottom =
-        m_stats.cameraBottom;
-
-    //
-    // 1. Camera visible world bounds
-    //
-
-    /*const float left =
         camera.GetLeft();
 
     const float right =
@@ -396,27 +544,23 @@ void TileMapRenderer::Submit(
         camera.GetTop();
 
     const float bottom =
-        camera.GetBottom();*/
+        camera.GetBottom();
 
-    //
-    // 2. World coordinate
-    //    → Tile coordinate
-    //
-    // visible range는
-    //
-    // [left, right)
-    // [top, bottom)
-    //
-    // 으로 취급한다.
-    //as
+    const float tileWidth =
+        static_cast<float>(
+            m_tileWidth
+            );
+
+    const float tileHeight =
+        static_cast<float>(
+            m_tileHeight
+            );
 
     int minTileX =
         static_cast<int>(
             std::floor(
                 left /
-                static_cast<float>(
-                    m_tileWidth
-                    )
+                tileWidth
             )
             );
 
@@ -424,9 +568,7 @@ void TileMapRenderer::Submit(
         static_cast<int>(
             std::floor(
                 top /
-                static_cast<float>(
-                    m_tileHeight
-                    )
+                tileHeight
             )
             );
 
@@ -434,9 +576,7 @@ void TileMapRenderer::Submit(
         static_cast<int>(
             std::ceil(
                 right /
-                static_cast<float>(
-                    m_tileWidth
-                    )
+                tileWidth
             )
             ) - 1;
 
@@ -444,17 +584,15 @@ void TileMapRenderer::Submit(
         static_cast<int>(
             std::ceil(
                 bottom /
-                static_cast<float>(
-                    m_tileHeight
-                    )
+                tileHeight
             )
             ) - 1;
 
     //
-    // 3. Camera가 Map과 완전히 떨어져 있으면
-    //    바로 종료.
+    // Camera와 TileMap이
+    // 완전히 떨어져 있다.
     //
-    // clamp 전에 검사해야 한다.
+    // Clamp보다 먼저 검사해야 한다.
     //
 
     if (maxTileX < 0 ||
@@ -462,12 +600,8 @@ void TileMapRenderer::Submit(
         minTileX >= m_mapWidth ||
         minTileY >= m_mapHeight)
     {
-        return;
+        return bounds;
     }
-
-    //
-    // 4. Map bounds로 clamp
-    //
 
     minTileX =
         max(
@@ -498,77 +632,47 @@ void TileMapRenderer::Submit(
         minTileY >
         maxTileY)
     {
-        return;
+        return bounds;
     }
 
-    m_stats.mapInView = true;
-
-    m_stats.visibleMinTileX =
+    bounds.minX =
         minTileX;
 
-    m_stats.visibleMaxTileX =
+    bounds.maxX =
         maxTileX;
 
-    m_stats.visibleMinTileY =
+    bounds.minY =
         minTileY;
 
-    m_stats.visibleMaxTileY =
+    bounds.maxY =
         maxTileY;
 
-    //
-    // 5. Visible grid cell만 Submit
-    //
+    bounds.valid = true;
 
-    for (const auto& layer :
-        m_renderLayers)
-    {
-        for (
-            int y = minTileY;
-            y <= maxTileY;
-            ++y)
-        {
-            for (
-                int x = minTileX;
-                x <= maxTileX;
-                ++x)
-            {
-                const std::size_t
-                    cellIndex =
-                    GetCellIndex(
-                        x,
-                        y
-                    );
+#ifdef _DEBUG
 
-                const TileRenderItem&
-                    item =
-                    layer.cells[
-                        cellIndex
-                    ];
+    assert(
+        m_stats.visibleRenderItems <=
+        m_stats.totalRenderItems
+    );
 
-                if (!item.occupied)
-                {
-                    continue;
-                }
+    assert(
+        m_stats.visibleRenderItems +
+        m_stats.culledRenderItems ==
+        m_stats.totalRenderItems
+    );
 
-                renderQueue.Submit(
-                    item.sprite,
-                    item.transform
-                );
+    assert(
+        m_stats.visibleRenderItems <=
+        m_stats.visibleCandidateCells
+    );
 
-                ++m_stats.visibleRenderItems;
-            }
-        }
-    }
-    if (m_renderItemCount >
-        m_stats.visibleRenderItems)
-    {
-        m_stats.culledRenderItems =
-            m_renderItemCount -
-            m_stats.visibleRenderItems;
-    }
-    else
-    {
-        m_stats.culledRenderItems =
-            0;
-    }
+    assert(
+        m_stats.visibleCandidateCells <=
+        m_stats.totalGridCells
+    );
+
+#endif
+
+    return bounds;
 }

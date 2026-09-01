@@ -311,4 +311,14 @@ void GameScene::CollectDebugStats(
 
     stats.tileMapInView =
         tileStats.mapInView;
+
+    stats.tileCandidateCells =
+        static_cast<std::uint32_t>(
+            tileStats.visibleCandidateCells
+            );
+
+    stats.tileGridCells =
+        static_cast<std::uint32_t>(
+            tileStats.totalGridCells
+            );
 }

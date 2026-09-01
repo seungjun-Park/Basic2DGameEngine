@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <cassert>
 
 class Camera;
 class TileMap;
@@ -40,6 +41,10 @@ struct TileMapRenderStats
     float cameraBottom = 0.0f;
 
     bool mapInView = false;
+
+    std::size_t visibleCandidateCells = 0;
+
+    std::size_t totalGridCells = 0;
 };
 
 
@@ -97,11 +102,53 @@ private:
             cells;
     };
 
+    struct VisibleTileBounds
+    {
+        int minX = -1;
+        int maxX = -1;
+
+        int minY = -1;
+        int maxY = -1;
+
+        bool valid = false;
+
+        int GetWidth() const
+        {
+            if (!valid)
+            {
+                return 0;
+            }
+
+            return
+                maxX -
+                minX +
+                1;
+        }
+
+        int GetHeight() const
+        {
+            if (!valid)
+            {
+                return 0;
+            }
+
+            return
+                maxY -
+                minY +
+                1;
+        }
+    };
+
 private:
     std::size_t GetCellIndex(
         int x,
         int y
     ) const;
+
+    VisibleTileBounds
+        CalculateVisibleTileBounds(
+            const Camera& camera
+        ) const;
 
 private:
     int m_mapWidth = 0;
