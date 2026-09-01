@@ -15,7 +15,7 @@ int WINAPI WinMain(
     EngineConfig config;
 
     config.windowWidth = 1280;
-    config.windowHeight = 720;
+    config.windowHeight = 960;
 
     config.vsync = false;
 

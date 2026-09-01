@@ -40,6 +40,7 @@ void GameScene::Initialize()
             L"Engine/Assets/Maps/testmap.json"
         );
 
+
     if (!m_tileMap)
     {
         OutputDebugStringA(

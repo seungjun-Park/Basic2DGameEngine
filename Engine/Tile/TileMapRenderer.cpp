@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <utility>
+#include <cassert>
 
 bool TileMapRenderer::Build(
     const TileMap& tileMap)
