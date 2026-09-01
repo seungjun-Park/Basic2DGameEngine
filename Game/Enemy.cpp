@@ -26,6 +26,19 @@ void Enemy::Initialize()
         64.0f
     };
 
+    desc.offset =
+    {
+        (
+            transform.scale.x -
+            desc.size.x
+        ) * 0.5f,
+
+        (
+            transform.scale.y -
+            desc.size.y
+        ) * 0.5f
+    };
+
     desc.density = 1.0f;
     desc.friction = 0.0f;
     desc.restitution = 0.0f;

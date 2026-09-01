@@ -13,6 +13,7 @@ class TileMapRenderer;
 class RenderQueue;
 class TileMapCollider;
 
+
 class GameScene :
     public Scene
 {
@@ -42,6 +43,11 @@ public:
     void CollectDebugStats(
         DebugStats& stats
     ) const override;
+
+    void DebugRender(
+        SpriteRenderer& renderer,
+        DebugRenderer& debugRenderer
+    ) override;
 
 private:
     ResourceManager& m_resources;

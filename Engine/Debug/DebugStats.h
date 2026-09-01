@@ -74,6 +74,9 @@ struct DebugStats
     std::uint32_t
         tileCollisionLayers = 0;
 
+    std::uint32_t
+        tileCollisionMergedArea = 0;
+
     void ResetTileStats()
     {
         tileRenderItems = 0;
@@ -109,5 +112,7 @@ struct DebugStats
         tileCollisionTiles = 0;
         tileCollisionShapes = 0;
         tileCollisionLayers = 0;
+
+        tileCollisionMergedArea = 0;
     }
 };

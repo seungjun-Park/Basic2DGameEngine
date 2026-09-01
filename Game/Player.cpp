@@ -30,6 +30,19 @@ void Player::Initialize()
         64.0f
     };
 
+    desc.offset =
+    {
+        (
+            transform.scale.x -
+            desc.size.x
+        ) * 0.5f,
+
+        (
+            transform.scale.y -
+            desc.size.y
+        ) * 0.5f
+    };
+
     desc.density = 1.0f;
     desc.friction = 0.0f;
 
@@ -38,12 +51,6 @@ void Player::Initialize()
     desc.fixedRotation = true;
 
     desc.enableContactEvents = true;
-
-    desc.offset =
-    {
-        16.0f,
-        16.0f
-    };
 
     physicsBody =
         std::make_unique<PhysicsBody>();

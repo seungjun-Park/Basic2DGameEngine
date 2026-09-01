@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <utility>
 #include <vector>
+#include <cassert>
 
 TileMapCollider::~TileMapCollider()
 {
@@ -40,11 +41,33 @@ bool TileMapCollider::Build(
     m_physics =
         &physics;
 
-    std::vector<CollisionRect>
-        rectangles =
+    m_collisionRects =
         BuildMergedRectangles(
             tileMap
         );
+
+    m_mergedTileArea = 0;
+
+    for (const CollisionRect& rect :
+        m_collisionRects)
+    {
+        if (rect.width <= 0 ||
+            rect.height <= 0)
+        {
+            Destroy();
+
+            return false;
+        }
+
+        m_mergedTileArea +=
+            static_cast<std::size_t>(
+                rect.width
+                )
+            *
+            static_cast<std::size_t>(
+                rect.height
+                );
+    }
 
     //
     // Collision layer가 없거나
@@ -52,8 +75,20 @@ bool TileMapCollider::Build(
     // 유효한 TileMap으로 취급한다.
     //
 
-    if (rectangles.empty())
+    if (m_collisionRects.empty())
     {
+#ifdef _DEBUG
+
+        assert(
+            m_solidTileCount == 0
+        );
+
+        assert(
+            m_mergedTileArea == 0
+        );
+
+#endif
+
         return true;
     }
 
@@ -136,11 +171,11 @@ bool TileMapCollider::Build(
             );
 
     m_shapeIds.reserve(
-        rectangles.size()
+        m_collisionRects.size()
     );
 
     for (const CollisionRect& rect :
-        rectangles)
+        m_collisionRects)
     {
         const float widthPixels =
             static_cast<float>(
@@ -231,6 +266,30 @@ bool TileMapCollider::Build(
         );
     }
 
+#ifdef _DEBUG
+
+    //
+    // Rectangle merge는
+    // solid cell을 잃거나 중복해서는 안 된다.
+    //
+
+    assert(
+        m_mergedTileArea ==
+        m_solidTileCount
+    );
+
+    //
+    // Collision rectangle 하나당
+    // Box2D polygon shape 하나.
+    //
+
+    assert(
+        m_shapeIds.size() ==
+        m_collisionRects.size()
+    );
+
+#endif
+
     return true;
 }
 
@@ -262,6 +321,10 @@ void TileMapCollider::Destroy()
     }
 
     m_shapeIds.clear();
+
+    m_collisionRects.clear();
+
+    m_mergedTileArea = 0;
 
     m_collisionLayerCount = 0;
 

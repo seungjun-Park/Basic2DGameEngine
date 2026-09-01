@@ -7,10 +7,12 @@
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Renderer/Camera.h"
 #include "Engine/Physics/PhysicsBody.h"
+#include "Engine/Physics/PhysicsUnits.h"
 #include "Engine/Debug/DebugStats.h"
 #include "Engine/Tile/TileMapRenderer.h"
 #include "Engine/Tile/TileMapCollider.h"
 #include "Engine/Tile/TileMap.h"
+#include "Engine/Debug/DebugRenderer.h"
 
 GameScene::GameScene(
     ResourceManager& resources,
@@ -349,6 +351,12 @@ void GameScene::CollectDebugStats(
             tileStats.totalGridCells
             );
 
+    stats.tileCollisionMergedArea =
+        static_cast<std::uint32_t>(
+            m_tileMapCollider->
+            GetMergedTileArea()
+            );
+
     if (m_tileMapCollider)
     {
         stats.tileCollisionTiles =
@@ -368,5 +376,102 @@ void GameScene::CollectDebugStats(
                 m_tileMapCollider->
                 GetCollisionLayerCount()
                 );
+    }
+}
+
+void GameScene::DebugRender(
+    SpriteRenderer& renderer,
+    DebugRenderer& debugRenderer)
+{
+    //
+    // 먼저 일반 Entity PhysicsBody.
+    //
+
+    Scene::DebugRender(
+        renderer,
+        debugRenderer
+    );
+
+    if (!m_tileMap)
+    {
+        return;
+    }
+
+    if (!m_tileMapCollider)
+    {
+        return;
+    }
+
+    const float tileWidth =
+        static_cast<float>(
+            m_tileMap->GetTileWidth()
+            );
+
+    const float tileHeight =
+        static_cast<float>(
+            m_tileMap->GetTileHeight()
+            );
+
+    const auto& collisionRects =
+        m_tileMapCollider->
+        GetCollisionRects();
+
+    for (const auto& rect :
+        collisionRects)
+    {
+        const float width =
+            static_cast<float>(
+                rect.width
+                )
+            *
+            tileWidth;
+
+        const float height =
+            static_cast<float>(
+                rect.height
+                )
+            *
+            tileHeight;
+
+        const float left =
+            static_cast<float>(
+                rect.x
+                )
+            *
+            tileWidth;
+
+        const float top =
+            static_cast<float>(
+                rect.y
+                )
+            *
+            tileHeight;
+
+        const DirectX::XMFLOAT2 center
+        {
+            left +
+            width * 0.5f,
+
+            top +
+            height * 0.5f
+        };
+
+        const DirectX::XMFLOAT2 size
+        {
+            width,
+            height
+        };
+
+        //
+        // Tile collider는 Entity collider보다
+        // 조금 두껍게 표시.
+        //
+
+        debugRenderer.DrawRect(
+            renderer,
+            center,
+            size,
+            4.0f
+        );
     }
 }

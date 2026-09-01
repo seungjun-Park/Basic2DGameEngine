@@ -3,6 +3,8 @@
 #include "Entity.h"
 #include "Engine/Renderer/SpriteRenderer.h"
 #include "Engine/Debug/DebugRenderer.h"
+#include "Engine/Physics/PhysicsBody.h"
+#include "Engine/Physics/PhysicsUnits.h"
 
 #include <algorithm>
 
@@ -92,10 +94,89 @@ void Scene::DebugRender(
     SpriteRenderer& renderer,
     DebugRenderer& debugRenderer)
 {
-    for (auto& entity : m_entities)
+    for (auto& entity :
+        m_entities)
     {
         if (!entity->active)
+        {
             continue;
+        }
+
+        if (!entity->physicsBody)
+        {
+            continue;
+        }
+
+        if (!entity->physicsBody->
+            IsValid())
+        {
+            continue;
+        }
+
+        const b2ShapeId shapeId =
+            entity->physicsBody->
+            GetShapeId();
+
+        if (B2_IS_NULL(
+            shapeId))
+        {
+            continue;
+        }
+
+        if (!b2Shape_IsValid(
+            shapeId))
+        {
+            continue;
+        }
+
+        //
+        // 실제 Box2D simulation에 등록된
+        // shape의 world-space AABB를 가져온다.
+        //
+
+        const b2AABB aabb =
+            b2Shape_GetAABB(
+                shapeId
+            );
+
+        const float left =
+            PhysicsUnits::ToPixels(
+                aabb.lowerBound.x
+            );
+
+        const float top =
+            PhysicsUnits::ToPixels(
+                aabb.lowerBound.y
+            );
+
+        const float right =
+            PhysicsUnits::ToPixels(
+                aabb.upperBound.x
+            );
+
+        const float bottom =
+            PhysicsUnits::ToPixels(
+                aabb.upperBound.y
+            );
+
+        const DirectX::XMFLOAT2 center
+        {
+            (left + right) * 0.5f,
+            (top + bottom) * 0.5f
+        };
+
+        const DirectX::XMFLOAT2 size
+        {
+            right - left,
+            bottom - top
+        };
+
+        debugRenderer.DrawRect(
+            renderer,
+            center,
+            size,
+            2.0f
+        );
     }
 }
 
@@ -115,6 +196,8 @@ void Scene::SyncPhysicsTransforms()
 }
 
 void Scene::CollectDebugStats(
-    DebugStats& stats) const
+    DebugStats& stats
+) const
 {
+
 }

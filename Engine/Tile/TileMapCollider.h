@@ -11,6 +11,16 @@ class TileMap;
 class TileMapCollider
 {
 public:
+    struct CollisionRect
+    {
+        int x = 0;
+        int y = 0;
+
+        int width = 0;
+        int height = 0;
+    };
+
+public:
     TileMapCollider() = default;
 
     ~TileMapCollider();
@@ -52,6 +62,20 @@ public:
             m_shapeIds.size();
     }
 
+    std::size_t
+        GetMergedTileArea() const
+    {
+        return
+            m_mergedTileArea;
+    }
+
+    const std::vector<CollisionRect>&
+        GetCollisionRects() const
+    {
+        return
+            m_collisionRects;
+    }
+
     bool HasBody() const
     {
         return
@@ -59,16 +83,6 @@ public:
                 m_bodyId
             );
     }
-
-private:
-    struct CollisionRect
-    {
-        int x = 0;
-        int y = 0;
-
-        int width = 0;
-        int height = 0;
-    };
 
 private:
     std::vector<CollisionRect>
@@ -86,9 +100,15 @@ private:
     std::vector<b2ShapeId>
         m_shapeIds;
 
+    std::vector<CollisionRect>
+        m_collisionRects;
+
     std::size_t
         m_collisionLayerCount = 0;
 
     std::size_t
         m_solidTileCount = 0;
+
+    std::size_t
+        m_mergedTileArea = 0;
 };
