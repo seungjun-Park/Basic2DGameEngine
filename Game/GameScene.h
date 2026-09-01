@@ -11,6 +11,7 @@ class PhysicsSystem;
 class TileMap;
 class TileMapRenderer;
 class RenderQueue;
+class TileMapCollider;
 
 class GameScene :
     public Scene
@@ -57,4 +58,7 @@ private:
 
     std::unique_ptr<TileMapRenderer>
         m_tileMapRenderer;
+
+    std::unique_ptr<TileMapCollider>
+        m_tileMapCollider;
 };

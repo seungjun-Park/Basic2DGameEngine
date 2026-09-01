@@ -65,6 +65,15 @@ struct DebugStats
 
     std::uint32_t tileGridCells = 0;
 
+    std::uint32_t
+        tileCollisionTiles = 0;
+
+    std::uint32_t
+        tileCollisionShapes = 0;
+
+    std::uint32_t
+        tileCollisionLayers = 0;
+
     void ResetTileStats()
     {
         tileRenderItems = 0;
@@ -96,5 +105,9 @@ struct DebugStats
     
         tileCandidateCells = 0;
         tileGridCells = 0;
+
+        tileCollisionTiles = 0;
+        tileCollisionShapes = 0;
+        tileCollisionLayers = 0;
     }
 };

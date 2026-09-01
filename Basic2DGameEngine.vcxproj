@@ -160,6 +160,7 @@
     <ClInclude Include="Engine\Scene\Entity.h" />
     <ClInclude Include="Engine\Scene\Scene.h" />
     <ClInclude Include="Engine\Tile\TileMap.h" />
+    <ClInclude Include="Engine\Tile\TileMapCollider.h" />
     <ClInclude Include="Engine\Tile\TileMapLoader.h" />
     <ClInclude Include="Engine\Tile\TileMapRenderer.h" />
     <ClInclude Include="Engine\Tile\Tileset.h" />
@@ -188,6 +189,7 @@
     <ClCompile Include="Engine\Scene\Entity.cpp" />
     <ClCompile Include="Engine\Scene\Scene.cpp" />
     <ClCompile Include="Engine\Tile\TileMap.cpp" />
+    <ClCompile Include="Engine\Tile\TileMapCollider.cpp" />
     <ClCompile Include="Engine\Tile\TileMapLoader.cpp" />
     <ClCompile Include="Engine\Tile\TileMapRenderer.cpp" />
     <ClCompile Include="Engine\Tile\Tileset.cpp" />

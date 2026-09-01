@@ -281,6 +281,7 @@ void Application::UpdateWindowTitle()
         L"Tiles %u/%u | "
         L"Cells %u | "
         L"Cull %u | "
+        L"Col %u->%u | "
         L"Range X[%d,%d] Y[%d,%d] | "
         L"Map %s | "
         L"VSync %s | "
@@ -303,6 +304,9 @@ void Application::UpdateWindowTitle()
         stats.tileCandidateCells,
 
         stats.culledTiles,
+
+        stats.tileCollisionTiles,
+        stats.tileCollisionShapes,
 
         stats.visibleTileMinX,
         stats.visibleTileMaxX,

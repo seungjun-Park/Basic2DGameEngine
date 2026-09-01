@@ -39,8 +39,15 @@ void Player::Initialize()
 
     desc.enableContactEvents = true;
 
+    desc.offset =
+    {
+        16.0f,
+        16.0f
+    };
+
     physicsBody =
         std::make_unique<PhysicsBody>();
+
 
     if (!physicsBody->Create(
         m_physics,

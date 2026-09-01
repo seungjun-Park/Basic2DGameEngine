@@ -122,40 +122,26 @@ bool PhysicsBody::Create(
             desc.size.y * 0.5f
         );
 
-    b2Polygon box;
+    const b2Vec2 center
+    {
+        PhysicsUnits::ToMeters(
+            desc.size.x * 0.5f +
+            desc.offset.x
+        ),
 
-    if (
-        desc.offset.x == 0.0f &&
-        desc.offset.y == 0.0f
+        PhysicsUnits::ToMeters(
+            desc.size.y * 0.5f +
+            desc.offset.y
         )
-    {
-        box =
-            b2MakeBox(
-                halfWidth,
-                halfHeight
-            );
-    }
-    else
-    {
-        const b2Vec2 center
-        {
-            PhysicsUnits::ToMeters(
-                desc.offset.x
-            ),
+    };
 
-            PhysicsUnits::ToMeters(
-                desc.offset.y
-            )
-        };
-
-        box =
-            b2MakeOffsetBox(
-                halfWidth,
-                halfHeight,
-                center,
-                b2MakeRot(0.0f)
-            );
-    }
+    const b2Polygon box =
+        b2MakeOffsetBox(
+            halfWidth,
+            halfHeight,
+            center,
+            b2MakeRot(0.0f)
+        );
 
     m_shapeId =
         b2CreatePolygonShape(

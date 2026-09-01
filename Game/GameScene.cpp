@@ -9,6 +9,8 @@
 #include "Engine/Physics/PhysicsBody.h"
 #include "Engine/Debug/DebugStats.h"
 #include "Engine/Tile/TileMapRenderer.h"
+#include "Engine/Tile/TileMapCollider.h"
+#include "Engine/Tile/TileMap.h"
 
 GameScene::GameScene(
     ResourceManager& resources,
@@ -27,12 +29,12 @@ void GameScene::Initialize()
 {
     Texture* playerTexture =
         m_resources.LoadTexture(
-            L"Engine/Assets/Textures/Qingxiao.png"
+            L"Engine/Assets/Textures/Aemeath.png"
         );
 
     Texture* enemyTexture =
         m_resources.LoadTexture(
-            L"Engine/Assets/Textures/2.jpg"
+            L"Engine/Assets/Textures/Qingxiao.png"
         );
 
     m_tileMap =
@@ -67,6 +69,25 @@ void GameScene::Initialize()
         return;
     }
 
+    m_tileMapCollider =
+        std::make_unique<
+        TileMapCollider
+        >();
+
+    if (!m_tileMapCollider->Build(
+        *m_tileMap,
+        m_physics))
+    {
+        OutputDebugStringA(
+            "[GameScene] Failed to build "
+            "TileMapCollider.\n"
+        );
+
+        m_tileMapCollider.reset();
+
+        return;
+    }
+
     if (!playerTexture)
     {
         return;
@@ -80,8 +101,13 @@ void GameScene::Initialize()
 
     m_player->transform.position =
     {
-        0.0f,
-        0.0f
+        static_cast<float>(
+            m_tileMap->GetTileWidth() * 2
+        ),
+
+        static_cast<float>(
+            m_tileMap->GetTileHeight() * 2
+        )
     };
 
     m_player->transform.scale =
@@ -322,4 +348,25 @@ void GameScene::CollectDebugStats(
         static_cast<std::uint32_t>(
             tileStats.totalGridCells
             );
+
+    if (m_tileMapCollider)
+    {
+        stats.tileCollisionTiles =
+            static_cast<std::uint32_t>(
+                m_tileMapCollider->
+                GetSolidTileCount()
+                );
+
+        stats.tileCollisionShapes =
+            static_cast<std::uint32_t>(
+                m_tileMapCollider->
+                GetShapeCount()
+                );
+
+        stats.tileCollisionLayers =
+            static_cast<std::uint32_t>(
+                m_tileMapCollider->
+                GetCollisionLayerCount()
+                );
+    }
 }
