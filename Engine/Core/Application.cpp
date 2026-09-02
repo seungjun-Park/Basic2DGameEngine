@@ -80,11 +80,18 @@ bool Application::Initialize(
 
 int Application::Run()
 {
-    while (
-        m_window->ProcessMessages()
-        )
+    while (true)
     {
+        //
+        // Frame budget에는 message pump까지
+        // 전체 frame 작업이 포함되어야 한다.
+        //
         m_frameLimiter.BeginFrame();
+
+        if (!m_window->ProcessMessages())
+        {
+            break;
+        }
 
         Time::Tick();
 
