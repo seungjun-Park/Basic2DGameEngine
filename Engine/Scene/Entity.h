@@ -2,12 +2,14 @@
 
 #include "Engine/Components/Transform.h"
 #include "Engine/Components/Sprite.h"
+#include "Engine/Animation/Animator.h"
 
 #include <memory>
 
 class SpriteRenderer;
 class PhysicsBody;
 class RenderQueue;
+class Animator;
 
 class Entity
 {
@@ -63,6 +65,9 @@ public:
 
     std::unique_ptr<PhysicsBody>
         physicsBody;
+
+    std::unique_ptr<Animator>
+        animator;
 
 private:
     bool m_destroyed = false;

@@ -5,6 +5,7 @@
 #include "Engine/Debug/DebugRenderer.h"
 #include "Engine/Physics/PhysicsBody.h"
 #include "Engine/Physics/PhysicsUnits.h"
+#include "Engine/Animation/Animator.h"
 
 #include <algorithm>
 
@@ -56,6 +57,13 @@ void Scene::Update(
         entity->Update(
             deltaTime
         );
+
+        if (entity->animator)
+        {
+            entity->animator->Update(
+                deltaTime
+            );
+        }
     }
 }
 

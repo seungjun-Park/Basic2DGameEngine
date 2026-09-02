@@ -12,6 +12,7 @@ class TileMap;
 class TileMapRenderer;
 class RenderQueue;
 class TileMapCollider;
+class AnimationClip;
 
 
 class GameScene :
@@ -67,4 +68,7 @@ private:
 
     std::unique_ptr<TileMapCollider>
         m_tileMapCollider;
+
+    std::unique_ptr<AnimationClip>
+        m_enemyWalkClip;
 };

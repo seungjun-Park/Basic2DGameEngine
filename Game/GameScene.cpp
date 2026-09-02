@@ -13,6 +13,8 @@
 #include "Engine/Tile/TileMapCollider.h"
 #include "Engine/Tile/TileMap.h"
 #include "Engine/Debug/DebugRenderer.h"
+#include "Engine/Animation/AnimationClip.h"
+#include "Engine/Animation/Animator.h"
 
 GameScene::GameScene(
     ResourceManager& resources,
@@ -34,9 +36,14 @@ void GameScene::Initialize()
             L"Engine/Assets/Textures/Aemeath.png"
         );
 
-    Texture* enemyTexture =
+    /*Texture* enemyTexture =
         m_resources.LoadTexture(
             L"Engine/Assets/Textures/Qingxiao.png"
+        );*/
+
+    Texture* enemyWalkTexture =
+        m_resources.LoadTexture(
+            L"Engine/Assets/Textures/Qingxiao_walk.png"
         );
 
     m_tileMap =
@@ -90,7 +97,8 @@ void GameScene::Initialize()
         return;
     }
 
-    if (!playerTexture)
+    if (!playerTexture ||
+        !enemyWalkTexture)
     {
         return;
     }
@@ -127,14 +135,95 @@ void GameScene::Initialize()
     m_player->sprite.useYSort = true;
 
     m_player->Initialize();
+    
+    m_enemyWalkClip =
+        std::make_unique<
+        AnimationClip
+        >();
+
+    m_enemyWalkClip->SetTexture(
+        enemyWalkTexture
+    );
+
+    m_enemyWalkClip->SetLooping(
+        true
+    );
+
+    //
+    // Qingxiao_walk.png
+    //
+    // 3 columns x 4 rows.
+    //
+    // Phase 8-A에서는 첫 번째 row의
+    // front walk 3 frames만 사용한다.
+    //
+    constexpr float columnWidth =
+        1.0f / 3.0f;
+
+    constexpr float rowHeight =
+        1.0f / 4.0f;
+
+    constexpr float frameDuration =
+        0.12f;
+
+    bool animationValid = true;
+
+    animationValid &=
+        m_enemyWalkClip->AddFrame(
+            UVRect
+            {
+                0.0f,
+                0.0f,
+                columnWidth,
+                rowHeight
+            },
+            frameDuration
+        );
+
+    animationValid &=
+        m_enemyWalkClip->AddFrame(
+            UVRect
+            {
+                columnWidth,
+                0.0f,
+                columnWidth * 2.0f,
+                rowHeight
+            },
+            frameDuration
+        );
+
+    animationValid &=
+        m_enemyWalkClip->AddFrame(
+            UVRect
+            {
+                columnWidth * 2.0f,
+                0.0f,
+                1.0f,
+                rowHeight
+            },
+            frameDuration
+        );
+
+    if (!animationValid ||
+        !m_enemyWalkClip->IsValid())
+    {
+        OutputDebugStringA(
+            "[GameScene] Failed to build "
+            "enemy walk animation.\n"
+        );
+
+        m_enemyWalkClip.reset();
+
+        return;
+    }
 
     for (int i = 0; i < 5; ++i)
     {
         Enemy* enemy =
             CreateEntity<Enemy>(m_physics);
 
-        enemy->sprite.texture =
-            enemyTexture;
+        /*enemy->sprite.texture =
+            enemyTexture;*/
 
         enemy->transform.position =
         {
@@ -161,6 +250,24 @@ void GameScene::Initialize()
         enemy->sprite.useYSort = true;
 
         enemy->Initialize();
+
+        enemy->animator =
+            std::make_unique<Animator>(
+                enemy->sprite
+            );
+
+        if (!enemy->animator->Play(
+            *m_enemyWalkClip))
+        {
+            OutputDebugStringA(
+                "[GameScene] Failed to start "
+                "enemy walk animation.\n"
+            );
+
+            enemy->animator.reset();
+
+            return;
+        }
     }
 }
 
