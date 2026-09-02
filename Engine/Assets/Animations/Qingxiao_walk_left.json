@@ -1,0 +1,18 @@
+{
+    "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+    "looping": true,
+    "frames": [
+        {
+            "uv": [0.0, 0.25, 0.33333334, 0.5],
+            "duration": 0.12
+        },
+        {
+            "uv": [0.33333334, 0.25, 0.6666667, 0.5],
+            "duration": 0.12
+        },
+        {
+            "uv": [0.6666667, 0.25, 1.0, 0.5],
+            "duration": 0.12
+        }
+    ]
+}

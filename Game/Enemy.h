@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CharacterAnimation.h"
 #include "Engine/Scene/Entity.h"
 
 class PhysicsSystem;
@@ -27,6 +28,13 @@ public:
         float fixedDeltaTime
     ) override;
 
+    bool SetAnimations(
+        const CharacterAnimationSet& animations
+    );
+
+private:
+    void UpdateAnimation();
+
 private:
     PhysicsSystem&
         m_physics;
@@ -41,4 +49,15 @@ private:
     };
 
     float m_speed = 100.0f;
+
+    CharacterAnimationSet
+        m_animations;
+
+    CharacterAnimationState
+        m_animationState =
+        CharacterAnimationState::Idle;
+
+    FacingDirection
+        m_facingDirection =
+        FacingDirection::Down;
 };

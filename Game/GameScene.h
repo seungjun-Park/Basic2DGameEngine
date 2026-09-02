@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Scene/Scene.h"
+#include "CharacterAnimation.h"
 
 #include <memory>
 
@@ -12,8 +13,6 @@ class TileMap;
 class TileMapRenderer;
 class RenderQueue;
 class TileMapCollider;
-class AnimationClip;
-
 
 class GameScene :
     public Scene
@@ -51,6 +50,9 @@ public:
     ) override;
 
 private:
+    bool LoadEnemyAnimations();
+
+private:
     ResourceManager& m_resources;
 
     Player* m_player =
@@ -69,6 +71,6 @@ private:
     std::unique_ptr<TileMapCollider>
         m_tileMapCollider;
 
-    AnimationClip* m_enemyWalkClip =
-        nullptr;
+    CharacterAnimationSet
+        m_enemyAnimations;
 };

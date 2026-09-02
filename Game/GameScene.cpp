@@ -36,11 +36,6 @@ void GameScene::Initialize()
             L"Engine/Assets/Textures/Aemeath.png"
         );
 
-    /*Texture* enemyTexture =
-        m_resources.LoadTexture(
-            L"Engine/Assets/Textures/Qingxiao.png"
-        );*/
-
     m_tileMap =
         m_resources.LoadTileMap(
             L"Engine/Assets/Maps/testmap.json"
@@ -130,19 +125,8 @@ void GameScene::Initialize()
 
     m_player->Initialize();
     
-    m_enemyWalkClip =
-        m_resources.LoadAnimationClip(
-            L"Engine/Assets/Animations/"
-            L"Qingxiao_walk_front.json"
-        );
-
-    if (!m_enemyWalkClip)
+    if (!LoadEnemyAnimations())
     {
-        OutputDebugStringA(
-            "[GameScene] Failed to load "
-            "enemy walk animation.\n"
-        );
-
         return;
     }
 
@@ -150,9 +134,6 @@ void GameScene::Initialize()
     {
         Enemy* enemy =
             CreateEntity<Enemy>(m_physics);
-
-        /*enemy->sprite.texture =
-            enemyTexture;*/
 
         enemy->transform.position =
         {
@@ -180,20 +161,15 @@ void GameScene::Initialize()
 
         enemy->Initialize();
 
-        enemy->animator =
-            std::make_unique<Animator>(
-                enemy->sprite
-            );
-
-        if (!enemy->animator->Play(
-            *m_enemyWalkClip))
+        if (!enemy->SetAnimations(
+            m_enemyAnimations))
         {
             OutputDebugStringA(
-                "[GameScene] Failed to start "
-                "enemy walk animation.\n"
+                "[GameScene] Failed to initialize "
+                "enemy animations.\n"
             );
 
-            enemy->animator.reset();
+            enemy->Destroy();
 
             return;
         }
@@ -509,4 +485,105 @@ void GameScene::DebugRender(
             4.0f
         );
     }
+}
+
+bool GameScene::LoadEnemyAnimations()
+{
+    struct AnimationAsset
+    {
+        CharacterAnimationState state;
+        FacingDirection direction;
+        const wchar_t* path;
+    };
+
+    constexpr AnimationAsset assets[]
+    {
+        {
+            CharacterAnimationState::Idle,
+            FacingDirection::Down,
+            L"Engine/Assets/Animations/"
+            L"Qingxiao_idle_down.json"
+        },
+        {
+            CharacterAnimationState::Idle,
+            FacingDirection::Left,
+            L"Engine/Assets/Animations/"
+            L"Qingxiao_idle_left.json"
+        },
+        {
+            CharacterAnimationState::Idle,
+            FacingDirection::Right,
+            L"Engine/Assets/Animations/"
+            L"Qingxiao_idle_right.json"
+        },
+        {
+            CharacterAnimationState::Idle,
+            FacingDirection::Up,
+            L"Engine/Assets/Animations/"
+            L"Qingxiao_idle_up.json"
+        },
+
+        {
+            CharacterAnimationState::Walk,
+            FacingDirection::Down,
+            L"Engine/Assets/Animations/"
+            L"Qingxiao_walk_down.json"
+        },
+        {
+            CharacterAnimationState::Walk,
+            FacingDirection::Left,
+            L"Engine/Assets/Animations/"
+            L"Qingxiao_walk_left.json"
+        },
+        {
+            CharacterAnimationState::Walk,
+            FacingDirection::Right,
+            L"Engine/Assets/Animations/"
+            L"Qingxiao_walk_right.json"
+        },
+        {
+            CharacterAnimationState::Walk,
+            FacingDirection::Up,
+            L"Engine/Assets/Animations/"
+            L"Qingxiao_walk_up.json"
+        }
+    };
+
+    for (const AnimationAsset& asset :
+        assets)
+    {
+        AnimationClip* clip =
+            m_resources.
+            LoadAnimationClip(
+                asset.path
+            );
+
+        if (!clip)
+        {
+            OutputDebugStringA(
+                "[GameScene] Failed to load "
+                "enemy animation.\n"
+            );
+
+            return false;
+        }
+
+        m_enemyAnimations.SetClip(
+            asset.state,
+            asset.direction,
+            clip
+        );
+    }
+
+    if (!m_enemyAnimations.IsValid())
+    {
+        OutputDebugStringA(
+            "[GameScene] Enemy animation "
+            "set is incomplete.\n"
+        );
+
+        return false;
+    }
+
+    return true;
 }

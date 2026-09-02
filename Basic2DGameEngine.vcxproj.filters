@@ -135,6 +135,9 @@
     <ClInclude Include="Engine\Animation\AnimationClipLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Game\CharacterAnimation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game\Main.cpp">
@@ -225,6 +228,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Animation\AnimationClipLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\CharacterAnimation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
