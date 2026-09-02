@@ -4,6 +4,8 @@
 #include "Engine/Renderer/DX11Renderer.h"
 #include "Engine/Tile/TilesetLoader.h"
 #include "Engine/Tile/TileMapLoader.h"
+#include "Engine/Animation/AnimationClip.h"
+#include "Engine/Animation/AnimationClipLoader.h"
 
 ResourceManager::ResourceManager() = default;
 ResourceManager::~ResourceManager() = default;
@@ -59,6 +61,8 @@ Texture* ResourceManager::LoadTexture(
 void ResourceManager::Clear()
 {
     m_tileMaps.clear();
+
+    m_animationClips.clear();
 
     m_tilesets.clear();
 
@@ -136,6 +140,54 @@ ResourceManager::LoadTileMap(
     m_tileMaps.emplace(
         path,
         std::move(tileMap)
+    );
+
+    return result;
+}
+
+AnimationClip*
+ResourceManager::LoadAnimationClip(
+    const std::wstring& path)
+{
+    auto it =
+        m_animationClips.find(
+            path
+        );
+
+    if (it !=
+        m_animationClips.end())
+    {
+        OutputDebugStringA(
+            "[Resource] Animation clip cache hit\n"
+        );
+
+        return
+            it->second.get();
+    }
+
+    auto animationClip =
+        AnimationClipLoader::Load(
+            path,
+            *this
+        );
+
+    if (!animationClip)
+    {
+        return nullptr;
+    }
+
+    AnimationClip* result =
+        animationClip.get();
+
+    m_animationClips.emplace(
+        path,
+        std::move(
+            animationClip
+        )
+    );
+
+    OutputDebugStringA(
+        "[Resource] Animation clip loaded\n"
     );
 
     return result;

@@ -69,6 +69,6 @@ private:
     std::unique_ptr<TileMapCollider>
         m_tileMapCollider;
 
-    std::unique_ptr<AnimationClip>
-        m_enemyWalkClip;
+    AnimationClip* m_enemyWalkClip =
+        nullptr;
 };

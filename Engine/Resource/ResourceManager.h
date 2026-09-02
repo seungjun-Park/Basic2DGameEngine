@@ -8,7 +8,7 @@ class Texture;
 class Tileset;
 class TileMap;
 class DX11Renderer;
-
+class AnimationClip;
 
 class ResourceManager
 {
@@ -35,6 +35,10 @@ public:
         const std::wstring& path
     );
 
+    AnimationClip* LoadAnimationClip(
+        const std::wstring& path
+    );
+
     void Clear();
 
 private:
@@ -54,4 +58,9 @@ private:
         std::wstring,
         std::unique_ptr<TileMap>
     > m_tileMaps;
+
+    std::unordered_map<
+        std::wstring,
+        std::unique_ptr<AnimationClip>
+    > m_animationClips;
 };

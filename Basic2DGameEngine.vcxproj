@@ -133,6 +133,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Animation\AnimationClip.h" />
+    <ClInclude Include="Engine\Animation\AnimationClipLoader.h" />
     <ClInclude Include="Engine\Animation\Animator.h" />
     <ClInclude Include="Engine\Components\Sprite.h" />
     <ClInclude Include="Engine\Components\Transform.h" />
@@ -174,6 +175,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Animation\AnimationClip.cpp" />
+    <ClCompile Include="Engine\Animation\AnimationClipLoader.cpp" />
     <ClCompile Include="Engine\Animation\Animator.cpp" />
     <ClCompile Include="Engine\Core\Application.cpp" />
     <ClCompile Include="Engine\Core\Engine.cpp" />
