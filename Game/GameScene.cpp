@@ -16,6 +16,9 @@
 #include "Engine/Animation/AnimationClip.h"
 #include "Engine/Animation/Animator.h"
 
+#include <optional>
+
+
 GameScene::GameScene(
     ResourceManager& resources,
     Camera& camera,
