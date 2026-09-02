@@ -26,6 +26,36 @@ struct DebugStats
     int renderCommands = 0;
 
     // --------------------------------------------------
+    // Render Batching
+    // --------------------------------------------------
+
+    std::uint32_t renderBatches = 0;
+
+    std::uint32_t
+        batchedRenderCommands = 0;
+
+    std::uint32_t
+        maxBatchSize = 0;
+
+    std::uint32_t
+        singleCommandBatches = 0;
+
+    std::uint32_t
+        batchBoundaries = 0;
+
+    std::uint32_t
+        textureBatchBoundaries = 0;
+
+    std::uint32_t
+        blendBatchBoundaries = 0;
+
+    std::uint32_t
+        layerBatchBoundaries = 0;
+
+    std::uint32_t
+        invalidRenderCommands = 0;
+
+    // --------------------------------------------------
     // TileMap Rendering
     // --------------------------------------------------
 

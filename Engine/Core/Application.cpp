@@ -273,6 +273,20 @@ void Application::UpdateWindowTitle()
         );
     }
 
+    float averageBatchSize =
+        0.0f;
+
+    if (stats.renderBatches > 0)
+    {
+        averageBatchSize =
+            static_cast<float>(
+                stats.batchedRenderCommands
+                ) /
+            static_cast<float>(
+                stats.renderBatches
+                );
+    }
+
     wchar_t title[512]{};
 
     swprintf_s(
@@ -284,7 +298,10 @@ void Application::UpdateWindowTitle()
         L"Fixed %.0f Hz (%u) | "
         L"Ent %d | "
         L"Cmd %d | "
+        L"Batch %u Avg %.1f Max %u | "
         L"Draw %d | "
+        L"Split T/B/L %u/%u/%u | "
+        L"Inv %u | "
         L"Tiles %u/%u | "
         L"Cells %u | "
         L"Cull %u | "
@@ -303,7 +320,18 @@ void Application::UpdateWindowTitle()
         stats.entityCount,
 
         stats.renderCommands,
+
+        stats.renderBatches,
+        averageBatchSize,
+        stats.maxBatchSize,
+
         stats.drawCalls,
+
+        stats.textureBatchBoundaries,
+        stats.blendBatchBoundaries,
+        stats.layerBatchBoundaries,
+
+        stats.invalidRenderCommands,
 
         stats.visibleTiles,
         stats.tileRenderItems,

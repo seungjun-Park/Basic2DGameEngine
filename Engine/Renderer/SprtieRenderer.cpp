@@ -699,6 +699,9 @@ void SpriteRenderer::Draw(
     command.transform =
         &transform;
 
+    command.texture =
+        sprite.texture;
+
     command.layer =
         sprite.layer;
 
@@ -875,6 +878,12 @@ void SpriteRenderer::DrawBatch(
             ];
 
         assert(
+            IsSpriteRenderCommandValid(
+                firstCommand
+            )
+        );
+
+        assert(
             firstCommand.sprite
         );
 
@@ -910,18 +919,15 @@ void SpriteRenderer::DrawBatch(
             );
 
             assert(
-                command.layer ==
-                firstCommand.layer
-            );
-
-            assert(
-                command.blendMode ==
-                firstCommand.blendMode
+                CanBatchSpriteRenderCommands(
+                    firstCommand,
+                    command
+                )
             );
 
             assert(
                 command.sprite->texture ==
-                firstCommand.sprite->texture
+                command.texture
             );
         }
 
@@ -977,7 +983,7 @@ void SpriteRenderer::DrawBatch(
         Texture* texture =
             commands[
                 commandOffset
-            ].sprite->texture;
+            ].texture;
 
         ID3D11ShaderResourceView* srv =
             texture->GetSRV();

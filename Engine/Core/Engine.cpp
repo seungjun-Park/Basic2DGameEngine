@@ -271,6 +271,63 @@ void Engine::Render(
             m_spriteRenderer->
             GetDrawCallCount();
 
+        const RenderBatchStats&
+            batchStats =
+            m_renderQueue->
+            GetBatchStats();
+
+        m_debugStats.renderBatches =
+            static_cast<std::uint32_t>(
+                batchStats.batchCount
+                );
+
+        m_debugStats.batchedRenderCommands =
+            static_cast<std::uint32_t>(
+                batchStats.
+                batchedCommandCount
+                );
+
+        m_debugStats.maxBatchSize =
+            static_cast<std::uint32_t>(
+                batchStats.maxBatchSize
+                );
+
+        m_debugStats.singleCommandBatches =
+            static_cast<std::uint32_t>(
+                batchStats.
+                singleCommandBatchCount
+                );
+
+        m_debugStats.batchBoundaries =
+            static_cast<std::uint32_t>(
+                batchStats.
+                batchBoundaryCount
+                );
+
+        m_debugStats.textureBatchBoundaries =
+            static_cast<std::uint32_t>(
+                batchStats.
+                textureBoundaryCount
+                );
+
+        m_debugStats.blendBatchBoundaries =
+            static_cast<std::uint32_t>(
+                batchStats.
+                blendBoundaryCount
+                );
+
+        m_debugStats.layerBatchBoundaries =
+            static_cast<std::uint32_t>(
+                batchStats.
+                layerBoundaryCount
+                );
+
+        m_debugStats.invalidRenderCommands =
+            static_cast<std::uint32_t>(
+                batchStats.
+                invalidCommandCount
+                );
+
         m_debugStats.ResetTileStats();
 
         m_scene->CollectDebugStats(
