@@ -4,6 +4,7 @@
 #include <wrl/client.h>
 
 #include <DirectXMath.h>
+#include <cstddef>
 
 #include "Engine/Components/Transform.h"
 #include "RenderTypes.h"
@@ -12,6 +13,7 @@ class DX11Renderer;
 class Texture;
 class Camera;
 struct Sprite;
+struct SpriteRenderCommand;
 
 class SpriteRenderer
 {
@@ -33,6 +35,11 @@ public:
     void Draw(
         const Sprite& sprite,
         const Transform& transform
+    );
+
+    void DrawBatch(
+        const SpriteRenderCommand* commands,
+        std::size_t commandCount
     );
 
     void End();
@@ -85,9 +92,6 @@ private:
 
     Microsoft::WRL::ComPtr<ID3D11Buffer>
         m_constantBuffer;
-
-    Microsoft::WRL::ComPtr<ID3D11Buffer>
-        m_uvConstantBuffer;
 
     Microsoft::WRL::ComPtr<ID3D11SamplerState>
         m_samplerState;

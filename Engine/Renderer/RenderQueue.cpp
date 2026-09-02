@@ -99,23 +99,87 @@ void RenderQueue::Sort()
 void RenderQueue::Execute(
     SpriteRenderer& renderer) const
 {
-    for (const auto& command :
-        m_commands)
+    std::size_t commandIndex = 0;
+
+    while (commandIndex <
+        m_commands.size())
     {
-        if (!command.sprite ||
-            !command.transform)
+        const SpriteRenderCommand&
+            firstCommand =
+            m_commands[
+                commandIndex
+            ];
+
+        if (!firstCommand.sprite ||
+            !firstCommand.transform ||
+            !firstCommand.sprite->texture)
         {
+            ++commandIndex;
             continue;
         }
 
+        Texture* batchTexture =
+            firstCommand.sprite->texture;
+
+        const RenderLayer batchLayer =
+            firstCommand.layer;
+
+        const BlendMode batchBlendMode =
+            firstCommand.blendMode;
+
+        std::size_t batchEnd =
+            commandIndex + 1;
+
+        while (batchEnd <
+            m_commands.size())
+        {
+            const SpriteRenderCommand&
+                command =
+                m_commands[
+                    batchEnd
+                ];
+
+            if (!command.sprite ||
+                !command.transform ||
+                !command.sprite->texture)
+            {
+                break;
+            }
+
+            if (command.layer !=
+                batchLayer)
+            {
+                break;
+            }
+
+            if (command.blendMode !=
+                batchBlendMode)
+            {
+                break;
+            }
+
+            if (command.sprite->texture !=
+                batchTexture)
+            {
+                break;
+            }
+
+            ++batchEnd;
+        }
+
         renderer.SetBlendMode(
-            command.blendMode
+            batchBlendMode
         );
 
-        renderer.Draw(
-            *command.sprite,
-            *command.transform
+        renderer.DrawBatch(
+            m_commands.data() +
+            commandIndex,
+            batchEnd -
+            commandIndex
         );
+
+        commandIndex =
+            batchEnd;
     }
 }
 

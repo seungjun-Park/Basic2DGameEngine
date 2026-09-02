@@ -4,9 +4,14 @@
 #include "DX11Renderer.h"
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Components/Sprite.h"
+#include "RenderCommand.h"
 
 #include <d3dcompiler.h>
 
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <cstring>
 #include <vector>
 #include <fstream>
 
@@ -17,28 +22,164 @@ using Microsoft::WRL::ComPtr;
 
 namespace
 {
+    constexpr std::size_t MaxBatchSprites =
+        2048;
+
+    constexpr std::size_t VerticesPerSprite =
+        4;
+
+    constexpr std::size_t IndicesPerSprite =
+        6;
+
     struct SpriteVertex
     {
         XMFLOAT3 position;
         XMFLOAT2 uv;
     };
 
-    struct SpriteConstantBuffer
+    struct SpriteFrameConstantBuffer
     {
-        XMMATRIX world;
         XMMATRIX view;
         XMMATRIX projection;
     };
 
-    struct SpriteUVConstantBuffer
-    {
-        XMFLOAT4 uvRect;
-    };
-
     static_assert(
-        sizeof(SpriteUVConstantBuffer) % 16 == 0,
+        sizeof(SpriteFrameConstantBuffer) % 16 == 0,
         "Constant buffer size must be a multiple of 16 bytes."
         );
+
+    XMMATRIX BuildSpriteWorldMatrix(
+        const Transform& transform)
+    {
+        //
+        // IMPORTANT:
+        //
+        // Phase 7에서 transform semantic을 변경하지 않는다.
+        // 기존 SpriteRenderer::Draw()가 사용하던
+        // World matrix 계산식을 그대로 유지한다.
+        //
+        return
+            XMMatrixScaling(
+                transform.scale.x,
+                transform.scale.y,
+                1.0f
+            )
+            *
+            XMMatrixTranslation(
+                -0.5f,
+                -0.5f,
+                0.0f
+            )
+            *
+            XMMatrixRotationZ(
+                transform.rotation
+            )
+            *
+            XMMatrixTranslation(
+                transform.position.x,
+                transform.position.y,
+                0.0f
+            );
+    }
+
+    void WriteSpriteVertices(
+        SpriteVertex* destination,
+        const Sprite& sprite,
+        const Transform& transform)
+    {
+        const XMMATRIX world =
+            BuildSpriteWorldMatrix(
+                transform
+            );
+
+        const XMVECTOR topLeft =
+            XMVector3TransformCoord(
+                XMVectorSet(
+                    0.0f,
+                    0.0f,
+                    0.0f,
+                    1.0f
+                ),
+                world
+            );
+
+        const XMVECTOR topRight =
+            XMVector3TransformCoord(
+                XMVectorSet(
+                    1.0f,
+                    0.0f,
+                    0.0f,
+                    1.0f
+                ),
+                world
+            );
+
+        const XMVECTOR bottomLeft =
+            XMVector3TransformCoord(
+                XMVectorSet(
+                    0.0f,
+                    1.0f,
+                    0.0f,
+                    1.0f
+                ),
+                world
+            );
+
+        const XMVECTOR bottomRight =
+            XMVector3TransformCoord(
+                XMVectorSet(
+                    1.0f,
+                    1.0f,
+                    0.0f,
+                    1.0f
+                ),
+                world
+            );
+
+        XMStoreFloat3(
+            &destination[0].position,
+            topLeft
+        );
+
+        XMStoreFloat3(
+            &destination[1].position,
+            topRight
+        );
+
+        XMStoreFloat3(
+            &destination[2].position,
+            bottomLeft
+        );
+
+        XMStoreFloat3(
+            &destination[3].position,
+            bottomRight
+        );
+
+        destination[0].uv =
+            XMFLOAT2(
+                sprite.uv.u0,
+                sprite.uv.v0
+            );
+
+        destination[1].uv =
+            XMFLOAT2(
+                sprite.uv.u1,
+                sprite.uv.v0
+            );
+
+        destination[2].uv =
+            XMFLOAT2(
+                sprite.uv.u0,
+                sprite.uv.v1
+            );
+
+        destination[3].uv =
+            XMFLOAT2(
+                sprite.uv.u1,
+                sprite.uv.v1
+            );
+    }
 }
 
 bool SpriteRenderer::Initialize(
@@ -234,81 +375,133 @@ bool SpriteRenderer::CreateInputLayout()
 
 bool SpriteRenderer::CreateBuffers()
 {
-    SpriteVertex vertices[] =
-    {
-        // position               UV
-        { { 0.0f, 0.0f, 0.0f },   { 0.0f, 0.0f } },
-        { { 1.0f, 0.0f, 0.0f },   { 1.0f, 0.0f } },
-        { { 0.0f, 1.0f, 0.0f },   { 0.0f, 1.0f } },
-        { { 1.0f, 1.0f, 0.0f },   { 1.0f, 1.0f } }
-    };
+    ID3D11Device* device =
+        m_renderer->GetDevice();
 
-    D3D11_BUFFER_DESC vertexBufferDesc{};
+    //
+    // Dynamic batch vertex buffer
+    //
+    D3D11_BUFFER_DESC
+        vertexBufferDesc{};
 
     vertexBufferDesc.Usage =
-        D3D11_USAGE_DEFAULT;
+        D3D11_USAGE_DYNAMIC;
 
     vertexBufferDesc.ByteWidth =
-        sizeof(vertices);
+        static_cast<UINT>(
+            sizeof(SpriteVertex) *
+            VerticesPerSprite *
+            MaxBatchSprites
+            );
 
     vertexBufferDesc.BindFlags =
         D3D11_BIND_VERTEX_BUFFER;
 
-    D3D11_SUBRESOURCE_DATA vertexData{};
-
-    vertexData.pSysMem =
-        vertices;
+    vertexBufferDesc.CPUAccessFlags =
+        D3D11_CPU_ACCESS_WRITE;
 
     HRESULT hr =
-        m_renderer->GetDevice()->CreateBuffer(
+        device->CreateBuffer(
             &vertexBufferDesc,
-            &vertexData,
+            nullptr,
             m_vertexBuffer.GetAddressOf()
         );
 
     if (FAILED(hr))
-        return false;
-
-    unsigned int indices[] =
     {
-        0, 1, 2,
-        2, 1, 3
-    };
+        return false;
+    }
 
-    D3D11_BUFFER_DESC indexBufferDesc{};
+    //
+    // Static batch index buffer
+    //
+    std::vector<std::uint32_t> indices(
+        MaxBatchSprites *
+        IndicesPerSprite
+    );
+
+    for (std::size_t spriteIndex = 0;
+        spriteIndex < MaxBatchSprites;
+        ++spriteIndex)
+    {
+        const std::uint32_t baseVertex =
+            static_cast<std::uint32_t>(
+                spriteIndex *
+                VerticesPerSprite
+                );
+
+        const std::size_t baseIndex =
+            spriteIndex *
+            IndicesPerSprite;
+
+        indices[baseIndex + 0] =
+            baseVertex + 0;
+
+        indices[baseIndex + 1] =
+            baseVertex + 1;
+
+        indices[baseIndex + 2] =
+            baseVertex + 2;
+
+        indices[baseIndex + 3] =
+            baseVertex + 2;
+
+        indices[baseIndex + 4] =
+            baseVertex + 1;
+
+        indices[baseIndex + 5] =
+            baseVertex + 3;
+    }
+
+    D3D11_BUFFER_DESC
+        indexBufferDesc{};
 
     indexBufferDesc.Usage =
         D3D11_USAGE_DEFAULT;
 
     indexBufferDesc.ByteWidth =
-        sizeof(indices);
+        static_cast<UINT>(
+            sizeof(std::uint32_t) *
+            indices.size()
+            );
 
     indexBufferDesc.BindFlags =
         D3D11_BIND_INDEX_BUFFER;
 
-    D3D11_SUBRESOURCE_DATA indexData{};
+    D3D11_SUBRESOURCE_DATA
+        indexData{};
 
     indexData.pSysMem =
-        indices;
+        indices.data();
 
     hr =
-        m_renderer->GetDevice()->CreateBuffer(
+        device->CreateBuffer(
             &indexBufferDesc,
             &indexData,
             m_indexBuffer.GetAddressOf()
         );
 
     if (FAILED(hr))
+    {
         return false;
+    }
 
-    // Constant Buffer
-    D3D11_BUFFER_DESC constantBufferDesc{};
+    //
+    // Frame constant buffer.
+    //
+    // World matrix는 batch vertex 생성 시
+    // CPU에서 이미 적용된다.
+    //
+    D3D11_BUFFER_DESC
+        constantBufferDesc{};
 
     constantBufferDesc.Usage =
         D3D11_USAGE_DYNAMIC;
 
     constantBufferDesc.ByteWidth =
-        sizeof(SpriteConstantBuffer);
+        sizeof(
+            SpriteFrameConstantBuffer
+            );
 
     constantBufferDesc.BindFlags =
         D3D11_BIND_CONSTANT_BUFFER;
@@ -317,39 +510,10 @@ bool SpriteRenderer::CreateBuffers()
         D3D11_CPU_ACCESS_WRITE;
 
     hr =
-        m_renderer->GetDevice()->CreateBuffer(
+        device->CreateBuffer(
             &constantBufferDesc,
             nullptr,
             m_constantBuffer.GetAddressOf()
-        );
-
-    if (FAILED(hr))
-        return false;
-
-    // --------------------------------------------------
-    // Pixel Shader UV Constant Buffer
-    // --------------------------------------------------
-
-    D3D11_BUFFER_DESC
-        uvConstantBufferDesc{};
-
-    uvConstantBufferDesc.Usage =
-        D3D11_USAGE_DYNAMIC;
-
-    uvConstantBufferDesc.ByteWidth =
-        sizeof(SpriteUVConstantBuffer);
-
-    uvConstantBufferDesc.BindFlags =
-        D3D11_BIND_CONSTANT_BUFFER;
-
-    uvConstantBufferDesc.CPUAccessFlags =
-        D3D11_CPU_ACCESS_WRITE;
-
-    hr =
-        m_renderer->GetDevice()->CreateBuffer(
-            &uvConstantBufferDesc,
-            nullptr,
-            m_uvConstantBuffer.GetAddressOf()
         );
 
     if (FAILED(hr))
@@ -444,10 +608,51 @@ void SpriteRenderer::Begin()
         m_samplerState.GetAddressOf()
     );
 
-    context->PSSetConstantBuffers(
+    SpriteFrameConstantBuffer
+        frameBuffer{};
+
+    frameBuffer.view =
+        XMMatrixTranspose(
+            m_viewMatrix
+        );
+
+    frameBuffer.projection =
+        XMMatrixTranspose(
+            m_projectionMatrix
+        );
+
+    D3D11_MAPPED_SUBRESOURCE
+        mapped{};
+
+    HRESULT hr =
+        context->Map(
+            m_constantBuffer.Get(),
+            0,
+            D3D11_MAP_WRITE_DISCARD,
+            0,
+            &mapped
+        );
+
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    memcpy(
+        mapped.pData,
+        &frameBuffer,
+        sizeof(frameBuffer)
+    );
+
+    context->Unmap(
+        m_constantBuffer.Get(),
+        0
+    );
+
+    context->VSSetConstantBuffers(
         0,
         1,
-        m_uvConstantBuffer.GetAddressOf()
+        m_constantBuffer.GetAddressOf()
     );
 
     m_currentBlendMode =
@@ -476,162 +681,38 @@ void SpriteRenderer::Draw(
     const Sprite& sprite,
     const Transform& transform)
 {
-    auto* context =
-        m_renderer->GetContext();
-
-    // 좌상단 중심
-    /*XMMATRIX world =
-        XMMatrixScaling(
-            transform.scale.x,
-            transform.scale.y,
-            1.0f
-        )
-        *
-        XMMatrixRotationZ(
-            transform.rotation
-        )
-        *
-        XMMatrixTranslation(
-            transform.position.x,
-            transform.position.y,
-            0.0f
-        );*/
-    // 중심
-    XMMATRIX world =
-        XMMatrixScaling(
-            transform.scale.x,
-            transform.scale.y,
-            1.0f
-        )
-        *
-        XMMatrixTranslation(
-            -0.5f,
-            -0.5f,
-            0.0f
-        )
-        *
-        XMMatrixRotationZ(
-            transform.rotation
-        )
-        *
-        XMMatrixTranslation(
-            transform.position.x,
-            transform.position.y,
-            0.0f
-        );
-
-    SpriteConstantBuffer buffer{};
-
-    buffer.world =
-        XMMatrixTranspose(world);
-
-    buffer.view =
-        XMMatrixTranspose(
-            m_viewMatrix
-        );
-
-    buffer.projection =
-        XMMatrixTranspose(
-            m_projectionMatrix
-        );
-
-    D3D11_MAPPED_SUBRESOURCE mapped{};
-
-    HRESULT hr =
-        context->Map(
-            m_constantBuffer.Get(),
-            0,
-            D3D11_MAP_WRITE_DISCARD,
-            0,
-            &mapped
-        );
-
-    if (FAILED(hr))
-        return;
-
-    memcpy(
-        mapped.pData,
-        &buffer,
-        sizeof(buffer)
-    );
-
-    context->Unmap(
-        m_constantBuffer.Get(),
-        0
-    );
-
-    context->VSSetConstantBuffers(
-        0,
-        1,
-        m_constantBuffer.GetAddressOf()
-    );
-
-    // --------------------------------------------------
-    // Update Sprite UV Constant Buffer
-    // --------------------------------------------------
-
-    SpriteUVConstantBuffer
-        uvBuffer{};
-
-    uvBuffer.uvRect =
-    {
-        sprite.uv.u0,
-        sprite.uv.v0,
-        sprite.uv.u1,
-        sprite.uv.v1
-    };
-
-    D3D11_MAPPED_SUBRESOURCE
-        uvMapped{};
-
-    hr =
-        context->Map(
-            m_uvConstantBuffer.Get(),
-            0,
-            D3D11_MAP_WRITE_DISCARD,
-            0,
-            &uvMapped
-        );
-
-    if (FAILED(hr))
+    if (!sprite.visible)
     {
         return;
     }
 
-    memcpy(
-        uvMapped.pData,
-        &uvBuffer,
-        sizeof(uvBuffer)
-    );
-
-    context->Unmap(
-        m_uvConstantBuffer.Get(),
-        0
-    );
-
-    // --------------------------------------------------
-    // Texture
-    // --------------------------------------------------
-
     if (!sprite.texture)
+    {
         return;
+    }
 
-    ID3D11ShaderResourceView* srv =
-        sprite.texture->GetSRV();
+    SpriteRenderCommand command;
 
-    context->PSSetShaderResources(
-        0,
-        1,
-        &srv
+    command.sprite =
+        &sprite;
+
+    command.transform =
+        &transform;
+
+    command.layer =
+        sprite.layer;
+
+    command.blendMode =
+        sprite.blendMode;
+
+    SetBlendMode(
+        command.blendMode
     );
 
-    context->DrawIndexed(
-        6,
-        0,
-        0
+    DrawBatch(
+        &command,
+        1
     );
-
-    ++m_drawCallCount;
 }
 
 bool SpriteRenderer::CreateBlendStates()
@@ -754,4 +835,171 @@ void SpriteRenderer::SetBlendMode(
             blendFactor,
             0xffffffff
         );
+}
+
+void SpriteRenderer::DrawBatch(
+    const SpriteRenderCommand* commands,
+    std::size_t commandCount)
+{
+    if (!commands ||
+        commandCount == 0)
+    {
+        return;
+    }
+
+    auto* context =
+        m_renderer->GetContext();
+
+    std::size_t commandOffset = 0;
+
+    while (commandOffset <
+        commandCount)
+    {
+        const std::size_t
+            remainingCount =
+            commandCount -
+            commandOffset;
+
+        const std::size_t batchCount =
+            min(
+                MaxBatchSprites,
+                remainingCount
+            );
+
+#ifdef _DEBUG
+
+        const SpriteRenderCommand&
+            firstCommand =
+            commands[
+                commandOffset
+            ];
+
+        assert(
+            firstCommand.sprite
+        );
+
+        assert(
+            firstCommand.transform
+        );
+
+        assert(
+            firstCommand.sprite->texture
+        );
+
+        for (std::size_t index = 0;
+            index < batchCount;
+            ++index)
+        {
+            const SpriteRenderCommand&
+                command =
+                commands[
+                    commandOffset +
+                        index
+                ];
+
+            assert(
+                command.sprite
+            );
+
+            assert(
+                command.transform
+            );
+
+            assert(
+                command.sprite->texture
+            );
+
+            assert(
+                command.layer ==
+                firstCommand.layer
+            );
+
+            assert(
+                command.blendMode ==
+                firstCommand.blendMode
+            );
+
+            assert(
+                command.sprite->texture ==
+                firstCommand.sprite->texture
+            );
+        }
+
+#endif
+
+        D3D11_MAPPED_SUBRESOURCE
+            mapped{};
+
+        HRESULT hr =
+            context->Map(
+                m_vertexBuffer.Get(),
+                0,
+                D3D11_MAP_WRITE_DISCARD,
+                0,
+                &mapped
+            );
+
+        if (FAILED(hr))
+        {
+            return;
+        }
+
+        SpriteVertex* vertices =
+            static_cast<SpriteVertex*>(
+                mapped.pData
+                );
+
+        for (std::size_t index = 0;
+            index < batchCount;
+            ++index)
+        {
+            const SpriteRenderCommand&
+                command =
+                commands[
+                    commandOffset +
+                        index
+                ];
+
+            WriteSpriteVertices(
+                vertices +
+                index *
+                VerticesPerSprite,
+                *command.sprite,
+                *command.transform
+            );
+        }
+
+        context->Unmap(
+            m_vertexBuffer.Get(),
+            0
+        );
+
+        Texture* texture =
+            commands[
+                commandOffset
+            ].sprite->texture;
+
+        ID3D11ShaderResourceView* srv =
+            texture->GetSRV();
+
+        context->PSSetShaderResources(
+            0,
+            1,
+            &srv
+        );
+
+        context->DrawIndexed(
+            static_cast<UINT>(
+                batchCount *
+                IndicesPerSprite
+                ),
+            0,
+            0
+        );
+
+        ++m_drawCallCount;
+
+        commandOffset +=
+            batchCount;
+    }
 }

@@ -20,7 +20,7 @@ int WINAPI WinMain(
     config.vsync = false;
 
     // 0ÀÌ¸י Unlimited
-    config.targetFPS = 0;
+    config.targetFPS = 60;
 
     config.fixedUpdateHz = 60.0f;
 
