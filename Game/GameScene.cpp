@@ -19,8 +19,10 @@
 #include "GameEntityFactory.h"
 #include "Engine/Serialization/SceneData.h"
 #include "Engine/Serialization/SceneSerializer.h"
+#include "Engine/Platform/Windows/WinInput.h"
 
 #include <optional>
+#include <utility>
 
 
 GameScene::GameScene(
@@ -100,6 +102,12 @@ void GameScene::Initialize()
     {
         return;
     }
+
+    /*if (!LoadSerializedEntities(
+        L"runtime_position_test.json"))
+    {
+        return;
+    }*/
 }
 
 void GameScene::Update(
@@ -650,6 +658,95 @@ bool GameScene::LoadSerializedEntities(
 
             return false;
         }
+    }
+
+    return true;
+}
+
+bool GameScene::SaveSerializedEntities(
+    const std::wstring& path)
+{
+    SceneData sceneData;
+
+    GameEntityFactory factory(
+        *this,
+        m_resources,
+        m_physics,
+        m_enemyAnimations
+    );
+
+    std::size_t playerCount =
+        0;
+
+    for (const auto& entity :
+        m_entities)
+    {
+        if (!entity)
+        {
+            continue;
+        }
+
+        //
+        // deferred destruction 대기 중인 Entity는
+        // persistent scene에 저장하지 않는다.
+        //
+        if (entity->IsDestroyed())
+        {
+            continue;
+        }
+
+        SerializedEntity
+            serializedEntity;
+
+        if (!factory.Serialize(
+            *entity,
+            serializedEntity))
+        {
+            OutputDebugStringA(
+                "[GameScene] Failed to serialize "
+                "runtime entity.\n"
+            );
+
+            return false;
+        }
+
+        if (serializedEntity.type ==
+            "Player")
+        {
+            ++playerCount;
+        }
+
+        sceneData.entities.emplace_back(
+            std::move(
+                serializedEntity
+            )
+        );
+    }
+
+    //
+    // Load contract와 동일:
+    // valid GameScene은 정확히 한 Player.
+    //
+    if (playerCount != 1)
+    {
+        OutputDebugStringA(
+            "[GameScene] Serialized scene must "
+            "contain exactly one Player.\n"
+        );
+
+        return false;
+    }
+
+    if (!SceneSerializer::Save(
+        sceneData,
+        path))
+    {
+        OutputDebugStringA(
+            "[GameScene] Failed to save "
+            "serialized scene.\n"
+        );
+
+        return false;
     }
 
     return true;

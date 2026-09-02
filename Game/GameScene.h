@@ -50,6 +50,10 @@ public:
         DebugRenderer& debugRenderer
     ) override;
 
+    bool SaveSerializedEntities(
+        const std::wstring& path
+    );
+
 private:
     bool LoadEnemyAnimations();
     

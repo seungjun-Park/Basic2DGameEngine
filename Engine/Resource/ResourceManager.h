@@ -27,6 +27,11 @@ public:
         const std::wstring& path
     );
 
+    bool TryGetTexturePath(
+        const Texture* texture,
+        std::wstring& outPath
+    ) const;
+
     Tileset* LoadTileset(
         const std::wstring& path
     );

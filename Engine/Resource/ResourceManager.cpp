@@ -192,3 +192,30 @@ ResourceManager::LoadAnimationClip(
 
     return result;
 }
+
+bool ResourceManager::TryGetTexturePath(
+    const Texture* texture,
+    std::wstring& outPath) const
+{
+    outPath.clear();
+
+    if (!texture)
+    {
+        return false;
+    }
+
+    for (const auto& entry :
+        m_textures)
+    {
+        if (entry.second.get() ==
+            texture)
+        {
+            outPath =
+                entry.first;
+
+            return true;
+        }
+    }
+
+    return false;
+}

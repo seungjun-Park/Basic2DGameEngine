@@ -30,6 +30,11 @@ public:
         Player* playerTarget
     );
 
+    bool Serialize(
+        const Entity& entity,
+        SerializedEntity& outData
+    ) const;
+
 private:
     bool ApplySerializedState(
         Entity& entity,

@@ -12,6 +12,9 @@
 #include "Engine/Physics/PhysicsSystem.h"
 
 #include "Engine/Serialization/SceneData.h"
+#include "Engine/Animation/AnimationClip.h"
+
+#include <utility>
 
 #include <Windows.h>
 
@@ -178,4 +181,151 @@ Entity* GameEntityFactory::Create(
     );
 
     return nullptr;
+}
+
+bool GameEntityFactory::Serialize(
+    const Entity& entity,
+    SerializedEntity& outData) const
+{
+    outData = {};
+
+    const bool isPlayer =
+        dynamic_cast<
+        const Player*
+        >(&entity) != nullptr;
+
+    const bool isEnemy =
+        dynamic_cast<
+        const Enemy*
+        >(&entity) != nullptr;
+
+    if (isPlayer)
+    {
+        outData.type =
+            "Player";
+    }
+    else if (isEnemy)
+    {
+        outData.type =
+            "Enemy";
+    }
+    else
+    {
+        OutputDebugStringA(
+            "[GameEntityFactory] "
+            "Unsupported runtime entity type "
+            "for serialization.\n"
+        );
+
+        return false;
+    }
+
+    outData.active =
+        entity.active;
+
+    outData.transform =
+        entity.transform;
+
+    SerializedSprite
+        serializedSprite;
+
+    serializedSprite.visible =
+        entity.sprite.visible;
+
+    serializedSprite.layer =
+        entity.sprite.layer;
+
+    serializedSprite.zIndex =
+        entity.sprite.zIndex;
+
+    serializedSprite.useYSort =
+        entity.sprite.useYSort;
+
+    serializedSprite.blendMode =
+        entity.sprite.blendMode;
+
+    Texture* texture =
+        entity.sprite.texture;
+
+    UVRect uv =
+        entity.sprite.uv;
+
+    //
+    // Enemy의 현재 Sprite UV는 Animator에 의해
+    // 계속 변경되는 transient runtime state이다.
+    //
+    // Scene asset에는 animation playback frame을
+    // 저장하지 않는다.
+    //
+    // 따라서 Enemy는 canonical initial pose인
+    // Idle / Down 첫 frame으로 저장한다.
+    //
+    if (isEnemy)
+    {
+        AnimationClip* idleDown =
+            m_enemyAnimations.GetClip(
+                CharacterAnimationState::Idle,
+                FacingDirection::Down
+            );
+
+        if (!idleDown ||
+            !idleDown->IsValid())
+        {
+            OutputDebugStringA(
+                "[GameEntityFactory] "
+                "Enemy idle animation is invalid.\n"
+            );
+
+            return false;
+        }
+
+        const AnimationFrame* frame =
+            idleDown->GetFrame(
+                0
+            );
+
+        if (!frame)
+        {
+            return false;
+        }
+
+        texture =
+            idleDown->GetTexture();
+
+        uv =
+            frame->uv;
+    }
+
+    if (!texture)
+    {
+        OutputDebugStringA(
+            "[GameEntityFactory] "
+            "Runtime entity has no sprite texture.\n"
+        );
+
+        return false;
+    }
+
+    if (!m_resources.TryGetTexturePath(
+        texture,
+        serializedSprite.texturePath))
+    {
+        OutputDebugStringA(
+            "[GameEntityFactory] "
+            "Sprite texture is not owned "
+            "by ResourceManager.\n"
+        );
+
+        return false;
+    }
+
+    serializedSprite.uv =
+        uv;
+
+    outData.sprite =
+        std::move(
+            serializedSprite
+        );
+
+    return true;
 }
