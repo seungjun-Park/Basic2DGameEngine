@@ -16,6 +16,10 @@
 #include "Engine/Animation/AnimationClip.h"
 #include "Engine/Animation/Animator.h"
 
+#include "GameEntityFactory.h"
+#include "Engine/Serialization/SceneData.h"
+#include "Engine/Serialization/SceneSerializer.h"
+
 #include <optional>
 
 
@@ -34,11 +38,6 @@ GameScene::~GameScene() = default;
 
 void GameScene::Initialize()
 {
-    Texture* playerTexture =
-        m_resources.LoadTexture(
-            L"Engine/Assets/Textures/Aemeath.png"
-        );
-
     m_tileMap =
         m_resources.LoadTileMap(
             L"Engine/Assets/Maps/testmap.json"
@@ -89,93 +88,17 @@ void GameScene::Initialize()
 
         return;
     }
-
-    if (!playerTexture)
-    {
-        return;
-    }
-
-    m_player =
-        CreateEntity<Player>(m_physics);
-
-    m_player->sprite.texture =
-        playerTexture;
-
-    m_player->transform.position =
-    {
-        static_cast<float>(
-            m_tileMap->GetTileWidth() * 2
-        ),
-
-        static_cast<float>(
-            m_tileMap->GetTileHeight() * 2
-        )
-    };
-
-    m_player->transform.scale =
-    {
-        96.0f,
-        96.0f
-    };
-
-    m_player->sprite.layer =
-        RenderLayer::World;
-    
-    m_player->sprite.zIndex =
-        10.0f;
-
-    m_player->sprite.useYSort = true;
-
-    m_player->Initialize();
     
     if (!LoadEnemyAnimations())
     {
         return;
     }
 
-    for (int i = 0; i < 5; ++i)
+    if (!LoadSerializedEntities(
+        L"Engine/Assets/Scenes/"
+        L"test_scene.json"))
     {
-        Enemy* enemy =
-            CreateEntity<Enemy>(m_physics);
-
-        enemy->transform.position =
-        {
-            300.0f + i * 150.0f,
-            200.0f
-        };
-
-        enemy->transform.scale =
-        {
-            80.0f,
-            80.0f
-        };
-
-        enemy->SetTarget(
-            m_player
-        );
-
-        enemy->sprite.layer =
-            RenderLayer::World;
-
-        enemy->sprite.zIndex =
-            5.0f;
-
-        enemy->sprite.useYSort = true;
-
-        enemy->Initialize();
-
-        if (!enemy->SetAnimations(
-            m_enemyAnimations))
-        {
-            OutputDebugStringA(
-                "[GameScene] Failed to initialize "
-                "enemy animations.\n"
-            );
-
-            enemy->Destroy();
-
-            return;
-        }
+        return;
     }
 }
 
@@ -586,6 +509,147 @@ bool GameScene::LoadEnemyAnimations()
         );
 
         return false;
+    }
+
+    return true;
+}
+
+bool GameScene::LoadSerializedEntities(
+    const std::wstring& path)
+{
+    auto sceneData =
+        SceneSerializer::Load(
+            path
+        );
+
+    if (!sceneData)
+    {
+        OutputDebugStringA(
+            "[GameScene] Failed to load "
+            "serialized scene.\n"
+        );
+
+        return false;
+    }
+
+    const SerializedEntity*
+        playerData =
+        nullptr;
+
+    std::size_t playerCount = 0;
+
+    //
+    // Preflight.
+    //
+    // 실제 Entity를 만들기 전에 type contract와
+    // Player cardinality를 먼저 검사한다.
+    //
+    GameEntityFactory factory(
+        *this,
+        m_resources,
+        m_physics,
+        m_enemyAnimations
+    );
+
+    for (const SerializedEntity& entity :
+        sceneData->entities)
+    {
+        if (!factory.IsSupportedType(
+            entity.type))
+        {
+            OutputDebugStringA(
+                "[GameScene] Scene contains "
+                "an unsupported entity type.\n"
+            );
+
+            return false;
+        }
+
+        if (entity.type == "Player")
+        {
+            ++playerCount;
+
+            playerData =
+                &entity;
+        }
+    }
+
+    //
+    // 현재 GameScene contract:
+    //
+    // 정확히 한 명의 Player가 존재해야 한다.
+    //
+    if (playerCount != 1 ||
+        !playerData)
+    {
+        OutputDebugStringA(
+            "[GameScene] Scene must contain "
+            "exactly one Player.\n"
+        );
+
+        return false;
+    }
+
+    //
+    // Pass 1:
+    // JSON 배열 순서와 관계없이 Player부터 생성.
+    //
+    Entity* playerEntity =
+        factory.Create(
+            *playerData,
+            nullptr
+        );
+
+    m_player =
+        dynamic_cast<Player*>(
+            playerEntity
+            );
+
+    if (!m_player)
+    {
+        m_entities.clear();
+
+        OutputDebugStringA(
+            "[GameScene] Failed to create Player.\n"
+        );
+
+        return false;
+    }
+
+    //
+    // Pass 2:
+    // 나머지 Entity 생성.
+    //
+    for (const SerializedEntity& entity :
+        sceneData->entities)
+    {
+        if (&entity == playerData)
+        {
+            continue;
+        }
+
+        Entity* created =
+            factory.Create(
+                entity,
+                m_player
+            );
+
+        if (!created)
+        {
+            //
+            // Initialize 단계에서만 호출되는 loader이므로
+            // partial scene을 허용하지 않는다.
+            //
+            m_entities.clear();
+            m_player = nullptr;
+
+            OutputDebugStringA(
+                "[GameScene] Failed to create "
+                "serialized entity.\n"
+            );
+
+            return false;
+        }
     }
 
     return true;

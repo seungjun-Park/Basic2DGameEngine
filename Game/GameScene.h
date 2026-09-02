@@ -4,6 +4,7 @@
 #include "CharacterAnimation.h"
 
 #include <memory>
+#include <string>
 
 class ResourceManager;
 class Player;
@@ -51,6 +52,10 @@ public:
 
 private:
     bool LoadEnemyAnimations();
+    
+    bool LoadSerializedEntities(
+        const std::wstring& path
+    );
 
 private:
     ResourceManager& m_resources;

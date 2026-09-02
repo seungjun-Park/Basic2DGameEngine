@@ -178,6 +178,7 @@
     <ClInclude Include="Engine\Tile\TileTypes.h" />
     <ClInclude Include="Game\CharacterAnimation.h" />
     <ClInclude Include="Game\Enemy.h" />
+    <ClInclude Include="Game\GameEntityFactory.h" />
     <ClInclude Include="Game\GameScene.h" />
     <ClInclude Include="Game\Player.h" />
   </ItemGroup>
@@ -211,6 +212,7 @@
     <ClCompile Include="Engine\Tile\TilesetLoader.cpp" />
     <ClCompile Include="Game\CharacterAnimation.cpp" />
     <ClCompile Include="Game\Enemy.cpp" />
+    <ClCompile Include="Game\GameEntityFactory.cpp" />
     <ClCompile Include="Game\GameScene.cpp" />
     <ClCompile Include="Game\Player.cpp" />
     <ClCompile Include="Game\Main.cpp" />
