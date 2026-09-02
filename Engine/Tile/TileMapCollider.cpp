@@ -1,6 +1,7 @@
 #include "TileMapCollider.h"
 
 #include "TileMap.h"
+#include "TileTypes.h"
 
 #include "Engine/Physics/PhysicsSystem.h"
 #include "Engine/Physics/PhysicsUnits.h"
@@ -38,13 +39,18 @@ bool TileMapCollider::Build(
         return false;
     }
 
-    m_physics =
-        &physics;
+    const b2WorldId worldId =
+        physics.GetWorldId();
+
+    if (!b2World_IsValid(worldId))
+    {
+        return false;
+    }
+
+    m_worldId = worldId;
 
     m_collisionRects =
-        BuildMergedRectangles(
-            tileMap
-        );
+        BuildMergedRectangles(tileMap);
 
     m_mergedTileArea = 0;
 
@@ -87,6 +93,13 @@ bool TileMapCollider::Build(
             m_mergedTileArea == 0
         );
 
+        assert(
+            m_shapeIds.empty()
+        );
+
+        assert(
+            !HasBody()
+        );
 #endif
 
         return true;
@@ -121,7 +134,7 @@ bool TileMapCollider::Build(
 
     m_bodyId =
         b2CreateBody(
-            physics.GetWorldId(),
+            m_worldId,
             &bodyDef
         );
 
@@ -288,6 +301,20 @@ bool TileMapCollider::Build(
         m_collisionRects.size()
     );
 
+    assert(
+        b2Body_IsValid(m_bodyId)
+    );
+
+    const int actualShapeCount =
+        b2Body_GetShapeCount(m_bodyId);
+
+    assert(
+        actualShapeCount ==
+        static_cast<int>(
+            m_shapeIds.size()
+            )
+    );
+
 #endif
 
     return true;
@@ -295,25 +322,19 @@ bool TileMapCollider::Build(
 
 void TileMapCollider::Destroy()
 {
-    if (B2_IS_NON_NULL(
-        m_bodyId))
+    if (B2_IS_NON_NULL(m_bodyId))
     {
         //
-        // Scene은 PhysicsSystem보다 먼저
-        // 파괴되는 것이 현재 Engine contract이지만
-        // 여기서도 방어한다.
+        // PhysicsSystem object lifetime에 의존하지 않는다.
         //
-
-        if (m_physics &&
-            m_physics->IsInitialized())
+        // 저장된 Box2D handle 자체의 validity만 확인한다.
+        //
+        if (b2World_IsValid(m_worldId) &&
+            b2Body_IsValid(m_bodyId))
         {
-            if (b2Body_IsValid(
-                m_bodyId))
-            {
-                b2DestroyBody(
-                    m_bodyId
-                );
-            }
+            b2DestroyBody(
+                m_bodyId
+            );
         }
 
         m_bodyId =
@@ -321,18 +342,15 @@ void TileMapCollider::Destroy()
     }
 
     m_shapeIds.clear();
-
     m_collisionRects.clear();
 
     m_mergedTileArea = 0;
-
     m_collisionLayerCount = 0;
-
     m_solidTileCount = 0;
 
-    m_physics = nullptr;
+    m_worldId =
+        b2_nullWorldId;
 }
-
 std::vector<
     TileMapCollider::CollisionRect
 >
@@ -430,17 +448,13 @@ TileMapCollider::BuildMergedRectangles(
                         y
                     );
 
-                if (tileId ==
-                    InvalidTileId)
+                if (!IsSolidCollisionTile(tileId))
                 {
                     continue;
                 }
 
                 solid[
-                    getIndex(
-                        x,
-                        y
-                    )
+                    getIndex(x, y)
                 ] = 1;
             }
         }

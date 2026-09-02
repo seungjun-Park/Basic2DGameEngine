@@ -351,12 +351,6 @@ void GameScene::CollectDebugStats(
             tileStats.totalGridCells
             );
 
-    stats.tileCollisionMergedArea =
-        static_cast<std::uint32_t>(
-            m_tileMapCollider->
-            GetMergedTileArea()
-            );
-
     if (m_tileMapCollider)
     {
         stats.tileCollisionTiles =
@@ -375,6 +369,11 @@ void GameScene::CollectDebugStats(
             static_cast<std::uint32_t>(
                 m_tileMapCollider->
                 GetCollisionLayerCount()
+                );
+        stats.tileCollisionMergedArea =
+            static_cast<std::uint32_t>(
+                m_tileMapCollider->
+                GetMergedTileArea()
                 );
     }
 }

@@ -34,6 +34,12 @@ public:
             const TileMapCollider&
             ) = delete;
 
+    //
+    // Static TileMap contract.
+    //
+    // PhysicsSystem::Step() / contact dispatch 중에는
+    // Build() 또는 Destroy()를 호출하지 않는다.
+    //
     bool Build(
         const TileMap& tileMap,
         PhysicsSystem& physics
@@ -79,9 +85,9 @@ public:
     bool HasBody() const
     {
         return
-            B2_IS_NON_NULL(
-                m_bodyId
-            );
+            B2_IS_NON_NULL(m_bodyId) &&
+            b2World_IsValid(m_worldId) &&
+            b2Body_IsValid(m_bodyId);
     }
 
 private:
@@ -91,8 +97,8 @@ private:
         );
 
 private:
-    PhysicsSystem* m_physics =
-        nullptr;
+    b2WorldId m_worldId =
+        b2_nullWorldId;
 
     b2BodyId m_bodyId =
         b2_nullBodyId;

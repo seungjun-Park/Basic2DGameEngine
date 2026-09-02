@@ -364,25 +364,53 @@ TileMapLoader::Load(
                 return nullptr;
             }
 
-            for (TileId tileId :
-            layer.tiles)
+            if (layer.type == TileLayerType::Render)
             {
-                if (tileId ==
-                    InvalidTileId)
+                //
+                // Render Layer contract:
+                //
+                // 0   = Empty
+                // 1~N = Tileset TileId
+                //
+                for (TileId tileId : layer.tiles)
                 {
-                    continue;
+                    if (tileId == InvalidTileId)
+                    {
+                        continue;
+                    }
+
+                    if (!tileset->IsValidTileId(tileId))
+                    {
+                        LogTileMapError(
+                            "Render layer contains an invalid TileId."
+                        );
+
+                        return nullptr;
+                    }
                 }
-
-                if (!tileset->
-                    IsValidTileId(
-                        tileId))
+            }
+            else
+            {
+                //
+                // Collision Layer contract:
+                //
+                // 0 = Empty
+                // 1 = Solid
+                //
+                // Collision value는 Tileset index가 아니다.
+                //
+                for (TileId tileId : layer.tiles)
                 {
-                    LogTileMapError(
-                        "Layer contains an "
-                        "invalid TileId."
-                    );
+                    if (tileId != EmptyCollisionTile &&
+                        !IsSolidCollisionTile(tileId))
+                    {
+                        LogTileMapError(
+                            "Collision layer contains an invalid value. "
+                            "Only 0 (Empty) and 1 (Solid) are allowed."
+                        );
 
-                    return nullptr;
+                        return nullptr;
+                    }
                 }
             }
 
