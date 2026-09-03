@@ -1,14 +1,23 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 
 #include <wrl/client.h>
 #include <xaudio2.h>
 
 
+class AudioClip;
+
+
 class AudioSystem final
 {
 public:
+
+    static constexpr std::size_t
+        MaxActiveSfxVoices = 64;
+
 
     AudioSystem() = default;
 
@@ -39,6 +48,24 @@ public:
     void Shutdown() noexcept;
 
 
+    //
+    // Main-thread maintenance.
+    //
+    // 완료된 one-shot SourceVoice를 회수한다.
+    //
+    void Update() noexcept;
+
+
+    //
+    // volume:
+    // engine policy상 0.0 ~ 1.0
+    //
+    bool PlayOneShot(
+        const AudioClip& clip,
+        float volume = 1.0f
+    );
+
+
     bool IsInitialized()
         const noexcept;
 
@@ -52,26 +79,51 @@ public:
         const noexcept;
 
 
+    std::size_t
+        GetActiveVoiceCount()
+        const noexcept;
+
+
 private:
 
-    //
-    // IXAudio2는 AddRef / Release를 지원하므로
-    // COM smart pointer로 소유한다.
-    //
+    struct ActiveVoice
+    {
+        IXAudio2SourceVoice*
+            voice = nullptr;
+    };
+
+
+    ActiveVoice*
+        FindFreeVoiceSlot()
+        noexcept;
+
+
+    void DestroySourceVoice(
+        ActiveVoice& activeVoice
+    ) noexcept;
+
+
+    void DestroyAllSourceVoices()
+        noexcept;
+
+
+private:
+
     Microsoft::WRL::ComPtr<
         IXAudio2
     >
         m_xaudio2;
 
 
-    //
-    // XAudio2 Voice interface에는
-    // Release()가 없다.
-    //
-    // 반드시 DestroyVoice()로 파괴한다.
-    //
     IXAudio2MasteringVoice*
         m_masterVoice = nullptr;
+
+
+    std::array<
+        ActiveVoice,
+        MaxActiveSfxVoices
+    >
+        m_activeVoices{};
 
 
     std::uint32_t

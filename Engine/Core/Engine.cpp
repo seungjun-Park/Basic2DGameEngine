@@ -260,6 +260,12 @@ void Engine::Update(
         CpuProfileZone::Update
     );
 
+    if (m_audioSystem)
+    {
+        m_audioSystem->
+            Update();
+    }
+
     if (WinInput::IsKeyPressed(
         VK_F1))
     {

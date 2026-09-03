@@ -1,8 +1,13 @@
 #include "AudioSystem.h"
 
+#include "AudioClip.h"
+
 #include <Windows.h>
 
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <limits>
 
 
 #pragma comment(lib, "xaudio2.lib")
@@ -170,6 +175,7 @@ noexcept
             StopEngine();
     }
 
+    DestroyAllSourceVoices();
 
     if (m_masterVoice)
     {
@@ -220,4 +226,315 @@ const noexcept
 {
     return
         m_outputSampleRate;
+}
+
+void AudioSystem::Update()
+noexcept
+{
+    if (!IsInitialized())
+    {
+        return;
+    }
+
+
+    for (ActiveVoice& activeVoice :
+        m_activeVoices)
+    {
+        if (!activeVoice.voice)
+        {
+            continue;
+        }
+
+
+        XAUDIO2_VOICE_STATE
+            state{};
+
+
+        activeVoice.voice->
+            GetState(
+                &state,
+                XAUDIO2_VOICE_NOSAMPLESPLAYED
+            );
+
+
+        //
+        // Queue가 비었다는 것은
+        // 제출한 one-shot buffer가 모두
+        // 소비되었다는 의미.
+        //
+        if (state.BuffersQueued != 0)
+        {
+            continue;
+        }
+
+
+        DestroySourceVoice(
+            activeVoice
+        );
+    }
+}
+
+AudioSystem::ActiveVoice*
+AudioSystem::FindFreeVoiceSlot()
+noexcept
+{
+    for (ActiveVoice& activeVoice :
+        m_activeVoices)
+    {
+        if (!activeVoice.voice)
+        {
+            return
+                &activeVoice;
+        }
+    }
+
+    return nullptr;
+}
+
+void AudioSystem::DestroySourceVoice(
+    ActiveVoice& activeVoice)
+    noexcept
+{
+    if (!activeVoice.voice)
+    {
+        return;
+    }
+
+
+    activeVoice.voice->
+        DestroyVoice();
+
+    activeVoice.voice =
+        nullptr;
+}
+
+void AudioSystem::
+DestroyAllSourceVoices()
+noexcept
+{
+    for (ActiveVoice& activeVoice :
+        m_activeVoices)
+    {
+        DestroySourceVoice(
+            activeVoice
+        );
+    }
+}
+
+bool AudioSystem::PlayOneShot(
+    const AudioClip& clip,
+    float volume)
+{
+    if (!IsInitialized())
+    {
+        OutputDebugStringA(
+            "[Audio] PlayOneShot called "
+            "before initialization.\n"
+        );
+
+        return false;
+    }
+
+
+    if (!clip.IsValid())
+    {
+        OutputDebugStringA(
+            "[Audio] PlayOneShot received "
+            "an invalid AudioClip.\n"
+        );
+
+        return false;
+    }
+
+
+    if (!std::isfinite(volume))
+    {
+        return false;
+    }
+
+
+    const std::size_t audioByteCount =
+        clip.GetAudioByteCount();
+
+
+    if (audioByteCount == 0 ||
+        audioByteCount >
+        static_cast<std::size_t>(
+            (std::numeric_limits<
+                UINT32
+            >::max)()
+            ))
+    {
+        OutputDebugStringA(
+            "[Audio] AudioClip buffer "
+            "size is invalid.\n"
+        );
+
+        return false;
+    }
+
+
+    //
+    // 이번 frame 전에 완료된 voice가 있다면
+    // 우선 회수한다.
+    //
+    Update();
+
+
+    ActiveVoice* activeVoice =
+        FindFreeVoiceSlot();
+
+
+    if (!activeVoice)
+    {
+        OutputDebugStringA(
+            "[Audio] Maximum active "
+            "SFX voice count reached.\n"
+        );
+
+        return false;
+    }
+
+
+    IXAudio2SourceVoice*
+        sourceVoice = nullptr;
+
+
+    HRESULT hr =
+        m_xaudio2->
+        CreateSourceVoice(
+            &sourceVoice,
+            &clip.GetFormat()
+        );
+
+
+    if (FAILED(hr) ||
+        !sourceVoice)
+    {
+        LogAudioError(
+            "CreateSourceVoice",
+            hr
+        );
+
+        return false;
+    }
+
+
+    const float clampedVolume =
+        std::clamp(
+            volume,
+            0.0f,
+            1.0f
+        );
+
+
+    hr =
+        sourceVoice->
+        SetVolume(
+            clampedVolume
+        );
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SetVolume",
+            hr
+        );
+
+        sourceVoice->
+            DestroyVoice();
+
+        return false;
+    }
+
+
+    XAUDIO2_BUFFER
+        buffer{};
+
+
+    buffer.Flags =
+        XAUDIO2_END_OF_STREAM;
+
+    buffer.AudioBytes =
+        static_cast<UINT32>(
+            audioByteCount
+            );
+
+    buffer.pAudioData =
+        reinterpret_cast<
+        const BYTE*
+        >(
+            clip.GetAudioData()
+            );
+
+
+    hr =
+        sourceVoice->
+        SubmitSourceBuffer(
+            &buffer
+        );
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SubmitSourceBuffer",
+            hr
+        );
+
+        sourceVoice->
+            DestroyVoice();
+
+        return false;
+    }
+
+
+    hr =
+        sourceVoice->
+        Start(
+            0
+        );
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SourceVoice::Start",
+            hr
+        );
+
+        sourceVoice->
+            DestroyVoice();
+
+        return false;
+    }
+
+
+    activeVoice->voice =
+        sourceVoice;
+
+
+    return true;
+}
+
+std::size_t
+AudioSystem::GetActiveVoiceCount()
+const noexcept
+{
+    std::size_t count =
+        0;
+
+
+    for (const ActiveVoice& activeVoice :
+        m_activeVoices)
+    {
+        if (activeVoice.voice)
+        {
+            ++count;
+        }
+    }
+
+
+    return count;
 }
