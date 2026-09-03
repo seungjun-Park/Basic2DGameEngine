@@ -13,6 +13,7 @@ class Camera;
 class DebugRenderer;
 class PhysicsSystem;
 class RenderQueue;
+class EventBus;
 
 
 class Engine
@@ -68,9 +69,15 @@ public:
     PhysicsSystem&
         GetPhysicsSystem();
 
+    EventBus&
+        GetEventBus();
+
 private:
     std::unique_ptr<Scene>
         m_scene;
+
+    std::unique_ptr<EventBus>
+        m_eventBus;
 
     std::unique_ptr<Camera>
         m_camera;

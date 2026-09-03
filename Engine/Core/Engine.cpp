@@ -13,6 +13,7 @@
 #include "Engine/Platform/Windows/WinInput.h"
 #include "Engine/Physics/PhysicsSystem.h"
 #include "Engine/Renderer/RenderQueue.h"
+#include "Engine/Event/EventBus.h"
 
 #include <algorithm>
 
@@ -55,11 +56,20 @@ Engine::~Engine()
 
     // Device / Context / SwapChain은 마지막.
     m_renderer.reset();
+
+    //
+    // 모든 event publisher / subscriber가
+    // 제거된 뒤 EventBus를 마지막으로 파괴.
+    //
+    m_eventBus.reset();
 }
 
 bool Engine::Initialize(
     WinWindow& window)
 {
+    m_eventBus =
+        std::make_unique<EventBus>();
+
     m_renderQueue =
         std::make_unique<RenderQueue>();
 
@@ -151,6 +161,13 @@ ResourceManager&
 Engine::GetResourceManager()
 {
     return *m_resourceManager;
+}
+
+EventBus&
+Engine::GetEventBus()
+{
+    return
+        *m_eventBus;
 }
 
 void Engine::FixedUpdate(

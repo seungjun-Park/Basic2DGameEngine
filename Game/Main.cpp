@@ -1,6 +1,9 @@
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Engine.h"
 #include "Engine/Resource/ResourceManager.h"
+#include "Engine/Event/EventBus.h"
+
+#include <cassert>
 
 #include "Game/GameScene.h"
 
