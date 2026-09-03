@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Debug/CpuProfiler.h"
 #include <cstdint>
 
 struct DebugStats
@@ -126,6 +127,62 @@ struct DebugStats
     // 나머지 RenderCpu 비용.
     //
     float renderOverheadCpuMs =
+        0.0f;
+
+    // --------------------------------------------------
+// CPU Profiler History / Diagnostics
+// --------------------------------------------------
+
+    std::uint32_t
+        profilerHistoryFrames = 0;
+
+    float
+        cpuWorkAverageMs = 0.0f;
+
+    float
+        cpuWorkMaxMs = 0.0f;
+
+    std::uint32_t
+        cpuWorkMaxFramesAgo =
+        InvalidCpuProfileFrameAge;
+
+
+    float
+        presentAverageMs = 0.0f;
+
+    float
+        presentMaxMs = 0.0f;
+
+
+    float
+        cpuSpikeThresholdMs = 0.0f;
+
+    bool
+        currentCpuSpike = false;
+
+    std::uint32_t
+        cpuSpikesInHistory = 0;
+
+    std::uint32_t
+        latestCpuSpikeFramesAgo =
+        InvalidCpuProfileFrameAge;
+
+
+    CpuProfileZone
+        peakFrameWorstCpuPhase =
+        CpuProfileZone::Count;
+
+    float
+        peakFrameWorstCpuPhaseMs =
+        0.0f;
+
+
+    CpuProfileZone
+        peakFrameWorstSubsystem =
+        CpuProfileZone::Count;
+
+    float
+        peakFrameWorstSubsystemMs =
         0.0f;
 
     int entityCount = 0;

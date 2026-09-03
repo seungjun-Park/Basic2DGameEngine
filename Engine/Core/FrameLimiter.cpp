@@ -134,7 +134,7 @@ void FrameLimiter::EndFrame(
     // spin 구간을 frame time의 최대 25%로 제한한다.
     //
     const double spinSeconds =
-        min(
+        std::min(
             MaxSpinSeconds,
             targetFrameTime * 0.25
         );

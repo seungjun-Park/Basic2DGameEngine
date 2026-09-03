@@ -224,7 +224,7 @@ void RenderQueue::Execute(
             batchSize;
 
         m_batchStats.maxBatchSize =
-            max(
+            std::max(
                 m_batchStats.maxBatchSize,
                 batchSize
             );

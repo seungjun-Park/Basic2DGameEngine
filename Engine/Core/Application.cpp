@@ -6,6 +6,7 @@
 #include "Engine/Platform/Windows/WinWindow.h"
 #include "Engine/Platform/Windows/WinInput.h"
 #include "Engine/Debug/DebugStats.h"
+#include "Engine/Debug/CpuProfiler.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -137,7 +138,7 @@ int Application::Run()
 
         // Spiral of Death ¹æÁö
         m_fixedAccumulator =
-            min(
+            std::min(
                 m_fixedAccumulator,
                 maxAccumulator
             );
@@ -293,7 +294,39 @@ void Application::UpdateWindowTitle()
                 );
     }
 
-    wchar_t title[1024]{};
+    wchar_t title[1536]{};
+
+    const int peakFrameAge =
+        stats.cpuWorkMaxFramesAgo ==
+        InvalidCpuProfileFrameAge
+        ?
+        -1
+        :
+        static_cast<int>(
+            stats.cpuWorkMaxFramesAgo
+            );
+
+    const int latestSpikeAge =
+        stats.latestCpuSpikeFramesAgo ==
+        InvalidCpuProfileFrameAge
+        ?
+        -1
+        :
+        static_cast<int>(
+            stats.latestCpuSpikeFramesAgo
+            );
+
+    const wchar_t*
+        peakPhaseLabel =
+        GetCpuProfileZoneLabel(
+            stats.peakFrameWorstCpuPhase
+        );
+
+    const wchar_t*
+        peakSubsystemLabel =
+        GetCpuProfileZoneLabel(
+            stats.peakFrameWorstSubsystem
+        );
 
     swprintf_s(
         title,
@@ -309,6 +342,10 @@ void Application::UpdateWindowTitle()
         L"P %.2f | "
         L"Phys S%.2f P%.2f Y%.2f C%.2f O%.2f | "
         L"Ren S%.2f O%.2f E%.2f D%.2f X%.2f | "
+        L"Hist %u | "
+        L"Avg/Max %.2f/%.2f ms (%df) | "
+        L"Spk %u last %df | "
+        L"Peak %ls %.2f / %ls %.2f | "
         L"Fixed %.0f Hz (%u) | "
         L"Ent %d | "
         L"Cmd %d | "
@@ -350,6 +387,21 @@ void Application::UpdateWindowTitle()
         stats.renderExecuteCpuMs,
         stats.debugRenderCpuMs,
         stats.renderOverheadCpuMs,
+
+        stats.profilerHistoryFrames,
+
+        stats.cpuWorkAverageMs,
+        stats.cpuWorkMaxMs,
+        peakFrameAge,
+
+        stats.cpuSpikesInHistory,
+        latestSpikeAge,
+
+        peakPhaseLabel,
+        stats.peakFrameWorstCpuPhaseMs,
+
+        peakSubsystemLabel,
+        stats.peakFrameWorstSubsystemMs,
 
         stats.fixedUpdateHz,
         stats.fixedSteps,

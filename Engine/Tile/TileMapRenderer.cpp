@@ -605,25 +605,25 @@ TileMapRenderer::CalculateVisibleTileBounds(
     }
 
     minTileX =
-        max(
+        std::max(
             minTileX,
             0
         );
 
     minTileY =
-        max(
+        std::max(
             minTileY,
             0
         );
 
     maxTileX =
-        min(
+        std::min(
             maxTileX,
             m_mapWidth - 1
         );
 
     maxTileY =
-        min(
+        std::min(
             maxTileY,
             m_mapHeight - 1
         );

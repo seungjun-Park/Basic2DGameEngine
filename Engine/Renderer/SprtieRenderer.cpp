@@ -864,7 +864,7 @@ void SpriteRenderer::DrawBatch(
             commandOffset;
 
         const std::size_t batchCount =
-            min(
+            std::min(
                 MaxBatchSprites,
                 remainingCount
             );

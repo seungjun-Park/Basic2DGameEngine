@@ -647,7 +647,7 @@ void Engine::EndProfileFrame()
         m_debugStats.contactDispatchCpuMs;
 
     m_debugStats.fixedOverheadCpuMs =
-        max(
+        std::max(
             0.0f,
             m_debugStats.fixedUpdateCpuMs -
             fixedChildrenMs
@@ -660,9 +660,88 @@ void Engine::EndProfileFrame()
         m_debugStats.debugRenderCpuMs;
 
     m_debugStats.renderOverheadCpuMs =
-        max(
+        std::max(
             0.0f,
             m_debugStats.renderCpuMs -
             renderChildrenMs
         );
+
+    const CpuProfilerDiagnostics&
+        diagnostics =
+        m_cpuProfiler.
+        GetDiagnostics();
+
+
+    m_debugStats.profilerHistoryFrames =
+        diagnostics.historyCount;
+
+    m_debugStats.cpuWorkAverageMs =
+        static_cast<float>(
+            diagnostics.
+            averageEngineCpuWorkMs
+            );
+
+    m_debugStats.cpuWorkMaxMs =
+        static_cast<float>(
+            diagnostics.
+            maxEngineCpuWorkMs
+            );
+
+    m_debugStats.cpuWorkMaxFramesAgo =
+        diagnostics.
+        maxEngineCpuWorkFramesAgo;
+
+
+    m_debugStats.presentAverageMs =
+        static_cast<float>(
+            diagnostics.
+            averagePresentMs
+            );
+
+    m_debugStats.presentMaxMs =
+        static_cast<float>(
+            diagnostics.
+            maxPresentMs
+            );
+
+
+    m_debugStats.cpuSpikeThresholdMs =
+        static_cast<float>(
+            diagnostics.
+            spikeThresholdMs
+            );
+
+    m_debugStats.currentCpuSpike =
+        diagnostics.
+        currentCpuSpike;
+
+    m_debugStats.cpuSpikesInHistory =
+        diagnostics.
+        cpuSpikesInHistory;
+
+    m_debugStats.latestCpuSpikeFramesAgo =
+        diagnostics.
+        latestSpikeFramesAgo;
+
+
+    m_debugStats.peakFrameWorstCpuPhase =
+        diagnostics.
+        peakFrameWorstCpuPhase;
+
+    m_debugStats.peakFrameWorstCpuPhaseMs =
+        static_cast<float>(
+            diagnostics.
+            peakFrameWorstCpuPhaseMs
+            );
+
+
+    m_debugStats.peakFrameWorstSubsystem =
+        diagnostics.
+        peakFrameWorstSubsystem;
+
+    m_debugStats.peakFrameWorstSubsystemMs =
+        static_cast<float>(
+            diagnostics.
+            peakFrameWorstSubsystemMs
+            );
 }

@@ -50,7 +50,7 @@ void Time::Initialize(
         counter.QuadPart;
 
     fixedUpdateHz =
-        max(
+        std::max(
             fixedUpdateHz,
             1.0f
         );
@@ -60,7 +60,7 @@ void Time::Initialize(
         fixedUpdateHz;
 
     s_maxDeltaTime =
-        max(
+        std::max(
             maxDeltaTime,
             0.001f
         );
@@ -107,7 +107,7 @@ void Time::Tick()
     // Breakpoint / Alt+Tab 등에 의해
     // 지나치게 큰 DeltaTime이 들어가는 것 방지
     s_unscaledDeltaTime =
-        min(
+        std::min(
             s_unscaledDeltaTime,
             s_maxDeltaTime
         );
@@ -178,7 +178,7 @@ void Time::SetTimeScale(
     float scale)
 {
     s_timeScale =
-        max(
+        std::max(
             scale,
             0.0f
         );
