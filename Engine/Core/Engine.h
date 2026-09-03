@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "Engine/Debug/DebugStats.h"
+#include "Engine/Debug/CpuProfiler.h"
 #include "EngineConfig.h"
 
 class WinWindow;
@@ -62,6 +63,10 @@ public:
         std::unique_ptr<Scene> scene
     );
 
+    void BeginProfileFrame();
+
+    void EndProfileFrame();
+
     ResourceManager& GetResourceManager();
 
     Camera& GetCamera();
@@ -103,6 +108,8 @@ private:
     EngineConfig m_config;
 
     DebugStats m_debugStats;
+    CpuProfiler
+        m_cpuProfiler;
     bool m_showDebug = true;
 
     float m_interpolationAlpha = 0.0f;

@@ -120,6 +120,9 @@ int Application::Run()
 
         WinInput::Update();
 
+        m_engine->
+            BeginProfileFrame();
+
         const float fixedDelta =
             Time::FixedDeltaTime();
 
@@ -182,6 +185,9 @@ int Application::Run()
         m_engine->Render(
             m_config.vsync
         );
+
+        m_engine->
+            EndProfileFrame();
 
         UpdateRuntimeStats(
             fixedSteps
@@ -287,14 +293,20 @@ void Application::UpdateWindowTitle()
                 );
     }
 
-    wchar_t title[512]{};
+    wchar_t title[768]{};
 
     swprintf_s(
         title,
 
-        L"Dobi2D | "
+        L"Demo | "
         L"FPS %.1f | "
         L"Frame %.2f ms | "
+        L"CPU %.2f ms | "
+        L"F %.2f/%.2f ms (%u) | "
+        L"U %.2f | "
+        L"L %.2f | "
+        L"R %.2f | "
+        L"P %.2f | "
         L"Fixed %.0f Hz (%u) | "
         L"Ent %d | "
         L"Cmd %d | "
@@ -313,6 +325,17 @@ void Application::UpdateWindowTitle()
 
         stats.fps,
         stats.frameTimeMs,
+
+        stats.engineCpuWorkMs,
+
+        stats.fixedUpdateCpuMs,
+        stats.fixedStepAverageCpuMs,
+        stats.profiledFixedSteps,
+
+        stats.updateCpuMs,
+        stats.lateUpdateCpuMs,
+        stats.renderCpuMs,
+        stats.presentMs,
 
         stats.fixedUpdateHz,
         stats.fixedSteps,

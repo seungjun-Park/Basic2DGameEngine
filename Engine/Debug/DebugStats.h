@@ -8,6 +8,63 @@ struct DebugStats
 
     float frameTimeMs = 0.0f;
 
+    // --------------------------------------------------
+// CPU Profiling
+// --------------------------------------------------
+
+//
+// FixedUpdate 전체 누적.
+//
+// 한 render frame 안에서 fixed step이
+// 여러 번 실행될 수 있으므로 total 값.
+//
+    float fixedUpdateCpuMs =
+        0.0f;
+
+    //
+    // FixedUpdate 한 step 평균.
+    //
+    float fixedStepAverageCpuMs =
+        0.0f;
+
+    //
+    // profiler가 실제 측정한 FixedUpdate 횟수.
+    //
+    std::uint32_t profiledFixedSteps =
+        0;
+
+    float updateCpuMs =
+        0.0f;
+
+    float lateUpdateCpuMs =
+        0.0f;
+
+    //
+    // GPU execution 시간이 아니다.
+    //
+    // CPU가 render commands를 만들고
+    // DX11 commands를 submit하는 데 소비한 시간.
+    //
+    float renderCpuMs =
+        0.0f;
+
+    //
+    // DX11 EndFrame / Present 시간.
+    //
+    // VSync ON에서는 refresh wait가
+    // 크게 포함될 수 있다.
+    //
+    float presentMs =
+        0.0f;
+
+    //
+    // Fixed + Update + Late + Render.
+    //
+    // Present wait은 제외.
+    //
+    float engineCpuWorkMs =
+        0.0f;
+
     int entityCount = 0;
 
     int drawCalls = 0;

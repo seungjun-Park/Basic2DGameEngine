@@ -173,6 +173,11 @@ Engine::GetEventBus()
 void Engine::FixedUpdate(
     float fixedDeltaTime)
 {
+    ScopedCpuProfile profileScope(
+        m_cpuProfiler,
+        CpuProfileZone::FixedUpdate
+    );
+
     if (!m_scene)
     {
         return;
@@ -207,6 +212,11 @@ void Engine::FixedUpdate(
 void Engine::Update(
     float deltaTime)
 {
+    ScopedCpuProfile profileScope(
+        m_cpuProfiler,
+        CpuProfileZone::Update
+    );
+
     if (WinInput::IsKeyPressed(
         VK_F1))
     {
@@ -227,6 +237,11 @@ void Engine::Update(
 void Engine::LateUpdate(
     float deltaTime)
 {
+    ScopedCpuProfile profileScope(
+        m_cpuProfiler,
+        CpuProfileZone::Update
+    );
+
     if (!m_scene)
     {
         return;
@@ -240,124 +255,138 @@ void Engine::LateUpdate(
 void Engine::Render(
     bool vsync)
 {
-    m_renderer->BeginFrame();
-
-    if (m_scene)
     {
-        m_spriteRenderer->SetCamera(
-            *m_camera
+        ScopedCpuProfile profileScope(
+            m_cpuProfiler,
+            CpuProfileZone::RenderCpu
         );
 
-        m_renderQueue->Clear();
+        m_renderer->BeginFrame();
 
-        m_scene->SubmitRender(
-            *m_renderQueue
-        );
+        if (m_scene)
+        {
+            m_spriteRenderer->SetCamera(
+                *m_camera
+            );
 
-        m_renderQueue->Sort();
+            m_renderQueue->Clear();
 
-        m_spriteRenderer->Begin();
+            m_scene->SubmitRender(
+                *m_renderQueue
+            );
 
-        m_renderQueue->Execute(
-            *m_spriteRenderer
-        );
+            m_renderQueue->Sort();
+
+            m_spriteRenderer->Begin();
+
+            m_renderQueue->Execute(
+                *m_spriteRenderer
+            );
 
 #ifdef _DEBUG
 
-        if (m_showDebug)
-        {
-            m_scene->DebugRender(
-                *m_spriteRenderer,
-                *m_debugRenderer
-            );
-        }
+            if (m_showDebug)
+            {
+                m_scene->DebugRender(
+                    *m_spriteRenderer,
+                    *m_debugRenderer
+                );
+            }
 
 #endif
 
-        m_spriteRenderer->End();
+            m_spriteRenderer->End();
 
-        m_debugStats.entityCount =
-            static_cast<int>(
-                m_scene->GetEntityCount()
-                );
+            m_debugStats.entityCount =
+                static_cast<int>(
+                    m_scene->GetEntityCount()
+                    );
 
-        m_debugStats.renderCommands =
-            static_cast<int>(
+            m_debugStats.renderCommands =
+                static_cast<int>(
+                    m_renderQueue->
+                    GetCommandCount()
+                    );
+
+            m_debugStats.drawCalls =
+                m_spriteRenderer->
+                GetDrawCallCount();
+
+            const RenderBatchStats&
+                batchStats =
                 m_renderQueue->
-                GetCommandCount()
-                );
+                GetBatchStats();
 
-        m_debugStats.drawCalls =
-            m_spriteRenderer->
-            GetDrawCallCount();
+            m_debugStats.renderBatches =
+                static_cast<std::uint32_t>(
+                    batchStats.batchCount
+                    );
 
-        const RenderBatchStats&
-            batchStats =
-            m_renderQueue->
-            GetBatchStats();
+            m_debugStats.batchedRenderCommands =
+                static_cast<std::uint32_t>(
+                    batchStats.
+                    batchedCommandCount
+                    );
 
-        m_debugStats.renderBatches =
-            static_cast<std::uint32_t>(
-                batchStats.batchCount
-                );
+            m_debugStats.maxBatchSize =
+                static_cast<std::uint32_t>(
+                    batchStats.maxBatchSize
+                    );
 
-        m_debugStats.batchedRenderCommands =
-            static_cast<std::uint32_t>(
-                batchStats.
-                batchedCommandCount
-                );
+            m_debugStats.singleCommandBatches =
+                static_cast<std::uint32_t>(
+                    batchStats.
+                    singleCommandBatchCount
+                    );
 
-        m_debugStats.maxBatchSize =
-            static_cast<std::uint32_t>(
-                batchStats.maxBatchSize
-                );
+            m_debugStats.batchBoundaries =
+                static_cast<std::uint32_t>(
+                    batchStats.
+                    batchBoundaryCount
+                    );
 
-        m_debugStats.singleCommandBatches =
-            static_cast<std::uint32_t>(
-                batchStats.
-                singleCommandBatchCount
-                );
+            m_debugStats.textureBatchBoundaries =
+                static_cast<std::uint32_t>(
+                    batchStats.
+                    textureBoundaryCount
+                    );
 
-        m_debugStats.batchBoundaries =
-            static_cast<std::uint32_t>(
-                batchStats.
-                batchBoundaryCount
-                );
+            m_debugStats.blendBatchBoundaries =
+                static_cast<std::uint32_t>(
+                    batchStats.
+                    blendBoundaryCount
+                    );
 
-        m_debugStats.textureBatchBoundaries =
-            static_cast<std::uint32_t>(
-                batchStats.
-                textureBoundaryCount
-                );
+            m_debugStats.layerBatchBoundaries =
+                static_cast<std::uint32_t>(
+                    batchStats.
+                    layerBoundaryCount
+                    );
 
-        m_debugStats.blendBatchBoundaries =
-            static_cast<std::uint32_t>(
-                batchStats.
-                blendBoundaryCount
-                );
+            m_debugStats.invalidRenderCommands =
+                static_cast<std::uint32_t>(
+                    batchStats.
+                    invalidCommandCount
+                    );
 
-        m_debugStats.layerBatchBoundaries =
-            static_cast<std::uint32_t>(
-                batchStats.
-                layerBoundaryCount
-                );
+            m_debugStats.ResetTileStats();
 
-        m_debugStats.invalidRenderCommands =
-            static_cast<std::uint32_t>(
-                batchStats.
-                invalidCommandCount
-                );
-
-        m_debugStats.ResetTileStats();
-
-        m_scene->CollectDebugStats(
-            m_debugStats
-        );
+            m_scene->CollectDebugStats(
+                m_debugStats
+            );
+        }
     }
 
-    m_renderer->EndFrame(
-        vsync
-    );
+    {
+        ScopedCpuProfile profileScope(
+            m_cpuProfiler,
+            CpuProfileZone::Present
+        );
+
+        m_renderer->EndFrame(
+            vsync
+        );
+    }
 }
 
 void Engine::Resize(
@@ -416,4 +445,81 @@ PhysicsSystem&
 Engine::GetPhysicsSystem()
 {
     return *m_physicsSystem;
+}
+
+void Engine::BeginProfileFrame()
+{
+    m_cpuProfiler.BeginFrame();
+}
+
+
+void Engine::EndProfileFrame()
+{
+    m_cpuProfiler.EndFrame();
+
+    const CpuProfileSnapshot&
+        profile =
+        m_cpuProfiler.
+        GetLatestSnapshot();
+
+    m_debugStats.fixedUpdateCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                FixedUpdate
+            )
+            );
+
+    m_debugStats.
+        fixedStepAverageCpuMs =
+        static_cast<float>(
+            profile.
+            GetAverageSampleMs(
+                CpuProfileZone::
+                FixedUpdate
+            )
+            );
+
+    m_debugStats.profiledFixedSteps =
+        profile.GetSampleCount(
+            CpuProfileZone::
+            FixedUpdate
+        );
+
+    m_debugStats.updateCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::Update
+            )
+            );
+
+    m_debugStats.lateUpdateCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                LateUpdate
+            )
+            );
+
+    m_debugStats.renderCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                RenderCpu
+            )
+            );
+
+    m_debugStats.presentMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                Present
+            )
+            );
+
+    m_debugStats.engineCpuWorkMs =
+        static_cast<float>(
+            profile.
+            GetEngineCpuWorkMs()
+            );
 }
