@@ -2,8 +2,10 @@
 
 #include "CharacterAnimation.h"
 #include "Engine/Scene/Entity.h"
+#include "Engine/Scene/EntityHandle.h"
 
 class PhysicsSystem;
+class Scene;
 class Player;
 
 class Enemy :
@@ -11,13 +13,14 @@ class Enemy :
 {
 public:
     explicit Enemy(
+        Scene& scene,
         PhysicsSystem& physics
     );
 
     void Initialize() override;
 
-    void SetTarget(
-        Player* player
+    bool SetTarget(
+        EntityHandle target
     );
 
     void Update(
@@ -35,11 +38,17 @@ public:
 private:
     void UpdateAnimation();
 
+    Player* ResolveTarget();
+
 private:
+    Scene&
+        m_scene;
+
     PhysicsSystem&
         m_physics;
 
-    Player* m_target = nullptr;
+    EntityHandle
+        m_target{};
 
     DirectX::XMFLOAT2
         m_moveDirection

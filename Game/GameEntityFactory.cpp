@@ -103,7 +103,7 @@ bool GameEntityFactory::ApplySerializedState(
 
 Entity* GameEntityFactory::Create(
     const SerializedEntity& data,
-    Player* playerTarget)
+    EntityHandle playerTarget)
 {
     if (data.type == "Player")
     {
@@ -131,11 +131,11 @@ Entity* GameEntityFactory::Create(
 
     if (data.type == "Enemy")
     {
-        if (!playerTarget)
+        if (!playerTarget.IsValid())
         {
             OutputDebugStringA(
                 "[GameEntityFactory] "
-                "Enemy requires a Player target.\n"
+                "Enemy requires a valid Player target.\n"
             );
 
             return nullptr;
@@ -143,6 +143,7 @@ Entity* GameEntityFactory::Create(
 
         Enemy* enemy =
             m_scene.CreateEntity<Enemy>(
+                m_scene,
                 m_physics
             );
 
@@ -155,9 +156,18 @@ Entity* GameEntityFactory::Create(
             return nullptr;
         }
 
-        enemy->SetTarget(
-            playerTarget
-        );
+        if (!enemy->SetTarget(
+            playerTarget))
+        {
+            enemy->Destroy();
+
+            OutputDebugStringA(
+                "[GameEntityFactory] "
+                "Enemy Player target is invalid.\n"
+            );
+
+            return nullptr;
+        }
 
         //
         // 开矫 Transform 利侩 饶 Physics 积己.

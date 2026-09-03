@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Engine/Scene/EntityHandle.h"
+
 #include <string>
 
 class Scene;
@@ -27,7 +29,7 @@ public:
 
     Entity* Create(
         const SerializedEntity& data,
-        Player* playerTarget
+        EntityHandle playerTarget
     );
 
     bool Serialize(

@@ -8,12 +8,15 @@
 
 #include "Engine/Animation/AnimationClip.h"
 #include "Engine/Animation/Animator.h"
+#include "Engine/Scene/Scene.h"
 
 #include <cmath>
 
 Enemy::Enemy(
+    Scene& scene,
     PhysicsSystem& physics)
     :
+    m_scene(scene),
     m_physics(physics)
 {
 }
@@ -63,10 +66,39 @@ void Enemy::Initialize()
     }
 }
 
-void Enemy::SetTarget(
-    Player* player)
+bool Enemy::SetTarget(
+    EntityHandle target)
 {
-    m_target = player;
+    if (!target.IsValid())
+    {
+        m_target =
+            EntityHandle{};
+
+        return false;
+    }
+
+    Entity* entity =
+        m_scene.ResolveEntity(
+            target
+        );
+
+    Player* player =
+        dynamic_cast<Player*>(
+            entity
+            );
+
+    if (!player)
+    {
+        m_target =
+            EntityHandle{};
+
+        return false;
+    }
+
+    m_target =
+        target;
+
+    return true;
 }
 
 void Enemy::Update(
@@ -78,7 +110,10 @@ void Enemy::Update(
         0.0f
     };
 
-    if (!m_target)
+    Player* target =
+        ResolveTarget();
+
+    if (!target)
     {
         UpdateAnimation();
 
@@ -86,12 +121,12 @@ void Enemy::Update(
     }
 
     float dx =
-        m_target->
+        target->
         transform.position.x -
         transform.position.x;
 
     float dy =
-        m_target->
+        target->
         transform.position.y -
         transform.position.y;
 
@@ -276,4 +311,37 @@ void Enemy::UpdateAnimation()
     animator->Play(
         *clip
     );
+}
+
+Player* Enemy::ResolveTarget()
+{
+    if (!m_target.IsValid())
+    {
+        return nullptr;
+    }
+
+    Entity* entity =
+        m_scene.ResolveEntity(
+            m_target
+        );
+
+    Player* player =
+        dynamic_cast<Player*>(
+            entity
+            );
+
+    if (!player)
+    {
+        //
+        // Target Entity가 Destroy() 되었거나
+        // 더 이상 유효하지 않으면 stale handle도
+        // Enemy에서 버린다.
+        //
+        m_target =
+            EntityHandle{};
+
+        return nullptr;
+    }
+
+    return player;
 }

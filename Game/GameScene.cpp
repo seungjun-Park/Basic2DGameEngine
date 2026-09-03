@@ -23,6 +23,7 @@
 
 #include <optional>
 #include <utility>
+#include <cassert>
 
 
 GameScene::GameScene(
@@ -605,7 +606,7 @@ bool GameScene::LoadSerializedEntities(
     Entity* playerEntity =
         factory.Create(
             *playerData,
-            nullptr
+            EntityHandle{}
         );
 
     m_player =
@@ -619,6 +620,24 @@ bool GameScene::LoadSerializedEntities(
 
         OutputDebugStringA(
             "[GameScene] Failed to create Player.\n"
+        );
+
+        return false;
+    }
+
+    const EntityHandle
+        playerHandle =
+        m_player->GetHandle();
+
+    if (!playerHandle.IsValid())
+    {
+        ClearEntities();
+
+        m_player = nullptr;
+
+        OutputDebugStringA(
+            "[GameScene] Player has "
+            "an invalid EntityHandle.\n"
         );
 
         return false;
@@ -639,7 +658,7 @@ bool GameScene::LoadSerializedEntities(
         Entity* created =
             factory.Create(
                 entity,
-                m_player
+                playerHandle
             );
 
         if (!created)
