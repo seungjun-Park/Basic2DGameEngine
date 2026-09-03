@@ -87,6 +87,21 @@ public:
         return m_stats;
     }
 
+    bool SetRenderLayerVisible(
+        std::size_t sourceLayerIndex,
+        bool visible
+    );
+
+    [[nodiscard]]
+    bool IsRenderLayerVisible(
+        std::size_t sourceLayerIndex
+    ) const;
+
+    [[nodiscard]]
+    bool IsRenderLayerCached(
+        std::size_t sourceLayerIndex
+    ) const;
+
 private:
     struct TileRenderItem
     {
@@ -98,6 +113,12 @@ private:
 
     struct TileRenderLayerCache
     {
+        std::size_t sourceLayerIndex = 0;
+
+        bool visible = true;
+
+        std::size_t renderItemCount = 0;
+
         std::vector<TileRenderItem>
             cells;
     };
@@ -149,6 +170,19 @@ private:
         CalculateVisibleTileBounds(
             const Camera& camera
         ) const;
+
+    TileRenderLayerCache*
+        FindRenderLayer(
+            std::size_t sourceLayerIndex
+        );
+
+    const TileRenderLayerCache*
+        FindRenderLayer(
+            std::size_t sourceLayerIndex
+        ) const;
+
+    std::size_t
+        GetVisibleRenderLayerCount() const;
 
 private:
     int m_mapWidth = 0;

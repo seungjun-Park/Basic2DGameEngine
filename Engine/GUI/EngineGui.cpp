@@ -1,6 +1,9 @@
 #include "EngineGui.h"
 
 #include "Engine/Audio/AudioSystem.h"
+#include "Engine/Tile/TileMap.h"
+#include "Engine/Tile/TileMapRenderer.h"
+#include "Engine/Tile/TileMapCollider.h"
 
 #include <imgui.h>
 
@@ -101,6 +104,157 @@ namespace EngineGui
             "Persistent Voices: %zu / %zu",
             audioSystem.GetPersistentVoiceCount(),
             AudioSystem::MaxPersistentVoices);
+
+        ImGui::End();
+    }
+
+    void EngineGui::DrawTileMapSettings(
+        const TileMap& tileMap,
+        TileMapRenderer& renderer,
+        const TileMapCollider* collider)
+    {
+        ImGui::Begin("TileMap Settings");
+
+        ImGui::Text(
+            "Map Size: %d x %d",
+            tileMap.GetWidth(),
+            tileMap.GetHeight());
+
+        ImGui::Text(
+            "Tile Size: %d x %d",
+            tileMap.GetTileWidth(),
+            tileMap.GetTileHeight());
+
+        ImGui::Text(
+            "Layers: %zu",
+            tileMap.GetLayerCount());
+
+        ImGui::TextDisabled(
+            "Map and tile dimensions are read-only at runtime.");
+
+        ImGui::SeparatorText(
+            "Layers");
+
+        for (std::size_t i = 0;
+            i < tileMap.GetLayerCount();
+            ++i)
+        {
+            const TileLayer* layer =
+                tileMap.GetLayer(i);
+
+            if (!layer)
+            {
+                continue;
+            }
+
+            ImGui::PushID(
+                static_cast<int>(i));
+
+            const char* layerName =
+                layer->name.empty()
+                ? "<Unnamed>"
+                : layer->name.c_str();
+
+            if (layer->type ==
+                TileLayerType::Render)
+            {
+                if (renderer.
+                    IsRenderLayerCached(i))
+                {
+                    bool visible =
+                        renderer.
+                        IsRenderLayerVisible(i);
+
+                    if (ImGui::Checkbox(
+                        "##Visible",
+                        &visible))
+                    {
+                        renderer.
+                            SetRenderLayerVisible(
+                                i,
+                                visible);
+                    }
+
+                    ImGui::SameLine();
+
+                    ImGui::Text(
+                        "%s [Render]",
+                        layerName);
+                }
+                else
+                {
+                    ImGui::TextDisabled(
+                        "%s [Render - unavailable]",
+                        layerName);
+                }
+            }
+            else
+            {
+                ImGui::BulletText(
+                    "%s [Collision]",
+                    layerName);
+
+                ImGui::SameLine();
+
+                ImGui::TextDisabled(
+                    "(physics always active)");
+            }
+
+            ImGui::PopID();
+        }
+
+        ImGui::SeparatorText(
+            "Renderer");
+
+        const TileMapRenderStats& stats =
+            renderer.GetStats();
+
+        ImGui::Text(
+            "Active Render Layers: %zu",
+            stats.renderLayerCount);
+
+        ImGui::Text(
+            "Active Render Items: %zu",
+            renderer.GetRenderItemCount());
+
+        ImGui::Text(
+            "Visible Tiles: %zu",
+            stats.visibleRenderItems);
+
+        ImGui::Text(
+            "Culled Tiles: %zu",
+            stats.culledRenderItems);
+
+        ImGui::SeparatorText(
+            "Collision");
+
+        if (collider)
+        {
+            ImGui::Text(
+                "Collision Layers: %zu",
+                collider->
+                GetCollisionLayerCount());
+
+            ImGui::Text(
+                "Solid Tiles: %zu",
+                collider->
+                GetSolidTileCount());
+
+            ImGui::Text(
+                "Collision Shapes: %zu",
+                collider->
+                GetShapeCount());
+
+            ImGui::Text(
+                "Merged Tile Area: %zu",
+                collider->
+                GetMergedTileArea());
+        }
+        else
+        {
+            ImGui::TextDisabled(
+                "TileMap collider unavailable.");
+        }
 
         ImGui::End();
     }

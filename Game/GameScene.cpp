@@ -25,6 +25,7 @@
 #include "GameplayEvents.h"
 #include "Engine/Audio/AudioClip.h"
 #include "Engine/Audio/AudioSystem.h"
+#include "Engine/GUI/EngineGui.h"
 
 #include <optional>
 #include <utility>
@@ -1088,4 +1089,18 @@ HandleEnemyDefeatedAudio(
         *m_enemyDefeatSfx,
         EnemyDefeatSfxVolume
     );
+}
+
+void GameScene::DrawGui()
+{
+    if (!m_tileMap ||
+        !m_tileMapRenderer)
+    {
+        return;
+    }
+
+    EngineGui::DrawTileMapSettings(
+        *m_tileMap,
+        *m_tileMapRenderer,
+        m_tileMapCollider.get());
 }

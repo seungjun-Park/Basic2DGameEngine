@@ -469,12 +469,18 @@ void Engine::Render(
             );
         }
 
-        if (m_guiSystem)
+        if (m_guiSystem &&
+            m_guiSystem->IsInitialized())
         {
             if (m_audioSystem)
             {
                 EngineGui::DrawAudioSettings(
                     *m_audioSystem);
+            }
+
+            if (m_scene)
+            {
+                m_scene->DrawGui();
             }
 
             m_guiSystem->Render();

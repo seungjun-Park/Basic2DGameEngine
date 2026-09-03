@@ -48,6 +48,10 @@ public:
         DebugRenderer& debugRenderer
     );
 
+    virtual void DrawGui()
+    {
+    }
+
     std::size_t GetEntityCount() const
     {
         return m_entities.size();

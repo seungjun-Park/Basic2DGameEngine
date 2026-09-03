@@ -102,13 +102,14 @@ bool TileMapRenderer::Build(
             continue;
         }
 
-        if (!layer->visible)
-        {
-            continue;
-        }
-
         TileRenderLayerCache
             layerCache;
+
+        layerCache.sourceLayerIndex =
+            layerIndex;
+
+        layerCache.visible =
+            layer->visible;
 
         layerCache.cells.resize(
             cellCount
@@ -228,9 +229,16 @@ bool TileMapRenderer::Build(
                 item.transform.rotation =
                     0.0f;
 
-                ++m_renderItemCount;
+                ++layerCache.renderItemCount;
             }
         }
+
+        if (layerCache.visible)
+        {
+            m_renderItemCount +=
+                layerCache.renderItemCount;
+        }
+
 
         m_renderLayers.emplace_back(
             std::move(
@@ -343,11 +351,15 @@ void TileMapRenderer::Submit(
     // --------------------------------------------
     //
 
+    const std::size_t
+        visibleRenderLayerCount =
+        GetVisibleRenderLayerCount();
+
     m_stats.totalRenderItems =
         m_renderItemCount;
 
     m_stats.renderLayerCount =
-        m_renderLayers.size();
+        visibleRenderLayerCount;
 
     m_stats.mapWidth =
         m_mapWidth;
@@ -363,14 +375,12 @@ void TileMapRenderer::Submit(
 
     m_stats.totalGridCells =
         static_cast<std::size_t>(
-            m_mapWidth
-            )
+            m_mapWidth)
         *
         static_cast<std::size_t>(
-            m_mapHeight
-            )
+            m_mapHeight)
         *
-        m_renderLayers.size();
+        visibleRenderLayerCount;
 
     //
     // --------------------------------------------
@@ -460,6 +470,11 @@ void TileMapRenderer::Submit(
     for (const auto& layer :
         m_renderLayers)
     {
+        if (!layer.visible)
+        {
+            continue;
+        }
+
         for (
             int y = bounds.minY;
             y <= bounds.maxY;
@@ -676,4 +691,124 @@ TileMapRenderer::CalculateVisibleTileBounds(
 #endif
 
     return bounds;
+}
+
+TileMapRenderer::TileRenderLayerCache*
+TileMapRenderer::FindRenderLayer(
+    std::size_t sourceLayerIndex)
+{
+    for (auto& layer :
+        m_renderLayers)
+    {
+        if (layer.sourceLayerIndex ==
+            sourceLayerIndex)
+        {
+            return &layer;
+        }
+    }
+
+    return nullptr;
+}
+
+const TileMapRenderer::
+TileRenderLayerCache*
+TileMapRenderer::FindRenderLayer(
+    std::size_t sourceLayerIndex) const
+{
+    for (const auto& layer :
+        m_renderLayers)
+    {
+        if (layer.sourceLayerIndex ==
+            sourceLayerIndex)
+        {
+            return &layer;
+        }
+    }
+
+    return nullptr;
+}
+
+bool TileMapRenderer::
+IsRenderLayerCached(
+    std::size_t sourceLayerIndex) const
+{
+    return
+        FindRenderLayer(
+            sourceLayerIndex) != nullptr;
+}
+
+bool TileMapRenderer::
+IsRenderLayerVisible(
+    std::size_t sourceLayerIndex) const
+{
+    const TileRenderLayerCache* layer =
+        FindRenderLayer(
+            sourceLayerIndex);
+
+    if (!layer)
+    {
+        return false;
+    }
+
+    return layer->visible;
+}
+
+bool TileMapRenderer::
+SetRenderLayerVisible(
+    std::size_t sourceLayerIndex,
+    bool visible)
+{
+    TileRenderLayerCache* layer =
+        FindRenderLayer(
+            sourceLayerIndex);
+
+    if (!layer)
+    {
+        return false;
+    }
+
+    if (layer->visible == visible)
+    {
+        return true;
+    }
+
+    if (visible)
+    {
+        m_renderItemCount +=
+            layer->renderItemCount;
+    }
+    else
+    {
+#ifdef _DEBUG
+        assert(
+            m_renderItemCount >=
+            layer->renderItemCount
+        );
+#endif
+
+        m_renderItemCount -=
+            layer->renderItemCount;
+    }
+
+    layer->visible = visible;
+
+    return true;
+}
+
+std::size_t
+TileMapRenderer::
+GetVisibleRenderLayerCount() const
+{
+    std::size_t count = 0;
+
+    for (const auto& layer :
+        m_renderLayers)
+    {
+        if (layer.visible)
+        {
+            ++count;
+        }
+    }
+
+    return count;
 }
