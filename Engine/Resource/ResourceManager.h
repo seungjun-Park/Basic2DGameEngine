@@ -32,6 +32,10 @@ public:
         std::wstring& outPath
     ) const;
 
+    bool IsTextureManaged(
+        const Texture* texture
+    ) const noexcept;
+
     Tileset* LoadTileset(
         const std::wstring& path
     );
@@ -44,7 +48,8 @@ public:
         const std::wstring& path
     );
 
-    void Clear();
+private:
+    void ReleaseAllResources() noexcept;
 
 private:
     DX11Renderer* m_renderer = nullptr;
@@ -53,6 +58,11 @@ private:
         std::wstring,
         std::unique_ptr<Texture>
     > m_textures;
+
+    std::unordered_map<
+        const Texture*,
+        std::wstring
+    > m_texturePathsByPointer;
 
     std::unordered_map<
         std::wstring,

@@ -8,7 +8,38 @@
 #include "Engine/Animation/AnimationClipLoader.h"
 
 ResourceManager::ResourceManager() = default;
-ResourceManager::~ResourceManager() = default;
+
+ResourceManager::~ResourceManager()
+{
+    ReleaseAllResources();
+}
+
+void ResourceManager::ReleaseAllResources() noexcept
+{
+    //
+    // Pointer identity index를 먼저 무효화한다.
+    //
+    m_texturePathsByPointer.clear();
+
+    //
+    // Texture를 참조할 수 있는 dependent
+    // resources부터 제거한다.
+    //
+    m_tileMaps.clear();
+
+    m_animationClips.clear();
+
+    m_tilesets.clear();
+
+    //
+    // 모든 dependent resource가 제거된 뒤
+    // Texture를 마지막으로 파괴한다.
+    //
+    m_textures.clear();
+
+    m_renderer =
+        nullptr;
+}
 
 bool ResourceManager::Initialize(
     DX11Renderer& renderer)
@@ -21,6 +52,16 @@ bool ResourceManager::Initialize(
 Texture* ResourceManager::LoadTexture(
     const std::wstring& path)
 {
+    if (!m_renderer)
+    {
+        OutputDebugStringA(
+            "[Resource] LoadTexture called "
+            "before initialization.\n"
+        );
+
+        return nullptr;
+    }
+
     auto it =
         m_textures.find(path);
 
@@ -51,22 +92,16 @@ Texture* ResourceManager::LoadTexture(
         std::move(texture)
     );
 
+    m_texturePathsByPointer.emplace(
+        result,
+        path
+    );
+
     OutputDebugStringA(
         "[Resource] Texture loaded\n"
     );
 
     return result;
-}
-
-void ResourceManager::Clear()
-{
-    m_tileMaps.clear();
-
-    m_animationClips.clear();
-
-    m_tilesets.clear();
-
-    m_textures.clear();
 }
 
 Tileset*
@@ -176,6 +211,17 @@ ResourceManager::LoadAnimationClip(
         return nullptr;
     }
 
+    if (!IsTextureManaged(
+        animationClip->GetTexture()))
+    {
+        OutputDebugStringA(
+            "[Resource] AnimationClip "
+            "references an unmanaged texture.\n"
+        );
+
+        return nullptr;
+    }
+
     AnimationClip* result =
         animationClip.get();
 
@@ -204,18 +250,34 @@ bool ResourceManager::TryGetTexturePath(
         return false;
     }
 
-    for (const auto& entry :
-        m_textures)
-    {
-        if (entry.second.get() ==
-            texture)
-        {
-            outPath =
-                entry.first;
+    const auto it =
+        m_texturePathsByPointer.find(
+            texture
+        );
 
-            return true;
-        }
+    if (it ==
+        m_texturePathsByPointer.end())
+    {
+        return false;
     }
 
-    return false;
+    outPath =
+        it->second;
+
+    return true;
+}
+
+bool ResourceManager::IsTextureManaged(
+    const Texture* texture) const noexcept
+{
+    if (!texture)
+    {
+        return false;
+    }
+
+    return
+        m_texturePathsByPointer.find(
+            texture
+        ) !=
+        m_texturePathsByPointer.end();
 }
