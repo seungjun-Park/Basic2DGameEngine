@@ -4,6 +4,7 @@
 
 class Entity;
 class Scene;
+class EventBus;
 
 class PhysicsSystem
 {
@@ -29,7 +30,8 @@ public:
     );
 
     void DispatchContactEvents(
-        Scene& scene
+        Scene& scene,
+        EventBus& eventBus
     );
 
     b2WorldId GetWorldId() const
@@ -50,12 +52,14 @@ private:
 
     void HandleBeginContact(
         Scene& scene,
+        EventBus& eventBus,
         b2ShapeId shapeA,
         b2ShapeId shapeB
     );
 
     void HandleEndContact(
         Scene& scene,
+        EventBus& eventBus,
         b2ShapeId shapeA,
         b2ShapeId shapeB
     );

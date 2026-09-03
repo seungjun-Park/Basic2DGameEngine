@@ -149,6 +149,7 @@
     <ClInclude Include="Engine\Core\Time.h" />
     <ClInclude Include="Engine\Debug\DebugRenderer.h" />
     <ClInclude Include="Engine\Debug\DebugStats.h" />
+    <ClInclude Include="Engine\Physics\CollisionEvents.h" />
     <ClInclude Include="Engine\Event\EventBus.h" />
     <ClInclude Include="Engine\Graphics\Texture.h" />
     <ClInclude Include="Engine\Graphics\UVRect.h" />

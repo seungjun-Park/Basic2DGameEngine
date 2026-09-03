@@ -1,10 +1,10 @@
 #include "PhysicsSystem.h"
 
-#include "Engine/Scene/Entity.h"
 #include "PhysicsBody.h"
-
 #include "Engine/Scene/Entity.h"
 #include "Engine/Scene/Scene.h"
+#include "Engine/Event/EventBus.h"
+#include "Engine/Physics/CollisionEvents.h"
 
 #include <Windows.h>
 
@@ -98,7 +98,8 @@ void PhysicsSystem::Step(
 }
 
 void PhysicsSystem::DispatchContactEvents(
-    Scene& scene)
+    Scene& scene,
+    EventBus& eventBus)
 {
     if (!m_initialized)
     {
@@ -129,6 +130,7 @@ void PhysicsSystem::DispatchContactEvents(
 
         HandleBeginContact(
             scene,
+            eventBus,
             event.shapeIdA,
             event.shapeIdB
         );
@@ -153,6 +155,7 @@ void PhysicsSystem::DispatchContactEvents(
 
         HandleEndContact(
             scene,
+            eventBus,
             event.shapeIdA,
             event.shapeIdB
         );
@@ -161,6 +164,7 @@ void PhysicsSystem::DispatchContactEvents(
 
 void PhysicsSystem::HandleBeginContact(
     Scene& scene,
+    EventBus& eventBus,
     b2ShapeId shapeA,
     b2ShapeId shapeB)
 {
@@ -198,6 +202,18 @@ void PhysicsSystem::HandleBeginContact(
         return;
     }
 
+    const EntityHandle handleA =
+        entityA->GetHandle();
+
+    const EntityHandle handleB =
+        entityB->GetHandle();
+
+    if (!handleA.IsValid() ||
+        !handleB.IsValid())
+    {
+        return;
+    }
+
     entityA->OnCollisionEnter(
         *entityB
     );
@@ -205,10 +221,19 @@ void PhysicsSystem::HandleBeginContact(
     entityB->OnCollisionEnter(
         *entityA
     );
+
+    eventBus.Publish(
+        CollisionEnterEvent
+        {
+            handleA,
+            handleB
+        }
+    );
 }
 
 void PhysicsSystem::HandleEndContact(
     Scene& scene,
+    EventBus& eventBus,
     b2ShapeId shapeA,
     b2ShapeId shapeB)
 {
@@ -251,12 +276,32 @@ void PhysicsSystem::HandleEndContact(
         return;
     }
 
+    const EntityHandle handleA =
+        entityA->GetHandle();
+
+    const EntityHandle handleB =
+        entityB->GetHandle();
+
+    if (!handleA.IsValid() ||
+        !handleB.IsValid())
+    {
+        return;
+    }
+
     entityA->OnCollisionExit(
         *entityB
     );
 
     entityB->OnCollisionExit(
         *entityA
+    );
+
+    eventBus.Publish(
+        CollisionExitEvent
+        {
+            handleA,
+            handleB
+        }
     );
 }
 

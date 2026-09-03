@@ -198,7 +198,10 @@ void Engine::FixedUpdate(
     // 4.
     // contact event РќДо
     m_physicsSystem->
-        DispatchContactEvents(*m_scene);
+        DispatchContactEvents(
+            *m_scene,
+            *m_eventBus
+            );
 }
 
 void Engine::Update(
