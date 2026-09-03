@@ -27,12 +27,6 @@ public:
 
     float GetAttackRange() const;
 
-    void OnCollisionEnter(
-        Entity& other) override;
-
-    void OnCollisionExit(
-        Entity& other) override;
-
 private:
     PhysicsSystem& m_physics;
 

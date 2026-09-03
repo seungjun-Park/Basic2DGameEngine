@@ -154,19 +154,3 @@ float Player::GetAttackRange() const
 {
     return m_attackRange;
 }
-
-void Player::OnCollisionEnter(
-    Entity& other)
-{
-    OutputDebugStringA(
-        "[Player] Collision Enter\n"
-    );
-}
-
-void Player::OnCollisionExit(
-    Entity& other)
-{
-    OutputDebugStringA(
-        "[Player] Collision Exit\n"
-    );
-}

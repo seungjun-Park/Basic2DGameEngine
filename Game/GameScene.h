@@ -1,10 +1,14 @@
 #pragma once
 
+#include "Engine/Event/EventBus.h"
 #include "Engine/Scene/Scene.h"
 #include "CharacterAnimation.h"
 
 #include <memory>
 #include <string>
+
+struct CollisionEnterEvent;
+struct CollisionExitEvent;
 
 class ResourceManager;
 class Player;
@@ -22,7 +26,8 @@ public:
     explicit GameScene(
         ResourceManager& resources,
         Camera& camera,
-        PhysicsSystem& physics
+        PhysicsSystem& physics,
+        EventBus& events
     );
 
     ~GameScene() override;
@@ -61,6 +66,21 @@ private:
         const std::wstring& path
     );
 
+    void SubscribeCollisionEvents();
+
+    void HandleCollisionEnterEvent(
+        const CollisionEnterEvent& event
+    );
+
+    void HandleCollisionExitEvent(
+        const CollisionExitEvent& event
+    );
+
+    bool IsPlayerCollision(
+        EntityHandle entityA,
+        EntityHandle entityB
+    ) const noexcept;
+
 private:
     ResourceManager& m_resources;
 
@@ -70,6 +90,16 @@ private:
     Camera& m_camera;
 
     PhysicsSystem& m_physics;
+
+    EventBus& m_events;
+
+    EntityHandle m_playerHandle{};
+
+    EventSubscription
+        m_collisionEnterSubscription;
+
+    EventSubscription
+        m_collisionExitSubscription;
 
     TileMap* m_tileMap =
         nullptr;

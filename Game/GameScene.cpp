@@ -20,6 +20,8 @@
 #include "Engine/Serialization/SceneData.h"
 #include "Engine/Serialization/SceneSerializer.h"
 #include "Engine/Platform/Windows/WinInput.h"
+#include "Engine/Event/EventBus.h"
+#include "Engine/Physics/CollisionEvents.h"
 
 #include <optional>
 #include <utility>
@@ -29,11 +31,13 @@
 GameScene::GameScene(
     ResourceManager& resources,
     Camera& camera,
-    PhysicsSystem& physics)
+    PhysicsSystem& physics,
+    EventBus& events)
     :
     m_resources(resources),
     m_camera(camera),
-    m_physics(physics)
+    m_physics(physics),
+    m_events(events)
 {
 }
 
@@ -104,13 +108,36 @@ void GameScene::Initialize()
         return;
     }
 
-    /*if (!LoadSerializedEntities(
-        L"runtime_position_test.json"))
-    {
-        return;
-    }*/
+    SubscribeCollisionEvents();
+}
 
+void GameScene::SubscribeCollisionEvents()
+{
+    m_collisionEnterSubscription =
+        m_events.Subscribe<
+        CollisionEnterEvent
+        >(
+            [this](
+                const CollisionEnterEvent& event)
+            {
+                HandleCollisionEnterEvent(
+                    event
+                );
+            }
+        );
 
+    m_collisionExitSubscription =
+        m_events.Subscribe<
+        CollisionExitEvent
+        >(
+            [this](
+                const CollisionExitEvent& event)
+            {
+                HandleCollisionExitEvent(
+                    event
+                );
+            }
+        );
 }
 
 void GameScene::Update(
@@ -528,6 +555,9 @@ bool GameScene::LoadEnemyAnimations()
 bool GameScene::LoadSerializedEntities(
     const std::wstring& path)
 {
+    m_playerHandle =
+        EntityHandle{};
+
     auto sceneData =
         SceneSerializer::Load(
             path
@@ -636,6 +666,8 @@ bool GameScene::LoadSerializedEntities(
         ClearEntities();
 
         m_player = nullptr;
+        m_playerHandle =
+            EntityHandle{};
 
         OutputDebugStringA(
             "[GameScene] Player has "
@@ -644,6 +676,9 @@ bool GameScene::LoadSerializedEntities(
 
         return false;
     }
+
+    m_playerHandle =
+        playerHandle;
 
     //
     // Pass 2:
@@ -771,4 +806,48 @@ bool GameScene::SaveSerializedEntities(
     }
 
     return true;
+}
+
+bool GameScene::IsPlayerCollision(
+    EntityHandle entityA,
+    EntityHandle entityB) const noexcept
+{
+    if (!m_playerHandle.IsValid())
+    {
+        return false;
+    }
+
+    return
+        entityA == m_playerHandle ||
+        entityB == m_playerHandle;
+}
+
+void GameScene::HandleCollisionEnterEvent(
+    const CollisionEnterEvent& event)
+{
+    if (!IsPlayerCollision(
+        event.entityA,
+        event.entityB))
+    {
+        return;
+    }
+
+    OutputDebugStringA(
+        "[Player] Collision Enter\n"
+    );
+}
+
+void GameScene::HandleCollisionExitEvent(
+    const CollisionExitEvent& event)
+{
+    if (!IsPlayerCollision(
+        event.entityA,
+        event.entityB))
+    {
+        return;
+    }
+
+    OutputDebugStringA(
+        "[Player] Collision Exit\n"
+    );
 }

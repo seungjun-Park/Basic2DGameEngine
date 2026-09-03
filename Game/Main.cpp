@@ -57,7 +57,8 @@ int WINAPI WinMain(
         std::make_unique<GameScene>(
             engine.GetResourceManager(),
             engine.GetCamera(),
-            engine.GetPhysicsSystem()
+            engine.GetPhysicsSystem(),
+            engine.GetEventBus()
         );
 
     engine.SetScene(
