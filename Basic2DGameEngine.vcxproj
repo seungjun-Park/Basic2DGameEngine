@@ -140,6 +140,8 @@
     <ClInclude Include="Engine\Animation\AnimationClip.h" />
     <ClInclude Include="Engine\Animation\AnimationClipLoader.h" />
     <ClInclude Include="Engine\Animation\Animator.h" />
+    <ClInclude Include="Engine\Audio\AudioClip.h" />
+    <ClInclude Include="Engine\Audio\AudioClipLoader.h" />
     <ClInclude Include="Engine\Audio\AudioSystem.h" />
     <ClInclude Include="Engine\Components\Sprite.h" />
     <ClInclude Include="Engine\Components\Transform.h" />
@@ -192,6 +194,8 @@
     <ClCompile Include="Engine\Animation\AnimationClip.cpp" />
     <ClCompile Include="Engine\Animation\AnimationClipLoader.cpp" />
     <ClCompile Include="Engine\Animation\Animator.cpp" />
+    <ClCompile Include="Engine\Audio\AudioClip.cpp" />
+    <ClCompile Include="Engine\Audio\AudioClipLoader.cpp" />
     <ClCompile Include="Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Engine\Core\Application.cpp" />
     <ClCompile Include="Engine\Core\Engine.cpp" />

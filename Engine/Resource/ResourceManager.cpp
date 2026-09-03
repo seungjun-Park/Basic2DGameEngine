@@ -6,6 +6,8 @@
 #include "Engine/Tile/TileMapLoader.h"
 #include "Engine/Animation/AnimationClip.h"
 #include "Engine/Animation/AnimationClipLoader.h"
+#include "Engine/Audio/AudioClip.h"
+#include "Engine/Audio/AudioClipLoader.h"
 
 ResourceManager::ResourceManager() = default;
 
@@ -28,6 +30,8 @@ void ResourceManager::ReleaseAllResources() noexcept
     m_tileMaps.clear();
 
     m_animationClips.clear();
+
+    m_audioClips.clear();
 
     m_tilesets.clear();
 
@@ -280,4 +284,54 @@ bool ResourceManager::IsTextureManaged(
             texture
         ) !=
         m_texturePathsByPointer.end();
+}
+
+AudioClip* ResourceManager::LoadAudioClip(
+    const std::wstring& path)
+{
+    const auto cached =
+        m_audioClips.find(
+            path
+        );
+
+    if (cached !=
+        m_audioClips.end())
+    {
+        return
+            cached->second.get();
+    }
+
+
+    auto audioClip =
+        AudioClipLoader::Load(
+            path
+        );
+
+    if (!audioClip)
+    {
+        OutputDebugStringA(
+            "[Resource] Failed to "
+            "load AudioClip.\n"
+        );
+
+        return nullptr;
+    }
+
+
+    AudioClip* result =
+        audioClip.get();
+
+
+    m_audioClips.emplace(
+        path,
+        std::move(audioClip)
+    );
+
+
+    OutputDebugStringA(
+        "[Resource] AudioClip loaded.\n"
+    );
+
+
+    return result;
 }

@@ -4,10 +4,10 @@
 #include "Engine/Event/EventBus.h"
 #include "Engine/Physics/CollisionEvents.h"
 #include "Game/GameplayEvents.h"
-#include <cassert>
-
+#include "Engine/Audio/AudioClip.h"
 #include "Game/GameScene.h"
 
+#include <cassert>
 #include <memory>
 
 int WINAPI WinMain(
@@ -53,6 +53,108 @@ int WINAPI WinMain(
 
     Engine& engine =
         application.GetEngine();
+
+#if defined(_DEBUG)
+
+    {
+        ResourceManager&
+            resources =
+            engine.GetResourceManager();
+
+
+        const std::wstring path =
+            L"Engine/Assets/Audio/test.wav";
+
+
+        AudioClip* clipA =
+            resources.LoadAudioClip(
+                path
+            );
+
+        AudioClip* clipB =
+            resources.LoadAudioClip(
+                path
+            );
+
+
+        assert(clipA);
+        assert(clipB);
+
+
+        //
+        // Cache identity.
+        //
+        assert(
+            clipA == clipB
+        );
+
+
+        assert(
+            clipA->IsValid()
+        );
+
+
+        const WAVEFORMATEX&
+            format =
+            clipA->GetFormat();
+
+
+        assert(
+            format.wFormatTag ==
+            WAVE_FORMAT_PCM
+        );
+
+        assert(
+            format.nChannels > 0
+        );
+
+        assert(
+            format.nSamplesPerSec > 0
+        );
+
+        assert(
+            format.nBlockAlign > 0
+        );
+
+        assert(
+            format.nAvgBytesPerSec > 0
+        );
+
+        assert(
+            format.wBitsPerSample > 0
+        );
+
+
+        assert(
+            clipA->GetAudioData() !=
+            nullptr
+        );
+
+        assert(
+            clipA->GetAudioByteCount() >
+            0
+        );
+
+        assert(
+            clipA->GetDurationSeconds() >
+            0.0f
+        );
+
+
+        assert(
+            clipA->GetAudioByteCount() %
+            format.nBlockAlign ==
+            0
+        );
+
+
+        OutputDebugStringA(
+            "[Phase13-B] "
+            "AudioClip validation passed.\n"
+        );
+    }
+
+#endif
 
     auto gameScene =
         std::make_unique<GameScene>(

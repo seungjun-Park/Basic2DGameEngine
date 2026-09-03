@@ -9,6 +9,7 @@ class Tileset;
 class TileMap;
 class DX11Renderer;
 class AnimationClip;
+class AudioClip;
 
 class ResourceManager
 {
@@ -48,6 +49,10 @@ public:
         const std::wstring& path
     );
 
+    AudioClip* LoadAudioClip(
+        const std::wstring& path
+    );
+
 private:
     void ReleaseAllResources() noexcept;
 
@@ -78,4 +83,10 @@ private:
         std::wstring,
         std::unique_ptr<AnimationClip>
     > m_animationClips;
+
+    std::unordered_map<
+        std::wstring,
+        std::unique_ptr<AudioClip>
+    >
+        m_audioClips;
 };
