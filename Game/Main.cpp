@@ -62,7 +62,8 @@ int WINAPI WinMain(
             engine.GetResourceManager(),
             engine.GetCamera(),
             engine.GetPhysicsSystem(),
-            engine.GetEventBus()
+            engine.GetEventBus(),
+            engine.GetAudioSystem()
         );
 
     engine.SetScene(

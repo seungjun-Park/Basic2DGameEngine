@@ -23,26 +23,54 @@
 #include "Engine/Event/EventBus.h"
 #include "Engine/Physics/CollisionEvents.h"
 #include "GameplayEvents.h"
+#include "Engine/Audio/AudioClip.h"
+#include "Engine/Audio/AudioSystem.h"
 
 #include <optional>
 #include <utility>
 #include <cassert>
 
 
+namespace
+{
+    constexpr const wchar_t*
+        GameplayBgmPath =
+        L"Engine/Assets/Audio/bgm.wav";
+
+    constexpr const wchar_t*
+        EnemyDefeatSfxPath =
+        L"Engine/Assets/Audio/"
+        L"enemy_defeat.wav";
+
+    constexpr float
+        GameplayBgmVolume =
+        0.35f;
+
+    constexpr float
+        EnemyDefeatSfxVolume =
+        0.70f;
+}
+
+
 GameScene::GameScene(
     ResourceManager& resources,
     Camera& camera,
     PhysicsSystem& physics,
-    EventBus& events)
+    EventBus& events,
+    AudioSystem& audio)
     :
     m_resources(resources),
     m_camera(camera),
     m_physics(physics),
-    m_events(events)
+    m_events(events),
+    m_audio(audio)
 {
 }
 
-GameScene::~GameScene() = default;
+GameScene::~GameScene()
+{
+    StopGameplayAudio();
+}
 
 void GameScene::Initialize()
 {
@@ -109,7 +137,15 @@ void GameScene::Initialize()
         return;
     }
 
+    if (!InitializeGameplayAudio())
+    {
+        return;
+    }
+
+
     SubscribeCollisionEvents();
+
+    SubscribeGameplayAudioEvents();
 }
 
 void GameScene::SubscribeCollisionEvents()
@@ -913,5 +949,143 @@ void GameScene::DefeatEnemy(
             defeatWorldX,
             defeatWorldY
         }
+    );
+}
+
+bool GameScene::InitializeGameplayAudio()
+{
+    //
+    // 이전 initialization 흔적이 있다면
+    // 먼저 정리한다.
+    //
+    StopGameplayAudio();
+
+    m_enemyDefeatSfx =
+        nullptr;
+
+    m_bgmClip =
+        nullptr;
+
+
+    m_enemyDefeatSfx =
+        m_resources.LoadAudioClip(
+            EnemyDefeatSfxPath
+        );
+
+    if (!m_enemyDefeatSfx)
+    {
+        OutputDebugStringA(
+            "[GameScene] Failed to load "
+            "enemy defeat SFX.\n"
+        );
+
+        return false;
+    }
+
+
+    m_bgmClip =
+        m_resources.LoadAudioClip(
+            GameplayBgmPath
+        );
+
+    if (!m_bgmClip)
+    {
+        OutputDebugStringA(
+            "[GameScene] Failed to load "
+            "gameplay BGM.\n"
+        );
+
+        m_enemyDefeatSfx =
+            nullptr;
+
+        return false;
+    }
+
+
+    m_bgmHandle =
+        m_audio.PlayMusic(
+            *m_bgmClip,
+            GameplayBgmVolume
+        );
+
+
+    if (!m_bgmHandle.IsValid())
+    {
+        OutputDebugStringA(
+            "[GameScene] Failed to start "
+            "gameplay BGM.\n"
+        );
+
+        m_enemyDefeatSfx =
+            nullptr;
+
+        m_bgmClip =
+            nullptr;
+
+        return false;
+    }
+
+
+    return true;
+}
+
+void GameScene::StopGameplayAudio()
+noexcept
+{
+    if (m_bgmHandle.IsValid())
+    {
+        m_audio.Stop(
+            m_bgmHandle
+        );
+
+        m_bgmHandle =
+            AudioPlaybackHandle{};
+    }
+
+
+    m_bgmClip =
+        nullptr;
+
+    m_enemyDefeatSfx =
+        nullptr;
+}
+
+void GameScene::
+SubscribeGameplayAudioEvents()
+{
+    m_enemyDefeatedAudioSubscription =
+        m_events.Subscribe<
+        EnemyDefeatedEvent
+        >(
+            [this](
+                const EnemyDefeatedEvent& event)
+            {
+                HandleEnemyDefeatedAudio(
+                    event
+                );
+            }
+        );
+}
+
+void GameScene::
+HandleEnemyDefeatedAudio(
+    const EnemyDefeatedEvent& event)
+{
+    //
+    // 이번 Stage에서는 spatial audio가 없으므로
+    // worldX/worldY는 사용하지 않는다.
+    //
+    (void)event;
+
+
+    if (!m_enemyDefeatSfx)
+    {
+        return;
+    }
+
+
+    m_audio.PlayOneShot(
+        *m_enemyDefeatSfx,
+        EnemyDefeatSfxVolume
     );
 }

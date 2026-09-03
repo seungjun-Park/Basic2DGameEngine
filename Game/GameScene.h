@@ -3,6 +3,7 @@
 #include "Engine/Event/EventBus.h"
 #include "Engine/Scene/Scene.h"
 #include "CharacterAnimation.h"
+#include "Engine/Audio/AudioPlaybackHandle.h"
 
 #include <memory>
 #include <string>
@@ -19,6 +20,9 @@ class TileMapRenderer;
 class RenderQueue;
 class TileMapCollider;
 class Enemy;
+class AudioSystem;
+class AudioClip;
+struct EnemyDefeatedEvent;
 
 class GameScene :
     public Scene
@@ -28,7 +32,8 @@ public:
         ResourceManager& resources,
         Camera& camera,
         PhysicsSystem& physics,
-        EventBus& events
+        EventBus& events,
+        AudioSystem& audio
     );
 
     ~GameScene() override;
@@ -86,6 +91,16 @@ private:
         Enemy& enemy
     );
 
+    bool InitializeGameplayAudio();
+
+    void StopGameplayAudio() noexcept;
+
+    void SubscribeGameplayAudioEvents();
+
+    void HandleEnemyDefeatedAudio(
+        const EnemyDefeatedEvent& event
+    );
+
 private:
     ResourceManager& m_resources;
 
@@ -97,6 +112,18 @@ private:
     PhysicsSystem& m_physics;
 
     EventBus& m_events;
+    
+    AudioSystem&
+        m_audio;
+
+    AudioClip*
+        m_enemyDefeatSfx = nullptr;
+
+    AudioClip*
+        m_bgmClip = nullptr;
+
+    AudioPlaybackHandle
+        m_bgmHandle{};
 
     EntityHandle m_playerHandle{};
 
@@ -105,6 +132,9 @@ private:
 
     EventSubscription
         m_collisionExitSubscription;
+
+    EventSubscription
+        m_enemyDefeatedAudioSubscription;
 
     TileMap* m_tileMap =
         nullptr;
