@@ -182,6 +182,7 @@
     <ClInclude Include="Game\CharacterAnimation.h" />
     <ClInclude Include="Game\Enemy.h" />
     <ClInclude Include="Game\GameEntityFactory.h" />
+    <ClInclude Include="Game\GameplayEvents.h" />
     <ClInclude Include="Game\GameScene.h" />
     <ClInclude Include="Game\Player.h" />
   </ItemGroup>

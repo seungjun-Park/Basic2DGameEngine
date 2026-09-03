@@ -18,6 +18,7 @@ class TileMap;
 class TileMapRenderer;
 class RenderQueue;
 class TileMapCollider;
+class Enemy;
 
 class GameScene :
     public Scene
@@ -80,6 +81,10 @@ private:
         EntityHandle entityA,
         EntityHandle entityB
     ) const noexcept;
+
+    void DefeatEnemy(
+        Enemy& enemy
+    );
 
 private:
     ResourceManager& m_resources;

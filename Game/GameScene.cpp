@@ -22,6 +22,7 @@
 #include "Engine/Platform/Windows/WinInput.h"
 #include "Engine/Event/EventBus.h"
 #include "Engine/Physics/CollisionEvents.h"
+#include "GameplayEvents.h"
 
 #include <optional>
 #include <utility>
@@ -152,6 +153,16 @@ void GameScene::Update(
     {
         for (auto& entity : m_entities)
         {
+            if (!entity)
+            {
+                continue;
+            }
+
+            if (entity->IsDestroyed())
+            {
+                continue;
+            }
+
             if (entity.get() ==
                 m_player)
             {
@@ -184,20 +195,11 @@ void GameScene::Update(
             if (distanceSquared <=
                 range * range)
             {
-                enemy->Destroy();
+                DefeatEnemy(
+                    *enemy
+                );
             }
         }
-    }
-
-    for (auto& entity : m_entities)
-    {
-        Enemy* enemy =
-            dynamic_cast<Enemy*>(
-                entity.get()
-                );
-
-        if (!enemy)
-            continue;
     }
 }
 
@@ -849,5 +851,67 @@ void GameScene::HandleCollisionExitEvent(
 
     OutputDebugStringA(
         "[Player] Collision Exit\n"
+    );
+}
+
+void GameScene::DefeatEnemy(
+    Enemy& enemy)
+{
+    //
+    // Synchronous EventBus subscriber가 같은 frame 안에서
+    // 다른 Enemy를 먼저 Destroy할 수도 있으므로
+    // 이미 logically-dead Entity는 다시 처리하지 않는다.
+    //
+    if (enemy.IsDestroyed())
+    {
+        return;
+    }
+
+    const EntityHandle enemyHandle =
+        enemy.GetHandle();
+
+    const EntityHandle instigatorHandle =
+        m_playerHandle;
+
+    const float defeatWorldX =
+        enemy.transform.position.x;
+
+    const float defeatWorldY =
+        enemy.transform.position.y;
+
+    //
+    // 기존 gameplay result가 먼저 확정된다.
+    //
+    enemy.Destroy();
+
+    //
+    // 정상 runtime Entity라면 두 handle 모두 valid여야 한다.
+    //
+    // 하지만 event publication 실패 때문에 기존 gameplay
+    // result까지 되돌리면 안 되므로 Destroy는 위에서 이미
+    // 수행했다.
+    //
+    if (!enemyHandle.IsValid() ||
+        !instigatorHandle.IsValid())
+    {
+        OutputDebugStringA(
+            "[GameScene] Enemy defeat has "
+            "an invalid EntityHandle.\n"
+        );
+
+        return;
+    }
+
+    //
+    // EventBus는 이미 발생한 gameplay fact만 알린다.
+    //
+    m_events.Publish(
+        EnemyDefeatedEvent
+        {
+            enemyHandle,
+            instigatorHandle,
+            defeatWorldX,
+            defeatWorldY
+        }
     );
 }

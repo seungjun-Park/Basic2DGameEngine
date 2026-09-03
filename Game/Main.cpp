@@ -3,6 +3,7 @@
 #include "Engine/Resource/ResourceManager.h"
 #include "Engine/Event/EventBus.h"
 #include "Engine/Physics/CollisionEvents.h"
+#include "Game/GameplayEvents.h"
 #include <cassert>
 
 #include "Game/GameScene.h"
