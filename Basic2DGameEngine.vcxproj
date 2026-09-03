@@ -166,6 +166,7 @@
     <ClInclude Include="Engine\Renderer\SpriteRenderer.h" />
     <ClInclude Include="Engine\Resource\ResourceManager.h" />
     <ClInclude Include="Engine\Scene\Entity.h" />
+    <ClInclude Include="Engine\Scene\EntityHandle.h" />
     <ClInclude Include="Engine\Scene\Scene.h" />
     <ClInclude Include="Engine\Serialization\SceneData.h" />
     <ClInclude Include="Engine\Serialization\SceneSerializer.h" />
@@ -202,6 +203,7 @@
     <ClCompile Include="Engine\Renderer\SprtieRenderer.cpp" />
     <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Engine\Scene\Entity.cpp" />
+    <ClCompile Include="Engine\Scene\EntityHandle.cpp" />
     <ClCompile Include="Engine\Scene\Scene.cpp" />
     <ClCompile Include="Engine\Serialization\SceneSerializer.cpp" />
     <ClCompile Include="Engine\Tile\TileMap.cpp" />

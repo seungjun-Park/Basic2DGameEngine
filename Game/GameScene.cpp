@@ -615,7 +615,7 @@ bool GameScene::LoadSerializedEntities(
 
     if (!m_player)
     {
-        m_entities.clear();
+        ClearEntities();
 
         OutputDebugStringA(
             "[GameScene] Failed to create Player.\n"
@@ -648,7 +648,7 @@ bool GameScene::LoadSerializedEntities(
             // Initialize 단계에서만 호출되는 loader이므로
             // partial scene을 허용하지 않는다.
             //
-            m_entities.clear();
+            ClearEntities();
             m_player = nullptr;
 
             OutputDebugStringA(

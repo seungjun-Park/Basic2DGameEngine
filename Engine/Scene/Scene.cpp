@@ -8,6 +8,33 @@
 #include "Engine/Animation/Animator.h"
 
 #include <algorithm>
+#include <atomic>
+
+Scene::~Scene()
+{
+    ClearEntities();
+}
+
+EntityHandle Scene::AllocateEntityHandle()
+{
+    static std::atomic<
+        EntityHandle::ValueType
+    > nextValue
+    {
+        1
+    };
+
+    const EntityHandle::ValueType value =
+        nextValue.fetch_add(
+            1,
+            std::memory_order_relaxed
+        );
+
+    return EntityHandle
+    {
+        value
+    };
+}
 
 void Scene::SubmitRender(
     RenderQueue& renderQueue)
@@ -90,10 +117,25 @@ void Scene::RemoveDestroyedEntities()
 {
     std::erase_if(
         m_entities,
-        [](const std::unique_ptr<Entity>& entity)
+        [this](
+            const std::unique_ptr<Entity>& entity)
         {
-            return
-                entity->IsDestroyed();
+            if (!entity->IsDestroyed())
+            {
+                return false;
+            }
+
+            const EntityHandle handle =
+                entity->GetHandle();
+
+            if (handle.IsValid())
+            {
+                m_entityLookup.erase(
+                    handle.value
+                );
+            }
+
+            return true;
         }
     );
 }
@@ -208,4 +250,90 @@ void Scene::CollectDebugStats(
 ) const
 {
 
+}
+
+Entity* Scene::ResolveEntity(
+    EntityHandle handle)
+{
+    if (!handle.IsValid())
+    {
+        return nullptr;
+    }
+
+    const auto it =
+        m_entityLookup.find(
+            handle.value
+        );
+
+    if (it == m_entityLookup.end())
+    {
+        return nullptr;
+    }
+
+    Entity* entity =
+        it->second;
+
+    if (!entity)
+    {
+        return nullptr;
+    }
+
+    if (entity->IsDestroyed())
+    {
+        return nullptr;
+    }
+
+    return entity;
+}
+
+const Entity* Scene::ResolveEntity(
+    EntityHandle handle) const
+{
+    if (!handle.IsValid())
+    {
+        return nullptr;
+    }
+
+    const auto it =
+        m_entityLookup.find(
+            handle.value
+        );
+
+    if (it == m_entityLookup.end())
+    {
+        return nullptr;
+    }
+
+    const Entity* entity =
+        it->second;
+
+    if (!entity)
+    {
+        return nullptr;
+    }
+
+    if (entity->IsDestroyed())
+    {
+        return nullptr;
+    }
+
+    return entity;
+}
+
+bool Scene::IsEntityAlive(
+    EntityHandle handle) const
+{
+    return
+        ResolveEntity(handle) != nullptr;
+}
+
+void Scene::ClearEntities()
+{
+    //
+    // Handle resolution부터 차단한 뒤
+    // 실제 Entity를 파괴한다.
+    //
+    m_entityLookup.clear();
+
+    m_entities.clear();
 }

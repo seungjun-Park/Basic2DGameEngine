@@ -3,6 +3,7 @@
 #include "Engine/Components/Transform.h"
 #include "Engine/Components/Sprite.h"
 #include "Engine/Animation/Animator.h"
+#include "Engine/Scene/EntityHandle.h"
 
 #include <memory>
 
@@ -10,6 +11,7 @@ class SpriteRenderer;
 class PhysicsBody;
 class RenderQueue;
 class Animator;
+class Scene;
 
 class Entity
 {
@@ -45,6 +47,11 @@ public:
 
     bool IsDestroyed() const;
 
+    EntityHandle GetHandle() const noexcept
+    {
+        return m_handle;
+    }
+
     virtual void OnCollisionEnter(
         Entity& other)
     {
@@ -70,5 +77,18 @@ public:
         animator;
 
 private:
+
+    friend class Scene;
+
+    void SetHandle(
+        EntityHandle handle
+    ) noexcept
+    {
+        m_handle = handle;
+    }
+
+private:
+    EntityHandle m_handle{};
+
     bool m_destroyed = false;
 };
