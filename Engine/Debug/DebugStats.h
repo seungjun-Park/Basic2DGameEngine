@@ -9,14 +9,14 @@ struct DebugStats
     float frameTimeMs = 0.0f;
 
     // --------------------------------------------------
-// CPU Profiling
-// --------------------------------------------------
+    // CPU Profiling
+    // --------------------------------------------------
 
-//
-// FixedUpdate 전체 누적.
-//
-// 한 render frame 안에서 fixed step이
-// 여러 번 실행될 수 있으므로 total 값.
+    //
+    // FixedUpdate 전체 누적.
+    //
+    // 한 render frame 안에서 fixed step이
+    // 여러 번 실행될 수 있으므로 total 값.
 //
     float fixedUpdateCpuMs =
         0.0f;
@@ -63,6 +63,69 @@ struct DebugStats
     // Present wait은 제외.
     //
     float engineCpuWorkMs =
+        0.0f;
+
+
+    // --------------------------------------------------
+    // FixedUpdate subsystem profiling
+    // --------------------------------------------------
+
+    float sceneFixedCpuMs =
+        0.0f;
+
+    float physicsStepCpuMs =
+        0.0f;
+
+    float physicsSyncCpuMs =
+        0.0f;
+
+    float contactDispatchCpuMs =
+        0.0f;
+
+    //
+    // FixedUpdate parent에서 위 child zone들을
+    // 제외하고 남은 Engine glue / profiler overhead.
+    //
+    float fixedOverheadCpuMs =
+        0.0f;
+
+    // --------------------------------------------------
+    // Render subsystem profiling
+    // --------------------------------------------------
+
+    //
+    // Scene / Entity / TileMap이
+    // RenderQueue command를 생성하는 시간.
+    //
+    float renderSubmitCpuMs =
+        0.0f;
+
+    //
+    // RenderQueue stable sort.
+    //
+    float renderSortCpuMs =
+        0.0f;
+
+    //
+    // batching boundary 탐색 + 실제 renderer submission.
+    //
+    float renderExecuteCpuMs =
+        0.0f;
+
+    //
+    // F1 DebugRender.
+    //
+    // Debug visualization이 꺼져 있으면 0.
+    //
+    float debugRenderCpuMs =
+        0.0f;
+
+    //
+    // BeginFrame / SetCamera / Clear / SpriteRenderer
+    // Begin-End / debug stats collection 등의
+    // 나머지 RenderCpu 비용.
+    //
+    float renderOverheadCpuMs =
         0.0f;
 
     int entityCount = 0;

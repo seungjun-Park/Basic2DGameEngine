@@ -183,30 +183,54 @@ void Engine::FixedUpdate(
         return;
     }
 
-    // 1.
-    // 게임 로직이 velocity / force를 Physics에 전달
-    m_scene->FixedUpdate(
-        fixedDeltaTime
-    );
+    {
+        ScopedCpuProfile profileScope(
+            m_cpuProfiler,
+            CpuProfileZone::FixedUpdate
+        );
+        // 1.
+        // 게임 로직이 velocity / force를 Physics에 전달
+        m_scene->FixedUpdate(
+            fixedDeltaTime
+        );
+    }
 
-    // 2.
-    // 실제 Box2D simulation
-    m_physicsSystem->Step(
-        fixedDeltaTime
-    );
+    {
+        ScopedCpuProfile profileScope(
+            m_cpuProfiler,
+            CpuProfileZone::FixedUpdate
+        );
+        // 2.
+        // 실제 Box2D simulation
+        m_physicsSystem->Step(
+            fixedDeltaTime
+        );
+    }
 
-    // 3.
-    // Box2D 결과를 render Transform으로 반영
-    m_scene->
-        SyncPhysicsTransforms();
+    {
+        ScopedCpuProfile profileScope(
+            m_cpuProfiler,
+            CpuProfileZone::FixedUpdate
+        );
+        // 3.
+        // Box2D 결과를 render Transform으로 반영
+        m_scene->
+            SyncPhysicsTransforms();
+    }
 
-    // 4.
-    // contact event 전달
-    m_physicsSystem->
-        DispatchContactEvents(
-            *m_scene,
-            *m_eventBus
+    {
+        ScopedCpuProfile profileScope(
+            m_cpuProfiler,
+            CpuProfileZone::FixedUpdate
+        );
+        // 4.
+        // contact event 전달
+        m_physicsSystem->
+            DispatchContactEvents(
+                *m_scene,
+                *m_eventBus
             );
+    }
 }
 
 void Engine::Update(
@@ -271,22 +295,52 @@ void Engine::Render(
 
             m_renderQueue->Clear();
 
-            m_scene->SubmitRender(
-                *m_renderQueue
-            );
+            {
+                ScopedCpuProfile subsystemScope(
+                    m_cpuProfiler,
+                    CpuProfileZone::
+                    RenderSubmit
+                );
 
-            m_renderQueue->Sort();
+                m_scene->SubmitRender(
+                    *m_renderQueue
+                );
+            }
+
+            {
+                ScopedCpuProfile subsystemScope(
+                    m_cpuProfiler,
+                    CpuProfileZone::
+                    RenderSort
+                );
+
+                m_renderQueue->Sort();
+            }
 
             m_spriteRenderer->Begin();
 
-            m_renderQueue->Execute(
-                *m_spriteRenderer
-            );
+            {
+                ScopedCpuProfile subsystemScope(
+                    m_cpuProfiler,
+                    CpuProfileZone::
+                    RenderExecute
+                );
+
+                m_renderQueue->Execute(
+                    *m_spriteRenderer
+                );
+            }
 
 #ifdef _DEBUG
 
             if (m_showDebug)
             {
+                ScopedCpuProfile subsystemScope(
+                    m_cpuProfiler,
+                    CpuProfileZone::
+                    DebugRender
+                );
+
                 m_scene->DebugRender(
                     *m_spriteRenderer,
                     *m_debugRenderer
@@ -522,4 +576,93 @@ void Engine::EndProfileFrame()
             profile.
             GetEngineCpuWorkMs()
             );
+    m_debugStats.sceneFixedCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                SceneFixedUpdate
+            )
+            );
+
+    m_debugStats.physicsStepCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                PhysicsStep
+            )
+            );
+
+    m_debugStats.physicsSyncCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                PhysicsSync
+            )
+            );
+
+    m_debugStats.contactDispatchCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                ContactDispatch
+            )
+            );
+
+
+    m_debugStats.renderSubmitCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                RenderSubmit
+            )
+            );
+
+    m_debugStats.renderSortCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                RenderSort
+            )
+            );
+
+    m_debugStats.renderExecuteCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                RenderExecute
+            )
+            );
+
+    m_debugStats.debugRenderCpuMs =
+        static_cast<float>(
+            profile.GetTotalMs(
+                CpuProfileZone::
+                DebugRender
+            )
+            );
+    const float fixedChildrenMs =
+        m_debugStats.sceneFixedCpuMs +
+        m_debugStats.physicsStepCpuMs +
+        m_debugStats.physicsSyncCpuMs +
+        m_debugStats.contactDispatchCpuMs;
+
+    m_debugStats.fixedOverheadCpuMs =
+        max(
+            0.0f,
+            m_debugStats.fixedUpdateCpuMs -
+            fixedChildrenMs
+        );
+
+    const float renderChildrenMs =
+        m_debugStats.renderSubmitCpuMs +
+        m_debugStats.renderSortCpuMs +
+        m_debugStats.renderExecuteCpuMs +
+        m_debugStats.debugRenderCpuMs;
+
+    m_debugStats.renderOverheadCpuMs =
+        max(
+            0.0f,
+            m_debugStats.renderCpuMs -
+            renderChildrenMs
+        );
 }

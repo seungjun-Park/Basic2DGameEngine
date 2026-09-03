@@ -293,7 +293,7 @@ void Application::UpdateWindowTitle()
                 );
     }
 
-    wchar_t title[768]{};
+    wchar_t title[1024]{};
 
     swprintf_s(
         title,
@@ -307,6 +307,8 @@ void Application::UpdateWindowTitle()
         L"L %.2f | "
         L"R %.2f | "
         L"P %.2f | "
+        L"Phys S%.2f P%.2f Y%.2f C%.2f O%.2f | "
+        L"Ren S%.2f O%.2f E%.2f D%.2f X%.2f | "
         L"Fixed %.0f Hz (%u) | "
         L"Ent %d | "
         L"Cmd %d | "
@@ -336,6 +338,18 @@ void Application::UpdateWindowTitle()
         stats.lateUpdateCpuMs,
         stats.renderCpuMs,
         stats.presentMs,
+
+        stats.sceneFixedCpuMs,
+        stats.physicsStepCpuMs,
+        stats.physicsSyncCpuMs,
+        stats.contactDispatchCpuMs,
+        stats.fixedOverheadCpuMs,
+
+        stats.renderSubmitCpuMs,
+        stats.renderSortCpuMs,
+        stats.renderExecuteCpuMs,
+        stats.debugRenderCpuMs,
+        stats.renderOverheadCpuMs,
 
         stats.fixedUpdateHz,
         stats.fixedSteps,
