@@ -86,49 +86,6 @@ void GuiSystem::BeginFrame()
     ImGui::NewFrame();
 }
 
-void GuiSystem::DrawFoundationWindow()
-{
-    if (!m_initialized)
-    {
-        return;
-    }
-
-    ImGuiIO& io = ImGui::GetIO();
-
-    ImGui::Begin("Basic2DGameEngine - Phase 14-A");
-
-    ImGui::Text("Dear ImGui integration active.");
-    ImGui::Text("Win32 + DirectX 11");
-
-    ImGui::Separator();
-
-    ImGui::InputText(
-        "Keyboard Capture Test",
-        m_keyboardCaptureTest.data(),
-        m_keyboardCaptureTest.size()
-    );
-
-    ImGui::Text(
-        "FPS: %.1f",
-        io.Framerate);
-
-    ImGui::Text(
-        "WantCaptureKeyboard: %s",
-        io.WantCaptureKeyboard ? "true" : "false");
-
-    ImGui::Text(
-        "WantCaptureMouse: %s",
-        io.WantCaptureMouse ? "true" : "false");
-
-    ImGui::SliderFloat(
-        "Foundation Test",
-        &m_testValue,
-        0.0f,
-        1.0f);
-
-    ImGui::End();
-}
-
 void GuiSystem::Render()
 {
     if (!m_initialized)

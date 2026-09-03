@@ -154,6 +154,7 @@
     <ClInclude Include="Engine\Debug\CpuProfiler.h" />
     <ClInclude Include="Engine\Debug\DebugRenderer.h" />
     <ClInclude Include="Engine\Debug\DebugStats.h" />
+    <ClInclude Include="Engine\GUI\EngineGui.h" />
     <ClInclude Include="Engine\GUI\GuiSystem.h" />
     <ClInclude Include="Engine\Physics\CollisionEvents.h" />
     <ClInclude Include="Engine\Event\EventBus.h" />
@@ -207,6 +208,7 @@
     <ClCompile Include="Engine\Debug\DebugRenderer.cpp" />
     <ClCompile Include="Engine\Event\EventBus.cpp" />
     <ClCompile Include="Engine\Graphics\Texture.cpp" />
+    <ClCompile Include="Engine\GUI\EngineGui.cpp" />
     <ClCompile Include="Engine\GUI\GuiSystem.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsBody.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsSystem.cpp" />

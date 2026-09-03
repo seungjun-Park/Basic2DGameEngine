@@ -16,6 +16,7 @@
 #include "Engine/Event/EventBus.h"
 #include "Engine/Audio/AudioSystem.h"
 #include "Engine/GUI/GuiSystem.h"
+#include "Engine/GUI/EngineGui.h"
 
 #include <algorithm>
 
@@ -470,7 +471,12 @@ void Engine::Render(
 
         if (m_guiSystem)
         {
-            m_guiSystem->DrawFoundationWindow();
+            if (m_audioSystem)
+            {
+                EngineGui::DrawAudioSettings(
+                    *m_audioSystem);
+            }
+
             m_guiSystem->Render();
         }
     }

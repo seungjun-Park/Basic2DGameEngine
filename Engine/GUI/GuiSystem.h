@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Windows.h>
-#include <array>
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
@@ -24,7 +23,6 @@ public:
 
     void BeginFrame();
 
-    void DrawFoundationWindow();
     void Render();
 
     [[nodiscard]]
@@ -41,9 +39,4 @@ public:
 
 private:
     bool m_initialized = false;
-
-    float m_testValue = 0.5f;
-
-    std::array<char, 128>
-        m_keyboardCaptureTest{};
 };
