@@ -3,6 +3,7 @@
 #include <box2d/box2d.h>
 
 class Entity;
+class Scene;
 
 class PhysicsSystem
 {
@@ -27,7 +28,9 @@ public:
         float fixedDeltaTime
     );
 
-    void DispatchContactEvents();
+    void DispatchContactEvents(
+        Scene& scene
+    );
 
     b2WorldId GetWorldId() const
     {
@@ -40,12 +43,19 @@ public:
     }
 
 private:
+    Entity* ResolveBodyEntity(
+        Scene& scene,
+        b2BodyId body
+    ) const;
+
     void HandleBeginContact(
+        Scene& scene,
         b2ShapeId shapeA,
         b2ShapeId shapeB
     );
 
     void HandleEndContact(
+        Scene& scene,
         b2ShapeId shapeA,
         b2ShapeId shapeB
     );

@@ -1,6 +1,10 @@
 #include "PhysicsSystem.h"
 
 #include "Engine/Scene/Entity.h"
+#include "PhysicsBody.h"
+
+#include "Engine/Scene/Entity.h"
+#include "Engine/Scene/Scene.h"
 
 #include <Windows.h>
 
@@ -93,7 +97,8 @@ void PhysicsSystem::Step(
     );
 }
 
-void PhysicsSystem::DispatchContactEvents()
+void PhysicsSystem::DispatchContactEvents(
+    Scene& scene)
 {
     if (!m_initialized)
     {
@@ -123,6 +128,7 @@ void PhysicsSystem::DispatchContactEvents()
         }
 
         HandleBeginContact(
+            scene,
             event.shapeIdA,
             event.shapeIdB
         );
@@ -146,6 +152,7 @@ void PhysicsSystem::DispatchContactEvents()
         }
 
         HandleEndContact(
+            scene,
             event.shapeIdA,
             event.shapeIdB
         );
@@ -153,6 +160,7 @@ void PhysicsSystem::DispatchContactEvents()
 }
 
 void PhysicsSystem::HandleBeginContact(
+    Scene& scene,
     b2ShapeId shapeA,
     b2ShapeId shapeB)
 {
@@ -173,18 +181,16 @@ void PhysicsSystem::HandleBeginContact(
         );
 
     Entity* entityA =
-        static_cast<Entity*>(
-            b2Body_GetUserData(
-                bodyA
-            )
-            );
+        ResolveBodyEntity(
+            scene,
+            bodyA
+        );
 
     Entity* entityB =
-        static_cast<Entity*>(
-            b2Body_GetUserData(
-                bodyB
-            )
-            );
+        ResolveBodyEntity(
+            scene,
+            bodyB
+        );
 
     if (!entityA ||
         !entityB)
@@ -202,6 +208,7 @@ void PhysicsSystem::HandleBeginContact(
 }
 
 void PhysicsSystem::HandleEndContact(
+    Scene& scene,
     b2ShapeId shapeA,
     b2ShapeId shapeB)
 {
@@ -227,18 +234,16 @@ void PhysicsSystem::HandleEndContact(
         );
 
     Entity* entityA =
-        static_cast<Entity*>(
-            b2Body_GetUserData(
-                bodyA
-            )
-            );
+        ResolveBodyEntity(
+            scene,
+            bodyA
+        );
 
     Entity* entityB =
-        static_cast<Entity*>(
-            b2Body_GetUserData(
-                bodyB
-            )
-            );
+        ResolveBodyEntity(
+            scene,
+            bodyB
+        );
 
     if (!entityA ||
         !entityB)
@@ -252,5 +257,40 @@ void PhysicsSystem::HandleEndContact(
 
     entityB->OnCollisionExit(
         *entityA
+    );
+}
+
+Entity* PhysicsSystem::ResolveBodyEntity(
+    Scene& scene,
+    b2BodyId body) const
+{
+    if (!b2Body_IsValid(
+        body))
+    {
+        return nullptr;
+    }
+
+    const auto* userData =
+        static_cast<
+        const PhysicsBodyUserData*
+        >(
+            b2Body_GetUserData(
+                body
+            )
+            );
+
+    if (!userData)
+    {
+        return nullptr;
+    }
+
+    if (!userData->
+        entityHandle.IsValid())
+    {
+        return nullptr;
+    }
+
+    return scene.ResolveEntity(
+        userData->entityHandle
     );
 }

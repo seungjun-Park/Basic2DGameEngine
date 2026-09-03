@@ -41,11 +41,16 @@ bool PhysicsBody::Create(
 {
     Destroy();
 
-    m_physics =
-        &physics;
+    const EntityHandle ownerHandle =
+        owner.GetHandle();
 
-    m_owner =
-        &owner;
+    if (!ownerHandle.IsValid())
+    {
+        return false;
+    }
+
+    m_userData.entityHandle =
+        ownerHandle;
 
     b2BodyDef bodyDef =
         b2DefaultBodyDef();
@@ -77,7 +82,7 @@ bool PhysicsBody::Create(
     // 충돌 이벤트에서 Entity를 찾기 위해
     // owner 포인터를 Box2D userData로 연결
     bodyDef.userData =
-        &owner;
+        &m_userData;
 
     m_bodyId =
         b2CreateBody(
@@ -88,8 +93,8 @@ bool PhysicsBody::Create(
     if (B2_IS_NULL(
         m_bodyId))
     {
-        m_physics = nullptr;
-        m_owner = nullptr;
+        m_userData.entityHandle =
+            EntityHandle{};
 
         return false;
     }
@@ -153,6 +158,11 @@ bool PhysicsBody::Create(
     if (B2_IS_NULL(
         m_shapeId))
     {
+        b2Body_SetUserData(
+            m_bodyId,
+            nullptr
+        );
+
         b2DestroyBody(
             m_bodyId
         );
@@ -160,8 +170,11 @@ bool PhysicsBody::Create(
         m_bodyId =
             b2_nullBodyId;
 
-        m_physics = nullptr;
-        m_owner = nullptr;
+        m_shapeId =
+            b2_nullShapeId;
+
+        m_userData.entityHandle =
+            EntityHandle{};
 
         return false;
     }
@@ -196,8 +209,8 @@ void PhysicsBody::Destroy()
             b2_nullShapeId;
     }
 
-    m_owner = nullptr;
-    m_physics = nullptr;
+    m_userData.entityHandle =
+        EntityHandle{};
 }
 
 bool PhysicsBody::IsValid() const

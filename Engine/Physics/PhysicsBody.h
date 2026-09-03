@@ -1,12 +1,18 @@
 #pragma once
 
 #include "PhysicsTypes.h"
+#include "Engine/Scene/EntityHandle.h"
 
 #include <box2d/box2d.h>
 
 class PhysicsSystem;
 struct Transform;
 class Entity;
+
+struct PhysicsBodyUserData
+{
+    EntityHandle entityHandle{};
+};
 
 class PhysicsBody
 {
@@ -63,11 +69,7 @@ public:
     }
 
 private:
-    PhysicsSystem* m_physics =
-        nullptr;
-
-    Entity* m_owner =
-        nullptr;
+    PhysicsBodyUserData m_userData{};
 
     b2BodyId m_bodyId =
         b2_nullBodyId;
