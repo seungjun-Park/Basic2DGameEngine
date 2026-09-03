@@ -287,6 +287,18 @@ void Engine::Update(
             !m_showDebug;
     }
 
+    if (WinInput::IsRawKeyPressed(VK_F3))
+    {
+        m_showGui = !m_showGui;
+
+        if (!m_showGui)
+        {
+            WinInput::SetCaptureState(
+                false,
+                false);
+        }
+    }
+
     if (!m_scene)
     {
         return;
@@ -472,15 +484,18 @@ void Engine::Render(
         if (m_guiSystem &&
             m_guiSystem->IsInitialized())
         {
-            if (m_audioSystem)
+            if (m_showGui)
             {
-                EngineGui::DrawAudioSettings(
-                    *m_audioSystem);
-            }
+                if (m_audioSystem)
+                {
+                    EngineGui::DrawAudioSettings(
+                        *m_audioSystem);
+                }
 
-            if (m_scene)
-            {
-                m_scene->DrawGui();
+                if (m_scene)
+                {
+                    m_scene->DrawGui();
+                }
             }
 
             m_guiSystem->Render();
@@ -811,7 +826,8 @@ Engine::GetAudioSystem()
 
 void Engine::BeginGuiFrame()
 {
-    if (!m_guiSystem)
+    if (!m_guiSystem ||
+        !m_guiSystem->IsInitialized())
     {
         WinInput::SetCaptureState(
             false,
@@ -822,10 +838,16 @@ void Engine::BeginGuiFrame()
 
     m_guiSystem->BeginFrame();
 
+    if (!m_showGui)
+    {
+        WinInput::SetCaptureState(
+            false,
+            false);
+
+        return;
+    }
+
     WinInput::SetCaptureState(
-        m_guiSystem->
-        WantsCaptureKeyboard(),
-        m_guiSystem->
-        WantsCaptureMouse()
-    );
+        m_guiSystem->WantsCaptureKeyboard(),
+        m_guiSystem->WantsCaptureMouse());
 }

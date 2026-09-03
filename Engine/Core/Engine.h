@@ -123,6 +123,7 @@ private:
     CpuProfiler
         m_cpuProfiler;
     bool m_showDebug = true;
+    bool m_showGui = true;
 
     float m_interpolationAlpha = 0.0f;
 };
