@@ -7,6 +7,8 @@
 #include <wrl/client.h>
 #include <xaudio2.h>
 
+#include "AudioPlaybackHandle.h"
+
 
 class AudioClip;
 
@@ -17,6 +19,9 @@ public:
 
     static constexpr std::size_t
         MaxActiveSfxVoices = 64;
+
+    static constexpr std::size_t
+        MaxPersistentVoices = 8;
 
 
     AudioSystem() = default;
@@ -65,6 +70,42 @@ public:
         float volume = 1.0f
     );
 
+    [[nodiscard]]
+    AudioPlaybackHandle PlayLoop(
+        const AudioClip& clip,
+        float volume = 1.0f
+    );
+
+
+    bool Pause(
+        AudioPlaybackHandle handle
+    );
+
+
+    bool Resume(
+        AudioPlaybackHandle handle
+    );
+
+
+    bool Stop(
+        AudioPlaybackHandle handle
+    );
+
+
+    bool IsPlaybackValid(
+        AudioPlaybackHandle handle
+    ) const noexcept;
+
+
+    bool IsPaused(
+        AudioPlaybackHandle handle
+    ) const noexcept;
+
+
+    std::size_t
+        GetPersistentVoiceCount()
+        const noexcept;
+
 
     bool IsInitialized()
         const noexcept;
@@ -92,6 +133,18 @@ private:
             voice = nullptr;
     };
 
+    struct PersistentVoice
+    {
+        AudioPlaybackHandle
+            handle{};
+
+        IXAudio2SourceVoice*
+            voice = nullptr;
+
+        bool paused =
+            false;
+    };
+
 
     ActiveVoice*
         FindFreeVoiceSlot()
@@ -106,6 +159,34 @@ private:
     void DestroyAllSourceVoices()
         noexcept;
 
+    static AudioPlaybackHandle
+        AllocatePlaybackHandle();
+
+
+    PersistentVoice*
+        FindFreePersistentVoice()
+        noexcept;
+
+
+    PersistentVoice*
+        FindPersistentVoice(
+            AudioPlaybackHandle handle
+        ) noexcept;
+
+
+    const PersistentVoice*
+        FindPersistentVoice(
+            AudioPlaybackHandle handle
+        ) const noexcept;
+
+
+    void DestroyPersistentVoice(
+        PersistentVoice& persistentVoice
+    ) noexcept;
+
+
+    void DestroyAllPersistentVoices()
+        noexcept;
 
 private:
 
@@ -124,6 +205,12 @@ private:
         MaxActiveSfxVoices
     >
         m_activeVoices{};
+
+    std::array<
+        PersistentVoice,
+        MaxPersistentVoices
+    >
+        m_persistentVoices{};
 
 
     std::uint32_t

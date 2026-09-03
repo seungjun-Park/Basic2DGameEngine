@@ -6,6 +6,7 @@
 #include "Game/GameplayEvents.h"
 #include "Engine/Audio/AudioClip.h"
 #include "Engine/Audio/AudioSystem.h"
+#include "Engine/Audio/AudioPlaybackHandle.h"
 
 #include <cassert>
 #include <memory>
@@ -56,7 +57,72 @@ int WINAPI WinMain(
     Engine& engine =
         application.GetEngine();
 
+#if defined(_DEBUG)
 
+    AudioPlaybackHandle
+        testLoopHandle{};
+
+
+    {
+        AudioClip* clip =
+            engine.GetResourceManager().
+            LoadAudioClip(
+                L"Engine/Assets/Audio/test.wav"
+            );
+
+
+        assert(clip);
+
+
+        AudioSystem& audio =
+            engine.GetAudioSystem();
+
+
+        assert(
+            audio.GetPersistentVoiceCount() ==
+            0
+        );
+
+
+        testLoopHandle =
+            audio.PlayLoop(
+                *clip,
+                0.35f
+            );
+
+
+        assert(
+            testLoopHandle.IsValid()
+        );
+
+
+        assert(
+            audio.IsPlaybackValid(
+                testLoopHandle
+            )
+        );
+
+
+        assert(
+            !audio.IsPaused(
+                testLoopHandle
+            )
+        );
+
+
+        assert(
+            audio.GetPersistentVoiceCount() ==
+            1
+        );
+
+
+        OutputDebugStringA(
+            "[Phase13-D] "
+            "Loop playback started.\n"
+        );
+    }
+
+#endif
 
     auto gameScene =
         std::make_unique<GameScene>(

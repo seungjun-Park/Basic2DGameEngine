@@ -4,6 +4,7 @@
 
 #include <Windows.h>
 
+#include <atomic>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -176,6 +177,8 @@ noexcept
     }
 
     DestroyAllSourceVoices();
+
+    DestroyAllPersistentVoices();
 
     if (m_masterVoice)
     {
@@ -530,6 +533,531 @@ const noexcept
         m_activeVoices)
     {
         if (activeVoice.voice)
+        {
+            ++count;
+        }
+    }
+
+
+    return count;
+}
+
+AudioPlaybackHandle
+AudioSystem::AllocatePlaybackHandle()
+{
+    static std::atomic<
+        AudioPlaybackHandle::ValueType
+    >
+        nextValue{ 1 };
+
+
+    const auto value =
+        nextValue.fetch_add(
+            1,
+            std::memory_order_relaxed
+        );
+
+
+    if (value ==
+        AudioPlaybackHandle::
+        InvalidValue)
+    {
+        return {};
+    }
+
+
+    return
+        AudioPlaybackHandle
+    {
+        value
+    };
+}
+
+AudioSystem::PersistentVoice*
+AudioSystem::FindFreePersistentVoice()
+noexcept
+{
+    for (PersistentVoice& voice :
+        m_persistentVoices)
+    {
+        if (!voice.voice)
+        {
+            return &voice;
+        }
+    }
+
+    return nullptr;
+}
+
+AudioSystem::PersistentVoice*
+AudioSystem::FindPersistentVoice(
+    AudioPlaybackHandle handle)
+    noexcept
+{
+    if (!handle.IsValid())
+    {
+        return nullptr;
+    }
+
+
+    for (PersistentVoice& voice :
+        m_persistentVoices)
+    {
+        if (!voice.voice)
+        {
+            continue;
+        }
+
+
+        if (voice.handle ==
+            handle)
+        {
+            return &voice;
+        }
+    }
+
+
+    return nullptr;
+}
+
+const AudioSystem::PersistentVoice*
+AudioSystem::FindPersistentVoice(
+    AudioPlaybackHandle handle)
+    const noexcept
+{
+    if (!handle.IsValid())
+    {
+        return nullptr;
+    }
+
+
+    for (const PersistentVoice& voice :
+        m_persistentVoices)
+    {
+        if (!voice.voice)
+        {
+            continue;
+        }
+
+
+        if (voice.handle ==
+            handle)
+        {
+            return &voice;
+        }
+    }
+
+
+    return nullptr;
+}
+
+void AudioSystem::DestroyPersistentVoice(
+    PersistentVoice& persistentVoice)
+    noexcept
+{
+    if (persistentVoice.voice)
+    {
+        //
+        // 더 이상 source data를 소비하지 않도록
+        // 먼저 정지.
+        //
+        persistentVoice.voice->
+            Stop(0);
+
+
+        persistentVoice.voice->
+            DestroyVoice();
+
+
+        persistentVoice.voice =
+            nullptr;
+    }
+
+
+    persistentVoice.handle =
+        AudioPlaybackHandle{};
+
+    persistentVoice.paused =
+        false;
+}
+
+void AudioSystem::
+DestroyAllPersistentVoices()
+noexcept
+{
+    for (PersistentVoice& voice :
+        m_persistentVoices)
+    {
+        DestroyPersistentVoice(
+            voice
+        );
+    }
+}
+
+AudioPlaybackHandle
+AudioSystem::PlayLoop(
+    const AudioClip& clip,
+    float volume)
+{
+    if (!IsInitialized())
+    {
+        OutputDebugStringA(
+            "[Audio] PlayLoop called "
+            "before initialization.\n"
+        );
+
+        return {};
+    }
+
+
+    if (!clip.IsValid())
+    {
+        OutputDebugStringA(
+            "[Audio] PlayLoop received "
+            "an invalid AudioClip.\n"
+        );
+
+        return {};
+    }
+
+
+    if (!std::isfinite(volume))
+    {
+        return {};
+    }
+
+
+    const std::size_t
+        audioByteCount =
+        clip.GetAudioByteCount();
+
+
+    if (audioByteCount == 0 ||
+        audioByteCount >
+        static_cast<std::size_t>(
+            (std::numeric_limits<
+                UINT32
+            >::max)()
+            ))
+    {
+        return {};
+    }
+
+
+    PersistentVoice* slot =
+        FindFreePersistentVoice();
+
+
+    if (!slot)
+    {
+        OutputDebugStringA(
+            "[Audio] Maximum persistent "
+            "voice count reached.\n"
+        );
+
+        return {};
+    }
+
+
+    IXAudio2SourceVoice*
+        sourceVoice = nullptr;
+
+
+    HRESULT hr =
+        m_xaudio2->
+        CreateSourceVoice(
+            &sourceVoice,
+            &clip.GetFormat()
+        );
+
+
+    if (FAILED(hr) ||
+        !sourceVoice)
+    {
+        LogAudioError(
+            "CreateSourceVoice(loop)",
+            hr
+        );
+
+        return {};
+    }
+
+
+    const float clampedVolume =
+        std::clamp(
+            volume,
+            0.0f,
+            1.0f
+        );
+
+
+    hr =
+        sourceVoice->
+        SetVolume(
+            clampedVolume
+        );
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SetVolume(loop)",
+            hr
+        );
+
+        sourceVoice->
+            DestroyVoice();
+
+        return {};
+    }
+
+
+    XAUDIO2_BUFFER buffer{};
+
+
+    buffer.Flags =
+        XAUDIO2_END_OF_STREAM;
+
+    buffer.AudioBytes =
+        static_cast<UINT32>(
+            audioByteCount
+            );
+
+    buffer.pAudioData =
+        reinterpret_cast<
+        const BYTE*
+        >(
+            clip.GetAudioData()
+            );
+
+
+    //
+    // LoopBegin = 0
+    // LoopLength = 0
+    //
+    // + infinite LoopCount
+    //
+    // => 전체 sample을 무한 반복.
+    //
+    buffer.LoopBegin =
+        0;
+
+    buffer.LoopLength =
+        0;
+
+    buffer.LoopCount =
+        XAUDIO2_LOOP_INFINITE;
+
+
+    hr =
+        sourceVoice->
+        SubmitSourceBuffer(
+            &buffer
+        );
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SubmitSourceBuffer(loop)",
+            hr
+        );
+
+        sourceVoice->
+            DestroyVoice();
+
+        return {};
+    }
+
+
+    hr =
+        sourceVoice->Start(0);
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SourceVoice::Start(loop)",
+            hr
+        );
+
+        sourceVoice->
+            DestroyVoice();
+
+        return {};
+    }
+
+
+    const AudioPlaybackHandle
+        handle =
+        AllocatePlaybackHandle();
+
+
+    if (!handle.IsValid())
+    {
+        sourceVoice->
+            DestroyVoice();
+
+        return {};
+    }
+
+
+    slot->handle =
+        handle;
+
+    slot->voice =
+        sourceVoice;
+
+    slot->paused =
+        false;
+
+
+    return handle;
+}
+
+bool AudioSystem::Pause(
+    AudioPlaybackHandle handle)
+{
+    PersistentVoice* playback =
+        FindPersistentVoice(
+            handle
+        );
+
+
+    if (!playback ||
+        playback->paused)
+    {
+        return false;
+    }
+
+
+    const HRESULT hr =
+        playback->voice->
+        Stop(0);
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SourceVoice::Stop(pause)",
+            hr
+        );
+
+        return false;
+    }
+
+
+    playback->paused =
+        true;
+
+
+    return true;
+}
+
+bool AudioSystem::Resume(
+    AudioPlaybackHandle handle)
+{
+    PersistentVoice* playback =
+        FindPersistentVoice(
+            handle
+        );
+
+
+    if (!playback ||
+        !playback->paused)
+    {
+        return false;
+    }
+
+
+    const HRESULT hr =
+        playback->voice->
+        Start(0);
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SourceVoice::Start(resume)",
+            hr
+        );
+
+        return false;
+    }
+
+
+    playback->paused =
+        false;
+
+
+    return true;
+}
+
+bool AudioSystem::Stop(
+    AudioPlaybackHandle handle)
+{
+    PersistentVoice* playback =
+        FindPersistentVoice(
+            handle
+        );
+
+
+    if (!playback)
+    {
+        return false;
+    }
+
+
+    DestroyPersistentVoice(
+        *playback
+    );
+
+
+    return true;
+}
+
+bool AudioSystem::IsPlaybackValid(
+    AudioPlaybackHandle handle)
+    const noexcept
+{
+    return
+        FindPersistentVoice(
+            handle
+        ) != nullptr;
+}
+
+bool AudioSystem::IsPaused(
+    AudioPlaybackHandle handle)
+    const noexcept
+{
+    const PersistentVoice* playback =
+        FindPersistentVoice(
+            handle
+        );
+
+
+    if (!playback)
+    {
+        return false;
+    }
+
+
+    return
+        playback->paused;
+}
+
+std::size_t
+AudioSystem::GetPersistentVoiceCount()
+const noexcept
+{
+    std::size_t count =
+        0;
+
+
+    for (const PersistentVoice& voice :
+        m_persistentVoices)
+    {
+        if (voice.voice)
         {
             ++count;
         }

@@ -142,6 +142,7 @@
     <ClInclude Include="Engine\Animation\Animator.h" />
     <ClInclude Include="Engine\Audio\AudioClip.h" />
     <ClInclude Include="Engine\Audio\AudioClipLoader.h" />
+    <ClInclude Include="Engine\Audio\AudioPlaybackHandle.h" />
     <ClInclude Include="Engine\Audio\AudioSystem.h" />
     <ClInclude Include="Engine\Components\Sprite.h" />
     <ClInclude Include="Engine\Components\Transform.h" />
