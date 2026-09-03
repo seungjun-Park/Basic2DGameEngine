@@ -13,6 +13,14 @@
 class AudioClip;
 
 
+enum class AudioCategory :
+    std::uint8_t
+{
+    Sfx = 0,
+    Music
+};
+
+
 class AudioSystem final
 {
 public:
@@ -77,6 +85,20 @@ public:
     );
 
 
+    [[nodiscard]]
+    AudioPlaybackHandle PlayLoop(
+        const AudioClip& clip,
+        AudioCategory category,
+        float volume
+    );
+
+    [[nodiscard]]
+    AudioPlaybackHandle PlayMusic(
+        const AudioClip& clip,
+        float volume = 1.0f
+    );
+
+
     bool Pause(
         AudioPlaybackHandle handle
     );
@@ -105,7 +127,28 @@ public:
     std::size_t
         GetPersistentVoiceCount()
         const noexcept;
+    
+    bool SetMasterVolume(
+        float volume
+    );
 
+    bool SetSfxVolume(
+        float volume
+    );
+
+    bool SetMusicVolume(
+        float volume
+    );
+
+
+    float GetMasterVolume()
+        const noexcept;
+
+    float GetSfxVolume()
+        const noexcept;
+
+    float GetMusicVolume()
+        const noexcept;
 
     bool IsInitialized()
         const noexcept;
@@ -188,6 +231,20 @@ private:
     void DestroyAllPersistentVoices()
         noexcept;
 
+
+    IXAudio2Voice*
+        GetCategoryOutputVoice(
+            AudioCategory category
+        ) const noexcept;
+
+
+    HRESULT CreateRoutedSourceVoice(
+        IXAudio2SourceVoice** outVoice,
+        const WAVEFORMATEX& format,
+        AudioCategory category
+    ) noexcept;
+
+
 private:
 
     Microsoft::WRL::ComPtr<
@@ -199,6 +256,11 @@ private:
     IXAudio2MasteringVoice*
         m_masterVoice = nullptr;
 
+    IXAudio2SubmixVoice*
+        m_sfxSubmixVoice = nullptr;
+
+    IXAudio2SubmixVoice*
+        m_musicSubmixVoice = nullptr;
 
     std::array<
         ActiveVoice,
@@ -211,6 +273,15 @@ private:
         MaxPersistentVoices
     >
         m_persistentVoices{};
+
+    float m_masterVolume =
+        1.0f;
+
+    float m_sfxVolume =
+        1.0f;
+
+    float m_musicVolume =
+        1.0f;
 
 
     std::uint32_t

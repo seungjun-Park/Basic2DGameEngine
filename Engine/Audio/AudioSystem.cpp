@@ -112,6 +112,64 @@ bool AudioSystem::Initialize()
     m_outputSampleRate =
         voiceDetails.InputSampleRate;
 
+    hr =
+        m_xaudio2->
+        CreateSubmixVoice(
+            &m_sfxSubmixVoice,
+            m_outputChannels,
+            m_outputSampleRate
+        );
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "CreateSubmixVoice(SFX)",
+            hr
+        );
+
+        Shutdown();
+
+        return false;
+    }
+
+
+    hr =
+        m_xaudio2->
+        CreateSubmixVoice(
+            &m_musicSubmixVoice,
+            m_outputChannels,
+            m_outputSampleRate
+        );
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "CreateSubmixVoice(Music)",
+            hr
+        );
+
+        Shutdown();
+
+        return false;
+    }
+
+    hr =
+        m_musicSubmixVoice->
+        SetVolume(
+            m_musicVolume
+        );
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SetVolume(Music)",
+            hr
+        );
+
+        Shutdown();
+
+        return false;
+    }
 
     if (m_outputChannels == 0 ||
         m_outputSampleRate == 0)
@@ -180,6 +238,26 @@ noexcept
 
     DestroyAllPersistentVoices();
 
+    if (m_sfxSubmixVoice)
+    {
+        m_sfxSubmixVoice->
+            DestroyVoice();
+
+        m_sfxSubmixVoice =
+            nullptr;
+    }
+
+
+    if (m_musicSubmixVoice)
+    {
+        m_musicSubmixVoice->
+            DestroyVoice();
+
+        m_musicSubmixVoice =
+            nullptr;
+    }
+
+
     if (m_masterVoice)
     {
         m_masterVoice->
@@ -210,7 +288,9 @@ const noexcept
     return
         m_initialized &&
         m_xaudio2 != nullptr &&
-        m_masterVoice != nullptr;
+        m_masterVoice != nullptr &&
+        m_sfxSubmixVoice != nullptr &&
+        m_musicSubmixVoice != nullptr;
 }
 
 
@@ -404,10 +484,10 @@ bool AudioSystem::PlayOneShot(
 
 
     HRESULT hr =
-        m_xaudio2->
-        CreateSourceVoice(
+        CreateRoutedSourceVoice(
             &sourceVoice,
-            &clip.GetFormat()
+            clip.GetFormat(),
+            AudioCategory::Sfx
         );
 
 
@@ -699,6 +779,20 @@ AudioSystem::PlayLoop(
     const AudioClip& clip,
     float volume)
 {
+    return
+        PlayLoop(
+            clip,
+            AudioCategory::Music,
+            volume
+        );
+}
+
+AudioPlaybackHandle
+AudioSystem::PlayLoop(
+    const AudioClip& clip,
+    AudioCategory category,
+    float volume)
+{
     if (!IsInitialized())
     {
         OutputDebugStringA(
@@ -764,10 +858,10 @@ AudioSystem::PlayLoop(
 
 
     HRESULT hr =
-        m_xaudio2->
-        CreateSourceVoice(
+        CreateRoutedSourceVoice(
             &sourceVoice,
-            &clip.GetFormat()
+            clip.GetFormat(),
+            category
         );
 
 
@@ -1065,4 +1159,250 @@ const noexcept
 
 
     return count;
+}
+
+IXAudio2Voice*
+AudioSystem::GetCategoryOutputVoice(
+    AudioCategory category)
+    const noexcept
+{
+    switch (category)
+    {
+    case AudioCategory::Sfx:
+        return m_sfxSubmixVoice;
+
+    case AudioCategory::Music:
+        return m_musicSubmixVoice;
+
+    default:
+        return nullptr;
+    }
+}
+
+HRESULT
+AudioSystem::CreateRoutedSourceVoice(
+    IXAudio2SourceVoice** outVoice,
+    const WAVEFORMATEX& format,
+    AudioCategory category) noexcept
+{
+    if (!outVoice)
+    {
+        return E_POINTER;
+    }
+
+    *outVoice =
+        nullptr;
+
+
+    if (!m_xaudio2)
+    {
+        return E_FAIL;
+    }
+
+
+    IXAudio2Voice* outputVoice =
+        GetCategoryOutputVoice(
+            category
+        );
+
+
+    if (!outputVoice)
+    {
+        return E_FAIL;
+    }
+
+
+    XAUDIO2_SEND_DESCRIPTOR
+        sendDescriptor{};
+
+    sendDescriptor.Flags =
+        0;
+
+    sendDescriptor.pOutputVoice =
+        outputVoice;
+
+
+    XAUDIO2_VOICE_SENDS
+        sendList{};
+
+    sendList.SendCount =
+        1;
+
+    sendList.pSends =
+        &sendDescriptor;
+
+
+    return
+        m_xaudio2->
+        CreateSourceVoice(
+            outVoice,
+            &format,
+            0,
+            XAUDIO2_DEFAULT_FREQ_RATIO,
+            nullptr,
+            &sendList,
+            nullptr
+        );
+}
+
+bool AudioSystem::SetMasterVolume(
+    float volume)
+{
+    if (!IsInitialized() ||
+        !std::isfinite(volume))
+    {
+        return false;
+    }
+
+
+    const float clamped =
+        std::clamp(
+            volume,
+            0.0f,
+            1.0f
+        );
+
+
+    const HRESULT hr =
+        m_masterVoice->
+        SetVolume(
+            clamped
+        );
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SetVolume(Master)",
+            hr
+        );
+
+        return false;
+    }
+
+
+    m_masterVolume =
+        clamped;
+
+
+    return true;
+}
+
+bool AudioSystem::SetSfxVolume(
+    float volume)
+{
+    if (!IsInitialized() ||
+        !std::isfinite(volume))
+    {
+        return false;
+    }
+
+
+    const float clamped =
+        std::clamp(
+            volume,
+            0.0f,
+            1.0f
+        );
+
+
+    const HRESULT hr =
+        m_sfxSubmixVoice->
+        SetVolume(
+            clamped
+        );
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SetVolume(SFX)",
+            hr
+        );
+
+        return false;
+    }
+
+
+    m_sfxVolume =
+        clamped;
+
+
+    return true;
+}
+
+bool AudioSystem::SetMusicVolume(
+    float volume)
+{
+    if (!IsInitialized() ||
+        !std::isfinite(volume))
+    {
+        return false;
+    }
+
+
+    const float clamped =
+        std::clamp(
+            volume,
+            0.0f,
+            1.0f
+        );
+
+
+    const HRESULT hr =
+        m_musicSubmixVoice->
+        SetVolume(
+            clamped
+        );
+
+
+    if (FAILED(hr))
+    {
+        LogAudioError(
+            "SetVolume(Music)",
+            hr
+        );
+
+        return false;
+    }
+
+
+    m_musicVolume =
+        clamped;
+
+
+    return true;
+}
+
+float AudioSystem::GetMasterVolume()
+const noexcept
+{
+    return m_masterVolume;
+}
+
+
+float AudioSystem::GetSfxVolume()
+const noexcept
+{
+    return m_sfxVolume;
+}
+
+
+float AudioSystem::GetMusicVolume()
+const noexcept
+{
+    return m_musicVolume;
+}
+
+AudioPlaybackHandle
+AudioSystem::PlayMusic(
+    const AudioClip& clip,
+    float volume)
+{
+    return
+        PlayLoop(
+            clip,
+            AudioCategory::Music,
+            volume
+        );
 }
