@@ -16,6 +16,7 @@ class PhysicsSystem;
 class RenderQueue;
 class EventBus;
 class AudioSystem;
+class GuiSystem;
 
 
 class Engine
@@ -68,6 +69,8 @@ public:
 
     void EndProfileFrame();
 
+    void BeginGuiFrame();
+
     ResourceManager& GetResourceManager();
 
     Camera& GetCamera();
@@ -111,6 +114,8 @@ private:
 
     std::unique_ptr<ResourceManager>
         m_resourceManager;
+
+    std::unique_ptr<GuiSystem> m_guiSystem;
 
     EngineConfig m_config;
 

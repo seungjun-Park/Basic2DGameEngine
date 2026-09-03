@@ -15,6 +15,7 @@
 #include "Engine/Renderer/RenderQueue.h"
 #include "Engine/Event/EventBus.h"
 #include "Engine/Audio/AudioSystem.h"
+#include "Engine/GUI/GuiSystem.h"
 
 #include <algorithm>
 
@@ -56,6 +57,8 @@ Engine::~Engine()
     // SpriteRenderer의 D3D resource도
     // DX11Renderer device보다 먼저 제거한다.
     m_spriteRenderer.reset();
+
+    m_guiSystem.reset();
 
     // Device / Context / SwapChain은 마지막.
     m_renderer.reset();
@@ -157,6 +160,16 @@ bool Engine::Initialize(
 
     if (!m_debugRenderer->Initialize(
         whiteTexture))
+    {
+        return false;
+    }
+
+    m_guiSystem = std::make_unique<GuiSystem>();
+
+    if (!m_guiSystem->Initialize(
+        window.GetHandle(),
+        dx11->GetDevice(),
+        dx11->GetContext()))
     {
         return false;
     }
@@ -266,7 +279,7 @@ void Engine::Update(
             Update();
     }
 
-    if (WinInput::IsKeyPressed(
+    if (WinInput::IsRawKeyPressed(
         VK_F1))
     {
         m_showDebug =
@@ -453,6 +466,12 @@ void Engine::Render(
             m_scene->CollectDebugStats(
                 m_debugStats
             );
+        }
+
+        if (m_guiSystem)
+        {
+            m_guiSystem->DrawFoundationWindow();
+            m_guiSystem->Render();
         }
     }
 
@@ -776,4 +795,25 @@ Engine::GetAudioSystem()
 {
     return
         *m_audioSystem;
+}
+
+void Engine::BeginGuiFrame()
+{
+    if (!m_guiSystem)
+    {
+        WinInput::SetCaptureState(
+            false,
+            false);
+
+        return;
+    }
+
+    m_guiSystem->BeginFrame();
+
+    WinInput::SetCaptureState(
+        m_guiSystem->
+        WantsCaptureKeyboard(),
+        m_guiSystem->
+        WantsCaptureMouse()
+    );
 }

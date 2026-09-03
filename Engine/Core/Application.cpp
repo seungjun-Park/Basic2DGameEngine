@@ -120,11 +120,11 @@ int Application::Run()
             continue;
         }
 
+        m_engine->BeginGuiFrame();
+
         WinInput::Update();
 
-        if (WinInput::IsKeyPressed(
-            VK_F2
-        ))
+        if (WinInput::IsRawKeyPressed(VK_F2))
         {
             m_showProfilerTitle =
                 !m_showProfilerTitle;

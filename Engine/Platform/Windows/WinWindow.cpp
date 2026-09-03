@@ -1,6 +1,16 @@
 #include "WinWindow.h"
+#include <imgui.h>
+#include <imgui_impl_win32.h>
 
 #include <cassert>
+
+extern IMGUI_IMPL_API LRESULT
+ImGui_ImplWin32_WndProcHandler(
+    HWND hWnd,
+    UINT msg,
+    WPARAM wParam,
+    LPARAM lParam);
+
 
 WinWindow::~WinWindow()
 {
@@ -151,6 +161,15 @@ LRESULT CALLBACK WinWindow::WindowProc(
     WPARAM wParam,
     LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(
+        hwnd,
+        message,
+        wParam,
+        lParam))
+    {
+        return 1;
+    }
+
     WinWindow* window = nullptr;
 
     if (message == WM_NCCREATE)
