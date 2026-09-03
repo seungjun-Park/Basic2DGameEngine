@@ -14,6 +14,7 @@
 #include "Engine/Physics/PhysicsSystem.h"
 #include "Engine/Renderer/RenderQueue.h"
 #include "Engine/Event/EventBus.h"
+#include "Engine/Audio/AudioSystem.h"
 
 #include <algorithm>
 
@@ -45,6 +46,8 @@ Engine::~Engine()
     m_physicsSystem.reset();
 
     m_camera.reset();
+
+    m_audioSystem.reset();
 
     // Texture / Tileset / TileMap을
     // GPU device가 살아있는 동안 제거한다.
@@ -106,6 +109,22 @@ bool Engine::Initialize(
     if (!m_resourceManager->Initialize(
         *dx11))
     {
+        return false;
+    }
+
+    m_audioSystem =
+        std::make_unique<
+        AudioSystem
+        >();
+
+    if (!m_audioSystem->
+        Initialize())
+    {
+        OutputDebugStringA(
+            "[Engine] Failed to initialize "
+            "AudioSystem.\n"
+        );
+
         return false;
     }
 
@@ -744,4 +763,11 @@ void Engine::EndProfileFrame()
             diagnostics.
             peakFrameWorstSubsystemMs
             );
+}
+
+AudioSystem&
+Engine::GetAudioSystem()
+{
+    return
+        *m_audioSystem;
 }

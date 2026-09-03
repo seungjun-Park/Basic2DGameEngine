@@ -15,6 +15,7 @@ class DebugRenderer;
 class PhysicsSystem;
 class RenderQueue;
 class EventBus;
+class AudioSystem;
 
 
 class Engine
@@ -77,6 +78,9 @@ public:
     EventBus&
         GetEventBus();
 
+    AudioSystem&
+        GetAudioSystem();
+
 private:
     std::unique_ptr<Scene>
         m_scene;
@@ -89,6 +93,9 @@ private:
 
     std::unique_ptr<PhysicsSystem>
         m_physicsSystem;
+
+    std::unique_ptr<AudioSystem>
+        m_audioSystem;
 
     std::unique_ptr<RenderQueue>
         m_renderQueue;
