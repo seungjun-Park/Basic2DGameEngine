@@ -63,6 +63,8 @@ private:
 
     void UpdateWindowTitle();
 
+    void ReportProfilerSpikeIfNeeded();
+
 private:
     std::unique_ptr<WinWindow>
         m_window;
@@ -77,6 +79,8 @@ private:
     float m_fixedAccumulator = 0.0f;
 
     float m_titleUpdateTimer = 0.0f;
+
+    bool m_showProfilerTitle = false;
 
     bool m_comInitialized = false;
 

@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cwchar>
 
 Application::Application() = default;
 
@@ -121,6 +122,14 @@ int Application::Run()
 
         WinInput::Update();
 
+        if (WinInput::IsKeyPressed(
+            VK_F2
+        ))
+        {
+            m_showProfilerTitle =
+                !m_showProfilerTitle;
+        }
+
         m_engine->
             BeginProfileFrame();
 
@@ -194,6 +203,8 @@ int Application::Run()
             fixedSteps
         );
 
+        ReportProfilerSpikeIfNeeded();
+
         UpdateWindowTitle();
 
         // VSync가 Present에서 기다리므로
@@ -262,6 +273,8 @@ void Application::UpdateWindowTitle()
     const DebugStats& stats =
         m_engine->GetDebugStats();
 
+
+
     wchar_t targetText[32]{};
 
     if (stats.targetFPS == 0)
@@ -328,24 +341,110 @@ void Application::UpdateWindowTitle()
             stats.peakFrameWorstSubsystem
         );
 
+    if (m_showProfilerTitle)
+    {
+        const int peakFrameAge =
+            stats.cpuWorkMaxFramesAgo ==
+            InvalidCpuProfileFrameAge
+            ?
+            -1
+            :
+            static_cast<int>(
+                stats.cpuWorkMaxFramesAgo
+                );
+
+        const int latestSpikeAge =
+            stats.latestCpuSpikeFramesAgo ==
+            InvalidCpuProfileFrameAge
+            ?
+            -1
+            :
+            static_cast<int>(
+                stats.latestCpuSpikeFramesAgo
+                );
+
+
+        const wchar_t*
+            peakPhaseLabel =
+            GetCpuProfileZoneLabel(
+                stats.peakFrameWorstCpuPhase
+            );
+
+        const wchar_t*
+            peakSubsystemLabel =
+            GetCpuProfileZoneLabel(
+                stats.peakFrameWorstSubsystem
+            );
+
+
+        wchar_t title[1024]{};
+
+        swprintf_s(
+            title,
+
+            L"Dobi2D [Profiler:F2] | "
+            L"FPS %.1f | "
+            L"Frame %.2f ms | "
+
+            L"CPU %.2f "
+            L"Avg %.2f "
+            L"Max %.2f@%df | "
+
+            L"F %.2f/%u | "
+            L"U %.2f | "
+            L"L %.2f | "
+            L"R %.2f | "
+            L"P %.2f | "
+
+            L"Spk %u "
+            L"last %df "
+            L"thr %.2f | "
+
+            L"Peak %ls %.2f / "
+            L"%ls %.2f",
+
+            stats.fps,
+            stats.frameTimeMs,
+
+            stats.engineCpuWorkMs,
+            stats.cpuWorkAverageMs,
+            stats.cpuWorkMaxMs,
+            peakFrameAge,
+
+            stats.fixedUpdateCpuMs,
+            stats.profiledFixedSteps,
+
+            stats.updateCpuMs,
+            stats.lateUpdateCpuMs,
+            stats.renderCpuMs,
+            stats.presentMs,
+
+            stats.cpuSpikesInHistory,
+            latestSpikeAge,
+            stats.cpuSpikeThresholdMs,
+
+            peakPhaseLabel,
+            stats.peakFrameWorstCpuPhaseMs,
+
+            peakSubsystemLabel,
+            stats.peakFrameWorstSubsystemMs
+        );
+
+
+        ::SetWindowTextW(
+            m_window->GetHandle(),
+            title
+        );
+
+        return;
+    }
+
     swprintf_s(
         title,
 
         L"Demo | "
         L"FPS %.1f | "
         L"Frame %.2f ms | "
-        L"CPU %.2f ms | "
-        L"F %.2f/%.2f ms (%u) | "
-        L"U %.2f | "
-        L"L %.2f | "
-        L"R %.2f | "
-        L"P %.2f | "
-        L"Phys S%.2f P%.2f Y%.2f C%.2f O%.2f | "
-        L"Ren S%.2f O%.2f E%.2f D%.2f X%.2f | "
-        L"Hist %u | "
-        L"Avg/Max %.2f/%.2f ms (%df) | "
-        L"Spk %u last %df | "
-        L"Peak %ls %.2f / %ls %.2f | "
         L"Fixed %.0f Hz (%u) | "
         L"Ent %d | "
         L"Cmd %d | "
@@ -364,44 +463,6 @@ void Application::UpdateWindowTitle()
 
         stats.fps,
         stats.frameTimeMs,
-
-        stats.engineCpuWorkMs,
-
-        stats.fixedUpdateCpuMs,
-        stats.fixedStepAverageCpuMs,
-        stats.profiledFixedSteps,
-
-        stats.updateCpuMs,
-        stats.lateUpdateCpuMs,
-        stats.renderCpuMs,
-        stats.presentMs,
-
-        stats.sceneFixedCpuMs,
-        stats.physicsStepCpuMs,
-        stats.physicsSyncCpuMs,
-        stats.contactDispatchCpuMs,
-        stats.fixedOverheadCpuMs,
-
-        stats.renderSubmitCpuMs,
-        stats.renderSortCpuMs,
-        stats.renderExecuteCpuMs,
-        stats.debugRenderCpuMs,
-        stats.renderOverheadCpuMs,
-
-        stats.profilerHistoryFrames,
-
-        stats.cpuWorkAverageMs,
-        stats.cpuWorkMaxMs,
-        peakFrameAge,
-
-        stats.cpuSpikesInHistory,
-        latestSpikeAge,
-
-        peakPhaseLabel,
-        stats.peakFrameWorstCpuPhaseMs,
-
-        peakSubsystemLabel,
-        stats.peakFrameWorstSubsystemMs,
 
         stats.fixedUpdateHz,
         stats.fixedSteps,
@@ -555,4 +616,205 @@ const EngineConfig&
 Application::GetConfig() const
 {
     return m_config;
+}
+
+void Application::
+ReportProfilerSpikeIfNeeded()
+{
+#if defined(_DEBUG)
+
+    if (!m_engine)
+    {
+        return;
+    }
+
+
+    const DebugStats& stats =
+        m_engine->GetDebugStats();
+
+
+    if (!stats.currentCpuSpike)
+    {
+        return;
+    }
+
+
+    CpuProfileZone
+        worstPhase =
+        CpuProfileZone::Count;
+
+    float worstPhaseMs =
+        0.0f;
+
+
+    auto considerPhase =
+        [&](
+            CpuProfileZone zone,
+            float value)
+        {
+            if (value <=
+                worstPhaseMs)
+            {
+                return;
+            }
+
+            worstPhase =
+                zone;
+
+            worstPhaseMs =
+                value;
+        };
+
+
+    considerPhase(
+        CpuProfileZone::FixedUpdate,
+        stats.fixedUpdateCpuMs
+    );
+
+    considerPhase(
+        CpuProfileZone::Update,
+        stats.updateCpuMs
+    );
+
+    considerPhase(
+        CpuProfileZone::LateUpdate,
+        stats.lateUpdateCpuMs
+    );
+
+    considerPhase(
+        CpuProfileZone::RenderCpu,
+        stats.renderCpuMs
+    );
+
+
+    CpuProfileZone
+        worstSubsystem =
+        CpuProfileZone::Count;
+
+    float worstSubsystemMs =
+        0.0f;
+
+
+    auto considerSubsystem =
+        [&](
+            CpuProfileZone zone,
+            float value)
+        {
+            if (value <=
+                worstSubsystemMs)
+            {
+                return;
+            }
+
+            worstSubsystem =
+                zone;
+
+            worstSubsystemMs =
+                value;
+        };
+
+
+    considerSubsystem(
+        CpuProfileZone::
+        SceneFixedUpdate,
+        stats.sceneFixedCpuMs
+    );
+
+    considerSubsystem(
+        CpuProfileZone::
+        PhysicsStep,
+        stats.physicsStepCpuMs
+    );
+
+    considerSubsystem(
+        CpuProfileZone::
+        PhysicsSync,
+        stats.physicsSyncCpuMs
+    );
+
+    considerSubsystem(
+        CpuProfileZone::
+        ContactDispatch,
+        stats.contactDispatchCpuMs
+    );
+
+    considerSubsystem(
+        CpuProfileZone::
+        RenderSubmit,
+        stats.renderSubmitCpuMs
+    );
+
+    considerSubsystem(
+        CpuProfileZone::
+        RenderSort,
+        stats.renderSortCpuMs
+    );
+
+    considerSubsystem(
+        CpuProfileZone::
+        RenderExecute,
+        stats.renderExecuteCpuMs
+    );
+
+    considerSubsystem(
+        CpuProfileZone::
+        DebugRender,
+        stats.debugRenderCpuMs
+    );
+
+
+    wchar_t message[1536]{};
+
+    swprintf_s(
+        message,
+
+        L"[Profiler] CPU SPIKE | "
+        L"CPU %.2f ms | "
+        L"WindowAvg %.2f ms | "
+        L"Threshold %.2f ms | "
+        L"Frame %.2f ms | "
+
+        L"Fixed %.2f | "
+        L"Update %.2f | "
+        L"Late %.2f | "
+        L"Render %.2f | "
+        L"Present %.2f | "
+
+        L"Worst %ls %.2f | "
+        L"Subsystem %ls %.2f | "
+
+        L"History %u | "
+        L"Spikes %u\n",
+
+        stats.engineCpuWorkMs,
+        stats.cpuWorkAverageMs,
+        stats.cpuSpikeThresholdMs,
+        stats.frameTimeMs,
+
+        stats.fixedUpdateCpuMs,
+        stats.updateCpuMs,
+        stats.lateUpdateCpuMs,
+        stats.renderCpuMs,
+        stats.presentMs,
+
+        GetCpuProfileZoneLabel(
+            worstPhase
+        ),
+        worstPhaseMs,
+
+        GetCpuProfileZoneLabel(
+            worstSubsystem
+        ),
+        worstSubsystemMs,
+
+        stats.profilerHistoryFrames,
+        stats.cpuSpikesInHistory
+    );
+
+
+    ::OutputDebugStringW(
+        message
+    );
+
+#endif
 }
