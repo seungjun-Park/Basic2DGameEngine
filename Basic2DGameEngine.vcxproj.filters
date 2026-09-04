@@ -180,6 +180,9 @@
     <ClInclude Include="Engine\GUI\EngineGui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Debug\DebugLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game\Main.cpp">
@@ -300,6 +303,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine\GUI\EngineGui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Debug\DebugLog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

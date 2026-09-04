@@ -1,5 +1,6 @@
 #include "Player.h"
 
+#include "Engine/Debug/DebugLog.h"
 #include "Engine/Platform/Windows/WinInput.h"
 #include "Engine/Physics/PhysicsBody.h"
 #include "Engine/Physics/PhysicsSystem.h"
@@ -64,7 +65,7 @@ void Player::Initialize()
     {
         physicsBody.reset();
 
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Player] Failed to create PhysicsBody.\n"
         );
     }

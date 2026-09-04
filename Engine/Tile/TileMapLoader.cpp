@@ -4,6 +4,7 @@
 #include "Tileset.h"
 
 #include "Engine/Resource/ResourceManager.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <nlohmann/json.hpp>
 
@@ -17,22 +18,6 @@
 
 namespace
 {
-    void LogTileMapError(
-        const char* message)
-    {
-        OutputDebugStringA(
-            "[TileMapLoader] "
-        );
-
-        OutputDebugStringA(
-            message
-        );
-
-        OutputDebugStringA(
-            "\n"
-        );
-    }
-
     bool TryParseRenderLayer(
         const std::string& value,
         RenderLayer& result)
@@ -126,7 +111,7 @@ TileMapLoader::Load(
 
     if (!file.is_open())
     {
-        LogTileMapError(
+        ENGINE_DEBUG_LOG(
             "Failed to open file."
         );
 
@@ -141,7 +126,7 @@ TileMapLoader::Load(
 
         if (!json.is_object())
         {
-            LogTileMapError(
+            ENGINE_DEBUG_LOG(
                 "Root must be a JSON object."
             );
 
@@ -181,7 +166,7 @@ TileMapLoader::Load(
         if (width <= 0 ||
             height <= 0)
         {
-            LogTileMapError(
+            ENGINE_DEBUG_LOG(
                 "Invalid map size."
             );
 
@@ -191,7 +176,7 @@ TileMapLoader::Load(
         if (tileWidth <= 0 ||
             tileHeight <= 0)
         {
-            LogTileMapError(
+            ENGINE_DEBUG_LOG(
                 "Invalid tile size."
             );
 
@@ -200,7 +185,7 @@ TileMapLoader::Load(
 
         if (tilesetPath.empty())
         {
-            LogTileMapError(
+            ENGINE_DEBUG_LOG(
                 "Tileset path is empty."
             );
 
@@ -210,7 +195,7 @@ TileMapLoader::Load(
         if (!json.contains("layers") ||
             !json["layers"].is_array())
         {
-            LogTileMapError(
+            ENGINE_DEBUG_LOG(
                 "Missing layers array."
             );
 
@@ -230,7 +215,7 @@ TileMapLoader::Load(
 
         if (!tileset)
         {
-            LogTileMapError(
+            ENGINE_DEBUG_LOG(
                 "Failed to load tileset."
             );
 
@@ -267,7 +252,7 @@ TileMapLoader::Load(
         {
             if (!layerJson.is_object())
             {
-                LogTileMapError(
+                ENGINE_DEBUG_LOG(
                     "Layer must be an object."
                 );
 
@@ -293,7 +278,7 @@ TileMapLoader::Load(
                 typeString,
                 layer.type))
             {
-                LogTileMapError(
+                ENGINE_DEBUG_LOG(
                     "Invalid layer type."
                 );
 
@@ -314,7 +299,7 @@ TileMapLoader::Load(
                     renderLayerString,
                     layer.renderLayer))
                 {
-                    LogTileMapError(
+                    ENGINE_DEBUG_LOG(
                         "Invalid render layer."
                     );
 
@@ -340,7 +325,7 @@ TileMapLoader::Load(
                 !layerJson["tiles"].
                 is_array())
             {
-                LogTileMapError(
+                ENGINE_DEBUG_LOG(
                     "Layer is missing tile array."
                 );
 
@@ -356,7 +341,7 @@ TileMapLoader::Load(
             if (layer.tiles.size() !=
                 expectedSize)
             {
-                LogTileMapError(
+                ENGINE_DEBUG_LOG(
                     "Layer tile count does not "
                     "match map size."
                 );
@@ -381,7 +366,7 @@ TileMapLoader::Load(
 
                     if (!tileset->IsValidTileId(tileId))
                     {
-                        LogTileMapError(
+                        ENGINE_DEBUG_LOG(
                             "Render layer contains an invalid TileId."
                         );
 
@@ -404,7 +389,7 @@ TileMapLoader::Load(
                     if (tileId != EmptyCollisionTile &&
                         !IsSolidCollisionTile(tileId))
                     {
-                        LogTileMapError(
+                        ENGINE_DEBUG_LOG(
                             "Collision layer contains an invalid value. "
                             "Only 0 (Empty) and 1 (Solid) are allowed."
                         );
@@ -424,7 +409,7 @@ TileMapLoader::Load(
     catch (
         const nlohmann::json::exception& e)
     {
-        LogTileMapError(
+        ENGINE_DEBUG_LOG(
             e.what()
         );
 

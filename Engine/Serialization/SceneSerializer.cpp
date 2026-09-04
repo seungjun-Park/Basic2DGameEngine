@@ -1,6 +1,7 @@
 #include "SceneSerializer.h"
 
 #include "SceneData.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <nlohmann/json.hpp>
 
@@ -13,22 +14,6 @@
 
 namespace
 {
-    void LogSceneError(
-        const char* message)
-    {
-        OutputDebugStringA(
-            "[SceneSerializer] "
-        );
-
-        OutputDebugStringA(
-            message
-        );
-
-        OutputDebugStringA(
-            "\n"
-        );
-    }
-
     const char* ToString(
         RenderLayer layer)
     {
@@ -254,7 +239,7 @@ bool SceneSerializer::Save(
     if (scene.version !=
         SceneData::CurrentVersion)
     {
-        LogSceneError(
+        ENGINE_DEBUG_LOG(
             "Unsupported scene version."
         );
 
@@ -274,7 +259,7 @@ bool SceneSerializer::Save(
     {
         if (entity.type.empty())
         {
-            LogSceneError(
+            ENGINE_DEBUG_LOG(
                 "Entity type is empty."
             );
 
@@ -320,7 +305,7 @@ bool SceneSerializer::Save(
             if (sprite.texturePath.empty() ||
                 !IsValidUV(sprite.uv))
             {
-                LogSceneError(
+                ENGINE_DEBUG_LOG(
                     "Invalid sprite data."
                 );
 
@@ -340,7 +325,7 @@ bool SceneSerializer::Save(
             if (!layer ||
                 !blend)
             {
-                LogSceneError(
+                ENGINE_DEBUG_LOG(
                     "Invalid render state."
                 );
 
@@ -404,7 +389,7 @@ bool SceneSerializer::Save(
 
     if (!file.is_open())
     {
-        LogSceneError(
+        ENGINE_DEBUG_LOG(
             "Failed to open output file."
         );
 
@@ -431,7 +416,7 @@ SceneSerializer::Load(
 
     if (!file.is_open())
     {
-        LogSceneError(
+        ENGINE_DEBUG_LOG(
             "Failed to open scene file."
         );
 
@@ -458,7 +443,7 @@ SceneSerializer::Load(
         if (version !=
             SceneData::CurrentVersion)
         {
-            LogSceneError(
+            ENGINE_DEBUG_LOG(
                 "Unsupported scene version."
             );
 
@@ -474,7 +459,7 @@ SceneSerializer::Load(
             root.end() ||
             !entitiesIt->is_array())
         {
-            LogSceneError(
+            ENGINE_DEBUG_LOG(
                 "Entities must be an array."
             );
 
@@ -507,7 +492,7 @@ SceneSerializer::Load(
 
             if (entity.type.empty())
             {
-                LogSceneError(
+                ENGINE_DEBUG_LOG(
                     "Entity type is missing."
                 );
 
@@ -591,7 +576,7 @@ SceneSerializer::Load(
             {
                 if (!std::isfinite(value))
                 {
-                    LogSceneError(
+                    ENGINE_DEBUG_LOG(
                         "Transform contains "
                         "a non-finite value."
                     );
@@ -721,7 +706,7 @@ SceneSerializer::Load(
     catch (
         const nlohmann::json::exception& e)
     {
-        LogSceneError(
+        ENGINE_DEBUG_LOG(
             e.what()
         );
 

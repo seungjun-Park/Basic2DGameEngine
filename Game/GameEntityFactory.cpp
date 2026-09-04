@@ -1,4 +1,5 @@
 #include "GameEntityFactory.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include "Player.h"
 #include "Enemy.h"
@@ -69,7 +70,7 @@ bool GameEntityFactory::ApplySerializedState(
 
     if (!texture)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameEntityFactory] "
             "Failed to load sprite texture.\n"
         );
@@ -133,7 +134,7 @@ Entity* GameEntityFactory::Create(
     {
         if (!playerTarget.IsValid())
         {
-            OutputDebugStringA(
+            ENGINE_DEBUG_LOG(
                 "[GameEntityFactory] "
                 "Enemy requires a valid Player target.\n"
             );
@@ -161,7 +162,7 @@ Entity* GameEntityFactory::Create(
         {
             enemy->Destroy();
 
-            OutputDebugStringA(
+            ENGINE_DEBUG_LOG(
                 "[GameEntityFactory] "
                 "Enemy Player target is invalid.\n"
             );
@@ -185,7 +186,7 @@ Entity* GameEntityFactory::Create(
         return enemy;
     }
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         "[GameEntityFactory] "
         "Unsupported entity type.\n"
     );
@@ -221,7 +222,7 @@ bool GameEntityFactory::Serialize(
     }
     else
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameEntityFactory] "
             "Unsupported runtime entity type "
             "for serialization.\n"
@@ -281,7 +282,7 @@ bool GameEntityFactory::Serialize(
         if (!idleDown ||
             !idleDown->IsValid())
         {
-            OutputDebugStringA(
+            ENGINE_DEBUG_LOG(
                 "[GameEntityFactory] "
                 "Enemy idle animation is invalid.\n"
             );
@@ -308,7 +309,7 @@ bool GameEntityFactory::Serialize(
 
     if (!texture)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameEntityFactory] "
             "Runtime entity has no sprite texture.\n"
         );
@@ -320,7 +321,7 @@ bool GameEntityFactory::Serialize(
         texture,
         serializedSprite.texturePath))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameEntityFactory] "
             "Sprite texture is not owned "
             "by ResourceManager.\n"

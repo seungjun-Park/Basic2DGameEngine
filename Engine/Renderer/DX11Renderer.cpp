@@ -1,4 +1,5 @@
 #include "DX11Renderer.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <cassert>
 #include <d3dcompiler.h>
@@ -6,6 +7,7 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+
 
 bool DX11Renderer::Initialize(
     HWND hwnd,
@@ -179,7 +181,7 @@ void DX11Renderer::EndFrame(
 
     if (FAILED(hr))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[DX11Renderer] Present failed.\n"
         );
     }
@@ -251,7 +253,7 @@ void DX11Renderer::Resize(
 
     if (FAILED(hr))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[DX11Renderer] ResizeBuffers failed.\n"
         );
 
@@ -260,7 +262,7 @@ void DX11Renderer::Resize(
 
     if (!CreateRenderTarget())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[DX11Renderer] Failed to recreate RenderTarget.\n"
         );
 

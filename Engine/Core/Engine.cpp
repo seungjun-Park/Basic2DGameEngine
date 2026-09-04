@@ -1,6 +1,7 @@
 #include "Engine.h"
 
 #include "Time.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include "Engine/Platform/Windows/WinWindow.h"
 #include "Engine/Renderer/IRenderer.h"
@@ -24,64 +25,35 @@ Engine::Engine() = default;
 
 Engine::~Engine()
 {
-    // Scene을 가장 먼저 제거한다.
-    //
-    // Entity
-    // → PhysicsBody
-    // → b2DestroyBody()
-    //
-    // 가 PhysicsSystem이 살아있는 동안
-    // 수행되어야 한다.
     m_scene.reset();
 
-    // DebugRenderer는 ResourceManager의
-    // white texture를 raw pointer로 참조하므로
-    // ResourceManager보다 먼저 제거한다.
     m_debugRenderer.reset();
 
-    // Frame-local command pointer를 보유하는
-    // RenderQueue도 더 이상 필요하지 않다.
     m_renderQueue.reset();
 
-    // 모든 Entity PhysicsBody가 제거된 뒤
-    // Box2D World를 제거한다.
     m_physicsSystem.reset();
 
     m_camera.reset();
 
     m_audioSystem.reset();
 
-    // Texture / Tileset / TileMap을
-    // GPU device가 살아있는 동안 제거한다.
     m_resourceManager.reset();
 
-    // SpriteRenderer의 D3D resource도
-    // DX11Renderer device보다 먼저 제거한다.
     m_spriteRenderer.reset();
-
     m_guiSystem.reset();
-
-    // Device / Context / SwapChain은 마지막.
     m_renderer.reset();
 
-    //
-    // 모든 event publisher / subscriber가
-    // 제거된 뒤 EventBus를 마지막으로 파괴.
-    //
     m_eventBus.reset();
 }
 
 bool Engine::Initialize(
     WinWindow& window)
 {
-    m_eventBus =
-        std::make_unique<EventBus>();
+    m_eventBus = std::make_unique<EventBus>();
 
-    m_renderQueue =
-        std::make_unique<RenderQueue>();
+    m_renderQueue = std::make_unique<RenderQueue>();
 
-    m_renderer =
-        std::make_unique<DX11Renderer>();
+    m_renderer = std::make_unique<DX11Renderer>();
 
     if (!m_renderer->Initialize(
         window.GetHandle(),
@@ -96,8 +68,7 @@ bool Engine::Initialize(
             m_renderer.get()
             );
 
-    m_spriteRenderer =
-        std::make_unique<SpriteRenderer>();
+    m_spriteRenderer = std::make_unique<SpriteRenderer>();
 
     if (!m_spriteRenderer->Initialize(
         *dx11,
@@ -107,8 +78,7 @@ bool Engine::Initialize(
         return false;
     }
 
-    m_resourceManager =
-        std::make_unique<ResourceManager>();
+    m_resourceManager = std::make_unique<ResourceManager>();
 
     if (!m_resourceManager->Initialize(
         *dx11))
@@ -116,15 +86,12 @@ bool Engine::Initialize(
         return false;
     }
 
-    m_audioSystem =
-        std::make_unique<
-        AudioSystem
-        >();
+    m_audioSystem = std::make_unique<AudioSystem>();
 
     if (!m_audioSystem->
         Initialize())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Engine] Failed to initialize "
             "AudioSystem.\n"
         );
@@ -151,8 +118,7 @@ bool Engine::Initialize(
             )
     );
 
-    m_debugRenderer =
-        std::make_unique<DebugRenderer>();
+    m_debugRenderer = std::make_unique<DebugRenderer>();
 
     Texture* whiteTexture =
         m_resourceManager->LoadTexture(
@@ -181,8 +147,7 @@ bool Engine::Initialize(
 void Engine::SetScene(
     std::unique_ptr<Scene> scene)
 {
-    m_scene =
-        std::move(scene);
+    m_scene = std::move(scene);
 
     if (m_scene)
     {
@@ -199,8 +164,7 @@ Engine::GetResourceManager()
 EventBus&
 Engine::GetEventBus()
 {
-    return
-        *m_eventBus;
+    return *m_eventBus;
 }
 
 void Engine::FixedUpdate(
@@ -221,8 +185,7 @@ void Engine::FixedUpdate(
             m_cpuProfiler,
             CpuProfileZone::FixedUpdate
         );
-        // 1.
-        // 게임 로직이 velocity / force를 Physics에 전달
+
         m_scene->FixedUpdate(
             fixedDeltaTime
         );
@@ -233,8 +196,7 @@ void Engine::FixedUpdate(
             m_cpuProfiler,
             CpuProfileZone::FixedUpdate
         );
-        // 2.
-        // 실제 Box2D simulation
+
         m_physicsSystem->Step(
             fixedDeltaTime
         );
@@ -245,8 +207,7 @@ void Engine::FixedUpdate(
             m_cpuProfiler,
             CpuProfileZone::FixedUpdate
         );
-        // 3.
-        // Box2D 결과를 render Transform으로 반영
+
         m_scene->
             SyncPhysicsTransforms();
     }
@@ -256,8 +217,7 @@ void Engine::FixedUpdate(
             m_cpuProfiler,
             CpuProfileZone::FixedUpdate
         );
-        // 4.
-        // contact event 전달
+
         m_physicsSystem->
             DispatchContactEvents(
                 *m_scene,
@@ -283,8 +243,7 @@ void Engine::Update(
     if (WinInput::IsRawKeyPressed(
         VK_F1))
     {
-        m_showDebug =
-            !m_showDebug;
+        m_showDebug = !m_showDebug;
     }
 
     if (WinInput::IsRawKeyPressed(VK_F3))
@@ -293,9 +252,7 @@ void Engine::Update(
 
         if (!m_showGui)
         {
-            WinInput::SetCaptureState(
-                false,
-                false);
+            WinInput::SetCaptureState(false, false);
         }
     }
 

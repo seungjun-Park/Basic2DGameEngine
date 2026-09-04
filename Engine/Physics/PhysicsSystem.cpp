@@ -5,6 +5,7 @@
 #include "Engine/Scene/Scene.h"
 #include "Engine/Event/EventBus.h"
 #include "Engine/Physics/CollisionEvents.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <Windows.h>
 
@@ -40,7 +41,7 @@ bool PhysicsSystem::Initialize()
     if (B2_IS_NULL(
         m_worldId))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Physics] Failed to create Box2D world.\n"
         );
 
@@ -49,7 +50,7 @@ bool PhysicsSystem::Initialize()
 
     m_initialized = true;
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         "[Physics] Box2D world initialized.\n"
     );
 

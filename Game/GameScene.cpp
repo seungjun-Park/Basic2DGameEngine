@@ -26,6 +26,7 @@
 #include "Engine/Audio/AudioClip.h"
 #include "Engine/Audio/AudioSystem.h"
 #include "Engine/GUI/EngineGui.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <optional>
 #include <utility>
@@ -83,7 +84,7 @@ void GameScene::Initialize()
 
     if (!m_tileMap)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Failed to load TileMap.\n"
         );
 
@@ -98,7 +99,7 @@ void GameScene::Initialize()
     if (!m_tileMapRenderer->Build(
         *m_tileMap))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Failed to build TileMapRenderer.\n"
         );
 
@@ -116,7 +117,7 @@ void GameScene::Initialize()
         *m_tileMap,
         m_physics))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Failed to build "
             "TileMapCollider.\n"
         );
@@ -563,7 +564,7 @@ bool GameScene::LoadEnemyAnimations()
 
         if (!clip)
         {
-            OutputDebugStringA(
+            ENGINE_DEBUG_LOG(
                 "[GameScene] Failed to load "
                 "enemy animation.\n"
             );
@@ -580,7 +581,7 @@ bool GameScene::LoadEnemyAnimations()
 
     if (!m_enemyAnimations.IsValid())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Enemy animation "
             "set is incomplete.\n"
         );
@@ -604,7 +605,7 @@ bool GameScene::LoadSerializedEntities(
 
     if (!sceneData)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Failed to load "
             "serialized scene.\n"
         );
@@ -637,7 +638,7 @@ bool GameScene::LoadSerializedEntities(
         if (!factory.IsSupportedType(
             entity.type))
         {
-            OutputDebugStringA(
+            ENGINE_DEBUG_LOG(
                 "[GameScene] Scene contains "
                 "an unsupported entity type.\n"
             );
@@ -662,7 +663,7 @@ bool GameScene::LoadSerializedEntities(
     if (playerCount != 1 ||
         !playerData)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Scene must contain "
             "exactly one Player.\n"
         );
@@ -689,7 +690,7 @@ bool GameScene::LoadSerializedEntities(
     {
         ClearEntities();
 
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Failed to create Player.\n"
         );
 
@@ -708,7 +709,7 @@ bool GameScene::LoadSerializedEntities(
         m_playerHandle =
             EntityHandle{};
 
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Player has "
             "an invalid EntityHandle.\n"
         );
@@ -746,7 +747,7 @@ bool GameScene::LoadSerializedEntities(
             ClearEntities();
             m_player = nullptr;
 
-            OutputDebugStringA(
+            ENGINE_DEBUG_LOG(
                 "[GameScene] Failed to create "
                 "serialized entity.\n"
             );
@@ -797,7 +798,7 @@ bool GameScene::SaveSerializedEntities(
             *entity,
             serializedEntity))
         {
-            OutputDebugStringA(
+            ENGINE_DEBUG_LOG(
                 "[GameScene] Failed to serialize "
                 "runtime entity.\n"
             );
@@ -824,7 +825,7 @@ bool GameScene::SaveSerializedEntities(
     //
     if (playerCount != 1)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Serialized scene must "
             "contain exactly one Player.\n"
         );
@@ -836,7 +837,7 @@ bool GameScene::SaveSerializedEntities(
         sceneData,
         path))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Failed to save "
             "serialized scene.\n"
         );
@@ -871,7 +872,7 @@ void GameScene::HandleCollisionEnterEvent(
         return;
     }
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         "[Player] Collision Enter\n"
     );
 }
@@ -886,7 +887,7 @@ void GameScene::HandleCollisionExitEvent(
         return;
     }
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         "[Player] Collision Exit\n"
     );
 }
@@ -931,7 +932,7 @@ void GameScene::DefeatEnemy(
     if (!enemyHandle.IsValid() ||
         !instigatorHandle.IsValid())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Enemy defeat has "
             "an invalid EntityHandle.\n"
         );
@@ -975,7 +976,7 @@ bool GameScene::InitializeGameplayAudio()
 
     if (!m_enemyDefeatSfx)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Failed to load "
             "enemy defeat SFX.\n"
         );
@@ -991,7 +992,7 @@ bool GameScene::InitializeGameplayAudio()
 
     if (!m_bgmClip)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Failed to load "
             "gameplay BGM.\n"
         );
@@ -1012,7 +1013,7 @@ bool GameScene::InitializeGameplayAudio()
 
     if (!m_bgmHandle.IsValid())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[GameScene] Failed to start "
             "gameplay BGM.\n"
         );

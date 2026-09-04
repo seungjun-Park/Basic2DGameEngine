@@ -1,6 +1,7 @@
 #include "AudioClipLoader.h"
 
 #include "AudioClip.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <Windows.h>
 
@@ -118,23 +119,6 @@ namespace
             value[2] == expected[2] &&
             value[3] == expected[3];
     }
-
-
-    void LogLoadFailure(
-        const char* reason)
-    {
-        OutputDebugStringA(
-            "[Audio] WAV load failed: "
-        );
-
-        OutputDebugStringA(
-            reason
-        );
-
-        OutputDebugStringA(
-            "\n"
-        );
-    }
 }
 
 
@@ -151,7 +135,7 @@ AudioClipLoader::Load(
 
     if (!file)
     {
-        LogLoadFailure(
+        AUDIOLOADER_DEBUG_LOG(
             "could not open file."
         );
 
@@ -192,7 +176,7 @@ AudioClipLoader::Load(
             waveId.size()
         ))
     {
-        LogLoadFailure(
+        AUDIOLOADER_DEBUG_LOG(
             "truncated RIFF header."
         );
 
@@ -204,7 +188,7 @@ AudioClipLoader::Load(
         riffId,
         "RIFF"))
     {
-        LogLoadFailure(
+        AUDIOLOADER_DEBUG_LOG(
             "file is not RIFF."
         );
 
@@ -216,7 +200,7 @@ AudioClipLoader::Load(
         waveId,
         "WAVE"))
     {
-        LogLoadFailure(
+        AUDIOLOADER_DEBUG_LOG(
             "RIFF file is not WAVE."
         );
 
@@ -261,7 +245,7 @@ AudioClipLoader::Load(
             sizeof(chunkSize)
         ))
         {
-            LogLoadFailure(
+            AUDIOLOADER_DEBUG_LOG(
                 "truncated chunk header."
             );
 
@@ -279,7 +263,7 @@ AudioClipLoader::Load(
             //
             if (chunkSize < 16)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "fmt chunk is too small."
                 );
 
@@ -294,7 +278,7 @@ AudioClipLoader::Load(
             if (chunkSize >
                 64 * 1024)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "fmt chunk is too large."
                 );
 
@@ -314,7 +298,7 @@ AudioClipLoader::Load(
                 formatData.size()
             ))
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "truncated fmt chunk."
                 );
 
@@ -372,7 +356,7 @@ AudioClipLoader::Load(
                     bitsPerSample
                 ))
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "invalid fmt chunk."
                 );
 
@@ -387,7 +371,7 @@ AudioClipLoader::Load(
             if (formatTag !=
                 WAVE_FORMAT_PCM)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "only PCM WAV is supported."
                 );
 
@@ -401,7 +385,7 @@ AudioClipLoader::Load(
                 averageBytes == 0 ||
                 bitsPerSample == 0)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "invalid PCM format values."
                 );
 
@@ -418,7 +402,7 @@ AudioClipLoader::Load(
                 bitsPerSample != 24 &&
                 bitsPerSample != 32)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "unsupported PCM bit depth."
                 );
 
@@ -439,7 +423,7 @@ AudioClipLoader::Load(
             if (blockAlign !=
                 expectedBlockAlign)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "invalid PCM block alignment."
                 );
 
@@ -462,7 +446,7 @@ AudioClipLoader::Load(
                 std::uint32_t
                 >::max())
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "PCM byte rate overflow."
                 );
 
@@ -475,7 +459,7 @@ AudioClipLoader::Load(
                     expectedAverageBytes
                     ))
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "invalid PCM byte rate."
                 );
 
@@ -516,7 +500,7 @@ AudioClipLoader::Load(
         {
             if (foundData)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "multiple data chunks "
                     "are not supported."
                 );
@@ -527,7 +511,7 @@ AudioClipLoader::Load(
 
             if (chunkSize == 0)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "empty data chunk."
                 );
 
@@ -541,7 +525,7 @@ AudioClipLoader::Load(
                     ) >
                 MaxAudioDataBytes)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "audio data is too large."
                 );
 
@@ -560,7 +544,7 @@ AudioClipLoader::Load(
                 audioData.size()
             ))
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "truncated audio data."
                 );
 
@@ -586,7 +570,7 @@ AudioClipLoader::Load(
 
             if (!file)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "failed to skip RIFF chunk."
                 );
 
@@ -607,7 +591,7 @@ AudioClipLoader::Load(
 
             if (!file)
             {
-                LogLoadFailure(
+                AUDIOLOADER_DEBUG_LOG(
                     "invalid RIFF padding."
                 );
 
@@ -619,7 +603,7 @@ AudioClipLoader::Load(
 
     if (!foundFormat)
     {
-        LogLoadFailure(
+        AUDIOLOADER_DEBUG_LOG(
             "fmt chunk was not found."
         );
 
@@ -629,7 +613,7 @@ AudioClipLoader::Load(
 
     if (!foundData)
     {
-        LogLoadFailure(
+        AUDIOLOADER_DEBUG_LOG(
             "data chunk was not found."
         );
 
@@ -641,7 +625,7 @@ AudioClipLoader::Load(
         audioData.size() %
         format.nBlockAlign != 0)
     {
-        LogLoadFailure(
+        AUDIOLOADER_DEBUG_LOG(
             "audio data is not frame aligned."
         );
 
@@ -660,7 +644,7 @@ AudioClipLoader::Load(
 
     if (!clip->IsValid())
     {
-        LogLoadFailure(
+        AUDIOLOADER_DEBUG_LOG(
             "constructed AudioClip is invalid."
         );
 
@@ -668,7 +652,7 @@ AudioClipLoader::Load(
     }
 
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         "[Audio] PCM WAV loaded.\n"
     );
 

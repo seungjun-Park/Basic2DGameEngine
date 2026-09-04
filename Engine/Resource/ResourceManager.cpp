@@ -8,6 +8,7 @@
 #include "Engine/Animation/AnimationClipLoader.h"
 #include "Engine/Audio/AudioClip.h"
 #include "Engine/Audio/AudioClipLoader.h"
+#include "Engine/Debug/DebugLog.h"
 
 ResourceManager::ResourceManager() = default;
 
@@ -58,7 +59,7 @@ Texture* ResourceManager::LoadTexture(
 {
     if (!m_renderer)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Resource] LoadTexture called "
             "before initialization.\n"
         );
@@ -71,7 +72,7 @@ Texture* ResourceManager::LoadTexture(
 
     if (it != m_textures.end())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Resource] Texture cache hit\n"
         );
 
@@ -101,7 +102,7 @@ Texture* ResourceManager::LoadTexture(
         path
     );
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         "[Resource] Texture loaded\n"
     );
 
@@ -196,7 +197,7 @@ ResourceManager::LoadAnimationClip(
     if (it !=
         m_animationClips.end())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Resource] Animation clip cache hit\n"
         );
 
@@ -218,7 +219,7 @@ ResourceManager::LoadAnimationClip(
     if (!IsTextureManaged(
         animationClip->GetTexture()))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Resource] AnimationClip "
             "references an unmanaged texture.\n"
         );
@@ -236,7 +237,7 @@ ResourceManager::LoadAnimationClip(
         )
     );
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         "[Resource] Animation clip loaded\n"
     );
 
@@ -309,7 +310,7 @@ AudioClip* ResourceManager::LoadAudioClip(
 
     if (!audioClip)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Resource] Failed to "
             "load AudioClip.\n"
         );
@@ -328,7 +329,7 @@ AudioClip* ResourceManager::LoadAudioClip(
     );
 
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         "[Resource] AudioClip loaded.\n"
     );
 

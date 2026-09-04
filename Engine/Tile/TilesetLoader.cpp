@@ -4,6 +4,7 @@
 
 #include "Engine/Resource/ResourceManager.h"
 #include "Engine/Graphics/Texture.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <nlohmann/json.hpp>
 
@@ -13,24 +14,6 @@
 #include <filesystem>
 #include <fstream>
 
-namespace
-{
-    void LogTilesetError(
-        const char* message)
-    {
-        OutputDebugStringA(
-            "[TilesetLoader] "
-        );
-
-        OutputDebugStringA(
-            message
-        );
-
-        OutputDebugStringA(
-            "\n"
-        );
-    }
-}
 
 std::unique_ptr<Tileset>
 TilesetLoader::Load(
@@ -46,7 +29,7 @@ TilesetLoader::Load(
 
     if (!file.is_open())
     {
-        LogTilesetError(
+        TILESET_DEBUG_LOG(
             "Failed to open file."
         );
 
@@ -61,7 +44,7 @@ TilesetLoader::Load(
 
         if (!json.is_object())
         {
-            LogTilesetError(
+            TILESET_DEBUG_LOG(
                 "Root must be a JSON object."
             );
 
@@ -119,7 +102,7 @@ TilesetLoader::Load(
 
         if (texturePath.empty())
         {
-            LogTilesetError(
+            TILESET_DEBUG_LOG(
                 "Texture path is empty."
             );
 
@@ -129,7 +112,7 @@ TilesetLoader::Load(
         if (tileWidth <= 0 ||
             tileHeight <= 0)
         {
-            LogTilesetError(
+            TILESET_DEBUG_LOG(
                 "Invalid tile size."
             );
 
@@ -139,7 +122,7 @@ TilesetLoader::Load(
         if (columns <= 0 ||
             rows <= 0)
         {
-            LogTilesetError(
+            TILESET_DEBUG_LOG(
                 "Invalid grid size."
             );
 
@@ -148,7 +131,7 @@ TilesetLoader::Load(
 
         if (margin < 0)
         {
-            LogTilesetError(
+            TILESET_DEBUG_LOG(
                 "Margin cannot be negative."
             );
 
@@ -157,7 +140,7 @@ TilesetLoader::Load(
 
         if (spacing < 0)
         {
-            LogTilesetError(
+            TILESET_DEBUG_LOG(
                 "Spacing cannot be negative."
             );
 
@@ -177,7 +160,7 @@ TilesetLoader::Load(
 
         if (!texture)
         {
-            LogTilesetError(
+            TILESET_DEBUG_LOG(
                 "Failed to load texture."
             );
 
@@ -261,7 +244,7 @@ TilesetLoader::Load(
                 texture->GetHeight()
                 ))
         {
-            LogTilesetError(
+            TILESET_DEBUG_LOG(
                 "Tileset layout exceeds "
                 "texture bounds."
             );
@@ -299,7 +282,7 @@ TilesetLoader::Load(
     catch (
         const nlohmann::json::exception& e)
     {
-        LogTilesetError(
+        TILESET_DEBUG_LOG(
             e.what()
         );
 

@@ -4,6 +4,7 @@
 
 #include "Engine/Resource/ResourceManager.h"
 #include "Engine/Graphics/Texture.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <nlohmann/json.hpp>
 
@@ -13,24 +14,9 @@
 #include <fstream>
 #include <string>
 
+
 namespace
 {
-    void LogAnimationClipError(
-        const char* message)
-    {
-        OutputDebugStringA(
-            "[AnimationClipLoader] "
-        );
-
-        OutputDebugStringA(
-            message
-        );
-
-        OutputDebugStringA(
-            "\n"
-        );
-    }
-
     bool ReadUVRect(
         const nlohmann::json& json,
         UVRect& outUV)
@@ -75,7 +61,7 @@ AnimationClipLoader::Load(
 
     if (!file.is_open())
     {
-        LogAnimationClipError(
+        ANIMATIONCLIP_DEBUG_LOG(
             "Failed to open file."
         );
 
@@ -90,7 +76,7 @@ AnimationClipLoader::Load(
 
         if (!json.is_object())
         {
-            LogAnimationClipError(
+            ANIMATIONCLIP_DEBUG_LOG(
                 "Root must be a JSON object."
             );
 
@@ -105,7 +91,7 @@ AnimationClipLoader::Load(
 
         if (texturePath.empty())
         {
-            LogAnimationClipError(
+            ANIMATIONCLIP_DEBUG_LOG(
                 "Texture path is empty."
             );
 
@@ -127,7 +113,7 @@ AnimationClipLoader::Load(
             !framesIt->is_array() ||
             framesIt->empty())
         {
-            LogAnimationClipError(
+            ANIMATIONCLIP_DEBUG_LOG(
                 "Frames must be a non-empty array."
             );
 
@@ -151,7 +137,7 @@ AnimationClipLoader::Load(
 
         if (!texture)
         {
-            LogAnimationClipError(
+            ANIMATIONCLIP_DEBUG_LOG(
                 "Failed to load texture."
             );
 
@@ -176,7 +162,7 @@ AnimationClipLoader::Load(
         {
             if (!frameJson.is_object())
             {
-                LogAnimationClipError(
+                ANIMATIONCLIP_DEBUG_LOG(
                     "Frame must be an object."
                 );
 
@@ -191,7 +177,7 @@ AnimationClipLoader::Load(
             if (uvIt ==
                 frameJson.end())
             {
-                LogAnimationClipError(
+                ANIMATIONCLIP_DEBUG_LOG(
                     "Frame UV is missing."
                 );
 
@@ -204,7 +190,7 @@ AnimationClipLoader::Load(
                 *uvIt,
                 uv))
             {
-                LogAnimationClipError(
+                ANIMATIONCLIP_DEBUG_LOG(
                     "Frame UV must contain "
                     "four numeric values."
                 );
@@ -226,7 +212,7 @@ AnimationClipLoader::Load(
                 uv,
                 duration))
             {
-                LogAnimationClipError(
+                ANIMATIONCLIP_DEBUG_LOG(
                     "Invalid animation frame."
                 );
 
@@ -236,7 +222,7 @@ AnimationClipLoader::Load(
 
         if (!clip->IsValid())
         {
-            LogAnimationClipError(
+            ANIMATIONCLIP_DEBUG_LOG(
                 "Animation clip is invalid."
             );
 
@@ -248,7 +234,7 @@ AnimationClipLoader::Load(
     catch (
         const nlohmann::json::exception& e)
     {
-        LogAnimationClipError(
+        ANIMATIONCLIP_DEBUG_LOG(
             e.what()
         );
 

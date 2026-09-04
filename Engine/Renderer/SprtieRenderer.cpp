@@ -4,6 +4,7 @@
 #include "DX11Renderer.h"
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Components/Sprite.h"
+#include "Engine/Debug/DebugLog.h"
 #include "RenderCommand.h"
 
 #include <d3dcompiler.h>
@@ -261,7 +262,7 @@ bool SpriteRenderer::CompileShader(
     {
         if (errorBlob)
         {
-            OutputDebugStringA(
+            ENGINE_DEBUG_LOG(
                 static_cast<const char*>(
                     errorBlob->GetBufferPointer()
                     )

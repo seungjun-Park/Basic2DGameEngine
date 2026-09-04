@@ -1,6 +1,7 @@
 #include "AudioSystem.h"
 
 #include "AudioClip.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <Windows.h>
 
@@ -13,31 +14,6 @@
 
 #pragma comment(lib, "xaudio2.lib")
 
-
-namespace
-{
-    void LogAudioError(
-        const char* operation,
-        HRESULT hr
-    )
-    {
-        char message[256]{};
-
-        sprintf_s(
-            message,
-            "[Audio] %s failed. "
-            "HRESULT=0x%08lX\n",
-            operation,
-            static_cast<unsigned long>(
-                hr
-                )
-        );
-
-        OutputDebugStringA(
-            message
-        );
-    }
-}
 
 
 AudioSystem::~AudioSystem()
@@ -64,7 +40,7 @@ bool AudioSystem::Initialize()
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "XAudio2Create",
             hr
         );
@@ -86,7 +62,7 @@ bool AudioSystem::Initialize()
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "CreateMasteringVoice",
             hr
         );
@@ -122,7 +98,7 @@ bool AudioSystem::Initialize()
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "CreateSubmixVoice(SFX)",
             hr
         );
@@ -143,7 +119,7 @@ bool AudioSystem::Initialize()
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "CreateSubmixVoice(Music)",
             hr
         );
@@ -161,7 +137,7 @@ bool AudioSystem::Initialize()
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SetVolume(Music)",
             hr
         );
@@ -174,7 +150,7 @@ bool AudioSystem::Initialize()
     if (m_outputChannels == 0 ||
         m_outputSampleRate == 0)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Audio] Invalid mastering "
             "voice output configuration.\n"
         );
@@ -200,7 +176,7 @@ bool AudioSystem::Initialize()
         m_outputSampleRate
     );
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         message
     );
 
@@ -410,7 +386,7 @@ bool AudioSystem::PlayOneShot(
 {
     if (!IsInitialized())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Audio] PlayOneShot called "
             "before initialization.\n"
         );
@@ -421,7 +397,7 @@ bool AudioSystem::PlayOneShot(
 
     if (!clip.IsValid())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Audio] PlayOneShot received "
             "an invalid AudioClip.\n"
         );
@@ -448,7 +424,7 @@ bool AudioSystem::PlayOneShot(
             >::max)()
             ))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Audio] AudioClip buffer "
             "size is invalid.\n"
         );
@@ -470,7 +446,7 @@ bool AudioSystem::PlayOneShot(
 
     if (!activeVoice)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Audio] Maximum active "
             "SFX voice count reached.\n"
         );
@@ -494,7 +470,7 @@ bool AudioSystem::PlayOneShot(
     if (FAILED(hr) ||
         !sourceVoice)
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "CreateSourceVoice",
             hr
         );
@@ -520,7 +496,7 @@ bool AudioSystem::PlayOneShot(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SetVolume",
             hr
         );
@@ -561,7 +537,7 @@ bool AudioSystem::PlayOneShot(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SubmitSourceBuffer",
             hr
         );
@@ -582,7 +558,7 @@ bool AudioSystem::PlayOneShot(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SourceVoice::Start",
             hr
         );
@@ -795,7 +771,7 @@ AudioSystem::PlayLoop(
 {
     if (!IsInitialized())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Audio] PlayLoop called "
             "before initialization.\n"
         );
@@ -806,7 +782,7 @@ AudioSystem::PlayLoop(
 
     if (!clip.IsValid())
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Audio] PlayLoop received "
             "an invalid AudioClip.\n"
         );
@@ -844,7 +820,7 @@ AudioSystem::PlayLoop(
 
     if (!slot)
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Audio] Maximum persistent "
             "voice count reached.\n"
         );
@@ -868,7 +844,7 @@ AudioSystem::PlayLoop(
     if (FAILED(hr) ||
         !sourceVoice)
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "CreateSourceVoice(loop)",
             hr
         );
@@ -894,7 +870,7 @@ AudioSystem::PlayLoop(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SetVolume(loop)",
             hr
         );
@@ -952,7 +928,7 @@ AudioSystem::PlayLoop(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SubmitSourceBuffer(loop)",
             hr
         );
@@ -970,7 +946,7 @@ AudioSystem::PlayLoop(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SourceVoice::Start(loop)",
             hr
         );
@@ -1032,7 +1008,7 @@ bool AudioSystem::Pause(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SourceVoice::Stop(pause)",
             hr
         );
@@ -1071,7 +1047,7 @@ bool AudioSystem::Resume(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SourceVoice::Start(resume)",
             hr
         );
@@ -1272,7 +1248,7 @@ bool AudioSystem::SetMasterVolume(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SetVolume(Master)",
             hr
         );
@@ -1315,7 +1291,7 @@ bool AudioSystem::SetSfxVolume(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SetVolume(SFX)",
             hr
         );
@@ -1358,7 +1334,7 @@ bool AudioSystem::SetMusicVolume(
 
     if (FAILED(hr))
     {
-        LogAudioError(
+        AUDIO_DEBUG_LOG(
             "SetVolume(Music)",
             hr
         );
