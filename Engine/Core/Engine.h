@@ -32,89 +32,66 @@ public:
         WinWindow& window
     );
 
+    void BeginGuiFrame();
+    void BeginProfileFrame();
     void FixedUpdate(
         float fixedDeltaTime
     );
-
     void Update(
         float deltaTime
     );
-
     void LateUpdate(
         float deltaTime
     );
-
     void Render(
         bool vsync
     );
+    void EndProfileFrame();
 
+    
     void Resize(
         int width,
         int height
     );
-
+    void SetScene(
+        std::unique_ptr<Scene> scene
+    );
     void SetInterpolationAlpha(
         float alpha
     );
 
     float GetInterpolationAlpha() const;
-
-    DebugStats& GetDebugStats();
-
-    void SetScene(
-        std::unique_ptr<Scene> scene
-    );
-
-    void BeginProfileFrame();
-
-    void EndProfileFrame();
-
-    void BeginGuiFrame();
-
     ResourceManager& GetResourceManager();
-
     Camera& GetCamera();
-
     PhysicsSystem&
         GetPhysicsSystem();
-
     EventBus&
         GetEventBus();
-
     AudioSystem&
         GetAudioSystem();
+    DebugStats& GetDebugStats();
 
 private:
     std::unique_ptr<Scene>
         m_scene;
-
     std::unique_ptr<EventBus>
         m_eventBus;
-
     std::unique_ptr<Camera>
         m_camera;
-
     std::unique_ptr<PhysicsSystem>
         m_physicsSystem;
-
     std::unique_ptr<AudioSystem>
         m_audioSystem;
-
     std::unique_ptr<RenderQueue>
         m_renderQueue;
-
     std::unique_ptr<DebugRenderer>
         m_debugRenderer;
-
     std::unique_ptr<IRenderer>
         m_renderer;
-
     std::unique_ptr<SpriteRenderer>
         m_spriteRenderer;
-
     std::unique_ptr<ResourceManager>
         m_resourceManager;
-
     std::unique_ptr<GuiSystem> m_guiSystem;
 
     EngineConfig m_config;

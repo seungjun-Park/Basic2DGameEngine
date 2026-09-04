@@ -26,6 +26,8 @@ public:
             const Application&
             ) = delete;
 
+
+
     bool Initialize(
         HINSTANCE hInstance,
         const EngineConfig& config
@@ -33,26 +35,23 @@ public:
 
     int Run();
 
-    Engine& GetEngine();
-
     void SetTargetFPS(
         std::uint32_t fps
     );
-
-    std::uint32_t GetTargetFPS() const;
-
     void SetVSync(
         bool enabled
     );
-
     void SetPaused(
         bool paused
     );
 
-    bool IsPaused() const;
 
+    Engine& GetEngine();
+    std::uint32_t GetTargetFPS() const;
     const EngineConfig&
         GetConfig() const;
+
+    bool IsPaused() const;
 
 private:
     void ProcessPendingResize();
@@ -61,9 +60,9 @@ private:
         std::uint32_t fixedSteps
     );
 
-    void UpdateWindowTitle();
-
     void ReportProfilerSpikeIfNeeded();
+
+    void UpdateWindowTitle();
 
 private:
     std::unique_ptr<WinWindow>

@@ -1,6 +1,5 @@
 #include "Engine.h"
 
-#include "Time.h"
 #include "Engine/Debug/DebugLog.h"
 
 #include "Engine/Platform/Windows/WinWindow.h"
@@ -144,27 +143,38 @@ bool Engine::Initialize(
     return true;
 }
 
-void Engine::SetScene(
-    std::unique_ptr<Scene> scene)
-{
-    m_scene = std::move(scene);
 
-    if (m_scene)
+void Engine::BeginGuiFrame()
+{
+    if (!m_guiSystem ||
+        !m_guiSystem->IsInitialized())
     {
-        m_scene->Initialize();
+        WinInput::SetCaptureState(
+            false,
+            false);
+
+        return;
     }
+
+    m_guiSystem->BeginFrame();
+
+    if (!m_showGui)
+    {
+        WinInput::SetCaptureState(
+            false,
+            false);
+
+        return;
+    }
+
+    WinInput::SetCaptureState(
+        m_guiSystem->WantsCaptureKeyboard(),
+        m_guiSystem->WantsCaptureMouse());
 }
 
-ResourceManager&
-Engine::GetResourceManager()
+void Engine::BeginProfileFrame()
 {
-    return *m_resourceManager;
-}
-
-EventBus&
-Engine::GetEventBus()
-{
-    return *m_eventBus;
+    m_cpuProfiler.BeginFrame();
 }
 
 void Engine::FixedUpdate(
@@ -471,70 +481,6 @@ void Engine::Render(
     }
 }
 
-void Engine::Resize(
-    int width,
-    int height)
-{
-    if (width <= 0 ||
-        height <= 0)
-    {
-        return;
-    }
-
-    m_renderer->Resize(
-        width,
-        height
-    );
-
-    m_camera->Resize(
-        static_cast<float>(
-            width
-            ),
-        static_cast<float>(
-            height
-            )
-    );
-}
-
-void Engine::SetInterpolationAlpha(
-    float alpha)
-{
-    m_interpolationAlpha =
-        std::clamp(
-            alpha,
-            0.0f,
-            1.0f
-        );
-}
-
-float Engine::GetInterpolationAlpha() const
-{
-    return m_interpolationAlpha;
-}
-
-Camera& Engine::GetCamera()
-{
-    return *m_camera;
-}
-
-DebugStats&
-Engine::GetDebugStats()
-{
-    return m_debugStats;
-}
-
-PhysicsSystem&
-Engine::GetPhysicsSystem()
-{
-    return *m_physicsSystem;
-}
-
-void Engine::BeginProfileFrame()
-{
-    m_cpuProfiler.BeginFrame();
-}
-
-
 void Engine::EndProfileFrame()
 {
     m_cpuProfiler.EndFrame();
@@ -774,6 +720,81 @@ void Engine::EndProfileFrame()
             );
 }
 
+void Engine::Resize(
+    int width,
+    int height)
+{
+    if (width <= 0 ||
+        height <= 0)
+    {
+        return;
+    }
+
+    m_renderer->Resize(
+        width,
+        height
+    );
+
+    m_camera->Resize(
+        static_cast<float>(
+            width
+            ),
+        static_cast<float>(
+            height
+            )
+    );
+}
+
+void Engine::SetScene(
+    std::unique_ptr<Scene> scene)
+{
+    m_scene = std::move(scene);
+
+    if (m_scene)
+    {
+        m_scene->Initialize();
+    }
+}
+
+void Engine::SetInterpolationAlpha(
+    float alpha)
+{
+    m_interpolationAlpha =
+        std::clamp(
+            alpha,
+            0.0f,
+            1.0f
+        );
+}
+
+ResourceManager&
+Engine::GetResourceManager()
+{
+    return *m_resourceManager;
+}
+
+float Engine::GetInterpolationAlpha() const
+{
+    return m_interpolationAlpha;
+}
+
+Camera& Engine::GetCamera()
+{
+    return *m_camera;
+}
+
+PhysicsSystem&
+Engine::GetPhysicsSystem()
+{
+    return *m_physicsSystem;
+}
+
+EventBus&
+Engine::GetEventBus()
+{
+    return *m_eventBus;
+}
+
 AudioSystem&
 Engine::GetAudioSystem()
 {
@@ -781,30 +802,8 @@ Engine::GetAudioSystem()
         *m_audioSystem;
 }
 
-void Engine::BeginGuiFrame()
+DebugStats&
+Engine::GetDebugStats()
 {
-    if (!m_guiSystem ||
-        !m_guiSystem->IsInitialized())
-    {
-        WinInput::SetCaptureState(
-            false,
-            false);
-
-        return;
-    }
-
-    m_guiSystem->BeginFrame();
-
-    if (!m_showGui)
-    {
-        WinInput::SetCaptureState(
-            false,
-            false);
-
-        return;
-    }
-
-    WinInput::SetCaptureState(
-        m_guiSystem->WantsCaptureKeyboard(),
-        m_guiSystem->WantsCaptureMouse());
+    return m_debugStats;
 }

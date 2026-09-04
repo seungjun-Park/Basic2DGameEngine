@@ -104,8 +104,6 @@ void Time::Tick()
             elapsedSeconds
             );
 
-    // Breakpoint / Alt+Tab 등에 의해
-    // 지나치게 큰 DeltaTime이 들어가는 것 방지
     s_unscaledDeltaTime =
         std::min(
             s_unscaledDeltaTime,
@@ -138,52 +136,6 @@ void Time::Tick()
         s_fpsTimer = 0.0f;
     }
 }
-
-float Time::DeltaTime()
-{
-    return s_deltaTime;
-}
-
-float Time::UnscaledDeltaTime()
-{
-    return s_unscaledDeltaTime;
-}
-
-float Time::FixedDeltaTime()
-{
-    return s_fixedDeltaTime;
-}
-
-float Time::TotalTime()
-{
-    return s_totalTime;
-}
-
-float Time::UnscaledTotalTime()
-{
-    return s_unscaledTotalTime;
-}
-
-float Time::FPS()
-{
-    return s_fps;
-}
-
-float Time::TimeScale()
-{
-    return s_timeScale;
-}
-
-void Time::SetTimeScale(
-    float scale)
-{
-    s_timeScale =
-        std::max(
-            scale,
-            0.0f
-        );
-}
-
 void Time::ResetFrameTimer()
 {
     LARGE_INTEGER counter{};
@@ -197,4 +149,43 @@ void Time::ResetFrameTimer()
 
     s_deltaTime = 0.0f;
     s_unscaledDeltaTime = 0.0f;
+}
+
+void Time::SetTimeScale(
+    float scale)
+{
+    s_timeScale =
+        std::max(
+            scale,
+            0.0f
+        );
+}
+
+float Time::DeltaTime()
+{
+    return s_deltaTime;
+}
+float Time::UnscaledDeltaTime()
+{
+    return s_unscaledDeltaTime;
+}
+float Time::FixedDeltaTime()
+{
+    return s_fixedDeltaTime;
+}
+float Time::TotalTime()
+{
+    return s_totalTime;
+}
+float Time::UnscaledTotalTime()
+{
+    return s_unscaledTotalTime;
+}
+float Time::FPS()
+{
+    return s_fps;
+}
+float Time::TimeScale()
+{
+    return s_timeScale;
 }
