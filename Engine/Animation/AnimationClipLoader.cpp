@@ -1,14 +1,10 @@
 #include "AnimationClipLoader.h"
 
 #include "AnimationClip.h"
-
-#include "Engine/Resource/ResourceManager.h"
-#include "Engine/Graphics/Texture.h"
 #include "Engine/Debug/DebugLog.h"
+#include "Engine/Resource/ResourceManager.h"
 
 #include <nlohmann/json.hpp>
-
-#include <Windows.h>
 
 #include <filesystem>
 #include <fstream>
@@ -120,10 +116,6 @@ AnimationClipLoader::Load(
             return nullptr;
         }
 
-        //
-        // 현재 project asset path contract와
-        // 동일하게 ASCII-compatible relative path를 사용한다.
-        //
         const std::wstring
             texturePathWide(
                 texturePath.begin(),
@@ -204,10 +196,6 @@ AnimationClipLoader::Load(
                     0.0f
                 );
 
-            //
-            // UV range와 duration 최종 validation은
-            // AnimationClip 자체의 contract를 재사용한다.
-            //
             if (!clip->AddFrame(
                 uv,
                 duration))

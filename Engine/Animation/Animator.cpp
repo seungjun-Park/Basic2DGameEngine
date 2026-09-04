@@ -1,7 +1,6 @@
 #include "Animator.h"
 
 #include "AnimationClip.h"
-
 #include "Engine/Components/Sprite.h"
 
 #include <cmath>
@@ -13,52 +12,6 @@ Animator::Animator(
         &sprite
     )
 {
-}
-
-bool Animator::Play(
-    const AnimationClip& clip,
-    bool restart)
-{
-    if (!clip.IsValid())
-    {
-        return false;
-    }
-
-    //
-    // 이미 같은 animation이 정상 재생 중이고
-    // restart 요청이 없다면 아무것도 하지 않는다.
-    //
-    if (m_clip == &clip &&
-        m_playing &&
-        !restart)
-    {
-        return true;
-    }
-
-    m_clip =
-        &clip;
-
-    m_frameIndex =
-        0;
-
-    m_frameElapsed =
-        0.0f;
-
-    m_playing =
-        true;
-
-    ApplyCurrentFrame();
-
-    return true;
-}
-
-void Animator::Stop() noexcept
-{
-    //
-    // 현재 보이는 frame은 유지한다.
-    //
-    m_playing =
-        false;
 }
 
 void Animator::Update(
@@ -93,10 +46,6 @@ void Animator::Update(
     m_frameElapsed +=
         deltaTime;
 
-    //
-    // deltaTime이 한 frame duration보다
-    // 큰 경우에도 animation time을 잃지 않는다.
-    //
     while (m_playing)
     {
         const AnimationFrame* frame =
@@ -140,23 +89,54 @@ void Animator::Update(
             continue;
         }
 
-        //
-        // Non-loop clip은 마지막 frame을
-        // 화면에 남기고 종료한다.
-        //
-        m_frameIndex =
-            frameCount - 1;
+        m_frameIndex = frameCount - 1;
 
-        m_frameElapsed =
-            0.0f;
+        m_frameElapsed = 0.0f;
 
-        m_playing =
-            false;
+        m_playing = false;
 
         ApplyCurrentFrame();
 
         break;
     }
+}
+
+bool Animator::Play(
+    const AnimationClip& clip,
+    bool restart)
+{
+    if (!clip.IsValid())
+    {
+        return false;
+    }
+
+    if (m_clip == &clip &&
+        m_playing &&
+        !restart)
+    {
+        return true;
+    }
+
+    m_clip =
+        &clip;
+
+    m_frameIndex =
+        0;
+
+    m_frameElapsed =
+        0.0f;
+
+    m_playing =
+        true;
+
+    ApplyCurrentFrame();
+
+    return true;
+}
+
+void Animator::Stop() noexcept
+{
+    m_playing = false;
 }
 
 void Animator::ApplyCurrentFrame()

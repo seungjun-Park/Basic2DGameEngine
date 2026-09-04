@@ -15,58 +15,55 @@ struct AnimationFrame
         0.1f;
 };
 
-class AnimationClip final
+class AnimationClip
 {
 public:
-    AnimationClip() = default;
-    ~AnimationClip() = default;
-
     void SetTexture(
-        Texture* texture) noexcept
+        Texture* texture
+    ) noexcept
     {
         m_texture = texture;
     }
 
     void SetLooping(
-        bool looping) noexcept
+        bool looping
+    ) noexcept
     {
         m_looping = looping;
     }
-    
+
     bool AddFrame(
         const UVRect& uv,
         float duration
     );
+
+    void ClearFrames();
+
+    Texture* GetTexture() const noexcept
+    {
+        return m_texture;
+    }
 
     bool IsLooping() const noexcept
     {
         return m_looping;
     }
 
-    bool IsValid() const noexcept;
-
-
-    void ClearFrames();
-    
-    Texture* GetTexture() const noexcept
-    {
-        return m_texture;
-    }
-
-
-    std::size_t
-        GetFrameCount() const noexcept
+    std::size_t GetFrameCount() const noexcept
     {
         return m_frames.size();
     }
 
-    const AnimationFrame*
-        GetFrame(
-            std::size_t index
-        ) const noexcept;
+    const AnimationFrame* GetFrame(
+        std::size_t index
+    ) const noexcept;
+
+    bool IsValid() const noexcept;
 
 private:
-    Texture* m_texture = nullptr;
     std::vector<AnimationFrame> m_frames;
+
+    Texture* m_texture = nullptr;
+
     bool m_looping = true;
 };
