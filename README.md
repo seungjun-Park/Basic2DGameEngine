@@ -1,7 +1,6 @@
 # Basic2DGameEngine
-Vive coding project with "Game Engine Architecture 3rd Edition".
-
-# Basic2DGameEngine
+AI-assisted C++20 / DirectX 11 2D game engine project.
+Architecture, implementation decisions, and local validation are performed iteratively by the developer.
 
 ## Overview
 
@@ -20,8 +19,16 @@ Vive coding basic 2D game engine project with "Game Engine Architecture 3rd Edit
 - Scene / Entity System
 - Camera
 - Input
-- AABB Collision
+- Box2D Physics / Collision
 - Debug Collider Visualization
+- Sprite Batching
+- Animation / Animator
+- TileMap Rendering / Collision
+- XAudio2 Audio
+- Scene Serialization
+- Event System
+- Dear ImGui Debug GUI
+- CPU Profiling
 
 ## Architecture
 
@@ -85,12 +92,8 @@ F1: Collider Toggle
 - DX11 backend dependency
 - No editor
 - No ECS
-- No batching
 - Runtime shader compilation
 
 ## Future Work
 
 - GraphicsDevice abstraction
-- Sprite batching
-- Animation system
-- Tilemap
