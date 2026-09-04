@@ -36,7 +36,8 @@ namespace DebugLog
 
 
     void LogAnimationClipError(
-        const char* message) noexcept
+        const char* message
+    ) noexcept
     {
         OutputDebugStringA(
             "[AnimationClipLoader] "
@@ -52,7 +53,8 @@ namespace DebugLog
     }
 
     void LogLoadFailure(
-        const char* reason) noexcept
+        const char* reason
+    ) noexcept
     {
         OutputDebugStringA(
             "[Audio] WAV load failed: "
@@ -91,7 +93,8 @@ namespace DebugLog
     }
 
     void LogSceneError(
-        const char* message) noexcept
+        const char* message
+    ) noexcept
     {
         OutputDebugStringA(
             "[SceneSerializer] "
@@ -107,7 +110,8 @@ namespace DebugLog
     }
 
     void LogTileMapError(
-        const char* message) noexcept
+        const char* message
+    ) noexcept
     {
         OutputDebugStringA(
             "[TileMapLoader] "
@@ -123,7 +127,8 @@ namespace DebugLog
     }
 
     void LogTilesetError(
-        const char* message) noexcept
+        const char* message
+    ) noexcept
     {
         OutputDebugStringA(
             "[TilesetLoader] "

@@ -261,10 +261,6 @@ private:
                     InvalidSubscriptionId;
             }
 
-            //
-            // uint64_t wrap-around 뒤
-            // 기존 ID를 재사용하지 않는다.
-            //
             if (m_nextId ==
                 InvalidSubscriptionId)
             {
@@ -331,13 +327,6 @@ private:
         {
             ++m_dispatchDepth;
 
-            //
-            // Dispatch 시작 시 존재했던
-            // subscriber만 이번 event를 받는다.
-            //
-            // callback 안에서 새 Subscribe를
-            // 하더라도 다음 Publish부터 호출.
-            //
             const std::size_t
                 dispatchCount =
                 m_slots.size();
@@ -350,26 +339,12 @@ private:
                     ++index
                     )
                 {
-                    //
-                    // callback 중 vector가
-                    // reallocate될 수 있으므로
-                    // Slot reference를 callback
-                    // 너머까지 보관하면 안 된다.
-                    //
                     if (!m_slots[index].
                         active)
                     {
                         continue;
                     }
 
-                    //
-                    // callback 자체도 복사한다.
-                    //
-                    // 이 handler 안에서
-                    // Subscribe()가 발생하여
-                    // m_slots가 reallocate되어도
-                    // 현재 호출은 안전하다.
-                    //
                     Handler callback =
                         m_slots[index].
                         handler;

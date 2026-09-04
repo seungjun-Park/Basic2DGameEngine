@@ -75,6 +75,7 @@ namespace
 }
 
 
+
 double CpuProfileSnapshot::GetTotalMs(
     CpuProfileZone zone) const noexcept
 {
@@ -154,6 +155,7 @@ const noexcept
 }
 
 
+
 void CpuProfiler::BeginFrame()
 noexcept
 {
@@ -163,7 +165,6 @@ noexcept
     m_frameOpen =
         true;
 }
-
 
 void CpuProfiler::EndFrame()
 noexcept
@@ -176,11 +177,6 @@ noexcept
     m_latest =
         m_current;
 
-
-    //
-    // Spike baseline에는 현재 frame을
-    // 아직 포함시키지 않는다.
-    //
     const double baselineAverageMs =
         CalculateHistoryAverageCpuWorkMs();
 
@@ -255,13 +251,11 @@ void CpuProfiler::AddSample(
     ++m_current.sampleCounts[index];
 }
 
-
 bool CpuProfiler::IsFrameOpen()
 const noexcept
 {
     return m_frameOpen;
 }
-
 
 const CpuProfileSnapshot&
 CpuProfiler::GetLatestSnapshot()
@@ -270,71 +264,20 @@ const noexcept
     return m_latest;
 }
 
-
-ScopedCpuProfile::ScopedCpuProfile(
-    CpuProfiler& profiler,
-    CpuProfileZone zone) noexcept
-    :
-    m_profiler(
-        profiler.IsFrameOpen()
-        ? &profiler
-        : nullptr
-    ),
-    m_zone(zone)
-{
-    if (!m_profiler)
-    {
-        return;
-    }
-
-    m_start =
-        Clock::now();
-}
-
-
-ScopedCpuProfile::~ScopedCpuProfile()
-{
-    if (!m_profiler)
-    {
-        return;
-    }
-
-    const Clock::time_point end =
-        Clock::now();
-
-    const double elapsedMs =
-        std::chrono::duration<
-        double,
-        std::milli
-        >(
-            end - m_start
-        ).count();
-
-    m_profiler->AddSample(
-        m_zone,
-        elapsedMs
-    );
-}
-
 std::size_t
-CpuProfiler::GetHistoryIndex(
-    std::size_t framesAgo) const noexcept
+CpuProfiler::GetHistoryCount()
+const noexcept
 {
-    const std::size_t latestIndex =
-        (
-            m_historyWriteIndex +
-            HistoryCapacity -
-            1
-            ) %
-        HistoryCapacity;
-
     return
-        (
-            latestIndex +
-            HistoryCapacity -
-            framesAgo
-            ) %
-        HistoryCapacity;
+        m_historyCount;
+}
+
+const CpuProfilerDiagnostics&
+CpuProfiler::GetDiagnostics()
+const noexcept
+{
+    return
+        m_diagnostics;
 }
 
 const CpuProfileSnapshot*
@@ -353,56 +296,6 @@ CpuProfiler::GetHistorySnapshot(
                 framesAgo
             )
         ];
-}
-
-std::size_t
-CpuProfiler::GetHistoryCount()
-const noexcept
-{
-    return
-        m_historyCount;
-}
-
-double
-CpuProfiler::
-CalculateHistoryAverageCpuWorkMs()
-const noexcept
-{
-    if (m_historyCount == 0)
-    {
-        return 0.0;
-    }
-
-    double totalMs =
-        0.0;
-
-    for (
-        std::size_t age = 0;
-        age < m_historyCount;
-        ++age
-        )
-    {
-        const CpuProfileSnapshot*
-            snapshot =
-            GetHistorySnapshot(
-                age
-            );
-
-        if (!snapshot)
-        {
-            continue;
-        }
-
-        totalMs +=
-            snapshot->
-            GetEngineCpuWorkMs();
-    }
-
-    return
-        totalMs /
-        static_cast<double>(
-            m_historyCount
-            );
 }
 
 void CpuProfiler::PushHistory(
@@ -585,11 +478,6 @@ void CpuProfiler::UpdateDiagnostics(
         latestSpikeFramesAgo =
         latestSpikeAge;
 
-
-    //
-    // CPU work가 최대였던 frame을
-    // 상세 분석한다.
-    //
     if (maxCpuAge ==
         InvalidCpuProfileFrameAge)
     {
@@ -703,10 +591,111 @@ void CpuProfiler::UpdateDiagnostics(
     }
 }
 
-const CpuProfilerDiagnostics&
-CpuProfiler::GetDiagnostics()
+std::size_t
+CpuProfiler::GetHistoryIndex(
+    std::size_t framesAgo) const noexcept
+{
+    const std::size_t latestIndex =
+        (
+            m_historyWriteIndex +
+            HistoryCapacity -
+            1
+            ) %
+        HistoryCapacity;
+
+    return
+        (
+            latestIndex +
+            HistoryCapacity -
+            framesAgo
+            ) %
+        HistoryCapacity;
+}
+
+double
+CpuProfiler::
+CalculateHistoryAverageCpuWorkMs()
 const noexcept
 {
+    if (m_historyCount == 0)
+    {
+        return 0.0;
+    }
+
+    double totalMs =
+        0.0;
+
+    for (
+        std::size_t age = 0;
+        age < m_historyCount;
+        ++age
+        )
+    {
+        const CpuProfileSnapshot*
+            snapshot =
+            GetHistorySnapshot(
+                age
+            );
+
+        if (!snapshot)
+        {
+            continue;
+        }
+
+        totalMs +=
+            snapshot->
+            GetEngineCpuWorkMs();
+    }
+
     return
-        m_diagnostics;
+        totalMs /
+        static_cast<double>(
+            m_historyCount
+            );
+}
+
+
+ScopedCpuProfile::ScopedCpuProfile(
+    CpuProfiler& profiler,
+    CpuProfileZone zone) noexcept
+    :
+    m_profiler(
+        profiler.IsFrameOpen()
+        ? &profiler
+        : nullptr
+    ),
+    m_zone(zone)
+{
+    if (!m_profiler)
+    {
+        return;
+    }
+
+    m_start =
+        Clock::now();
+}
+
+
+ScopedCpuProfile::~ScopedCpuProfile()
+{
+    if (!m_profiler)
+    {
+        return;
+    }
+
+    const Clock::time_point end =
+        Clock::now();
+
+    const double elapsedMs =
+        std::chrono::duration<
+        double,
+        std::milli
+        >(
+            end - m_start
+        ).count();
+
+    m_profiler->AddSample(
+        m_zone,
+        elapsedMs
+    );
 }

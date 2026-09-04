@@ -13,24 +13,12 @@ struct DebugStats
     // CPU Profiling
     // --------------------------------------------------
 
-    //
-    // FixedUpdate 전체 누적.
-    //
-    // 한 render frame 안에서 fixed step이
-    // 여러 번 실행될 수 있으므로 total 값.
-//
     float fixedUpdateCpuMs =
         0.0f;
 
-    //
-    // FixedUpdate 한 step 평균.
-    //
     float fixedStepAverageCpuMs =
         0.0f;
 
-    //
-    // profiler가 실제 측정한 FixedUpdate 횟수.
-    //
     std::uint32_t profiledFixedSteps =
         0;
 
@@ -40,32 +28,14 @@ struct DebugStats
     float lateUpdateCpuMs =
         0.0f;
 
-    //
-    // GPU execution 시간이 아니다.
-    //
-    // CPU가 render commands를 만들고
-    // DX11 commands를 submit하는 데 소비한 시간.
-    //
     float renderCpuMs =
         0.0f;
 
-    //
-    // DX11 EndFrame / Present 시간.
-    //
-    // VSync ON에서는 refresh wait가
-    // 크게 포함될 수 있다.
-    //
     float presentMs =
         0.0f;
 
-    //
-    // Fixed + Update + Late + Render.
-    //
-    // Present wait은 제외.
-    //
     float engineCpuWorkMs =
         0.0f;
-
 
     // --------------------------------------------------
     // FixedUpdate subsystem profiling
@@ -83,10 +53,6 @@ struct DebugStats
     float contactDispatchCpuMs =
         0.0f;
 
-    //
-    // FixedUpdate parent에서 위 child zone들을
-    // 제외하고 남은 Engine glue / profiler overhead.
-    //
     float fixedOverheadCpuMs =
         0.0f;
 
@@ -94,44 +60,24 @@ struct DebugStats
     // Render subsystem profiling
     // --------------------------------------------------
 
-    //
-    // Scene / Entity / TileMap이
-    // RenderQueue command를 생성하는 시간.
-    //
     float renderSubmitCpuMs =
         0.0f;
 
-    //
-    // RenderQueue stable sort.
-    //
     float renderSortCpuMs =
         0.0f;
 
-    //
-    // batching boundary 탐색 + 실제 renderer submission.
-    //
     float renderExecuteCpuMs =
         0.0f;
 
-    //
-    // F1 DebugRender.
-    //
-    // Debug visualization이 꺼져 있으면 0.
-    //
     float debugRenderCpuMs =
         0.0f;
 
-    //
-    // BeginFrame / SetCamera / Clear / SpriteRenderer
-    // Begin-End / debug stats collection 등의
-    // 나머지 RenderCpu 비용.
-    //
     float renderOverheadCpuMs =
         0.0f;
 
     // --------------------------------------------------
-// CPU Profiler History / Diagnostics
-// --------------------------------------------------
+    // CPU Profiler History / Diagnostics
+    // --------------------------------------------------
 
     std::uint32_t
         profilerHistoryFrames = 0;
@@ -152,7 +98,6 @@ struct DebugStats
 
     float
         presentMaxMs = 0.0f;
-
 
     float
         cpuSpikeThresholdMs = 0.0f;
@@ -197,7 +142,6 @@ struct DebugStats
 
     bool vsync = false;
 
-    // 0 == Unlimited
     std::uint32_t targetFPS = 0;
 
     int renderCommands = 0;
@@ -250,10 +194,6 @@ struct DebugStats
     int tileWidth = 0;
     int tileHeight = 0;
 
-    // 현재 Camera가 검사하고 있는
-    // Tile coordinate 범위.
-    //
-    // -1이면 Camera와 Map이 겹치지 않음.
     int visibleTileMinX = -1;
     int visibleTileMaxX = -1;
 
