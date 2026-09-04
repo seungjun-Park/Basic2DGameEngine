@@ -3,12 +3,12 @@
 #include "Engine/Components/Transform.h"
 #include "Engine/Components/Sprite.h"
 #include "Engine/Scene/EntityHandle.h"
+#include "Engine/Animation/Animator.h"
 
 #include <memory>
 
 class PhysicsBody;
 class RenderQueue;
-class Animator;
 class Scene;
 
 class Entity
