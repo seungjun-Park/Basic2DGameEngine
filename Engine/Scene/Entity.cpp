@@ -1,7 +1,6 @@
 #include "Entity.h"
 
-#include "Engine/Renderer/SpriteRenderer.h"
-#include "Engine/Graphics/Texture.h"
+#include "Engine/Animation/Animator.h"
 #include "Engine/Physics/PhysicsBody.h"
 #include "Engine/Renderer/RenderQueue.h"
 
@@ -21,15 +20,6 @@ void Entity::SubmitRender(
     );
 }
 
-void Entity::Destroy()
-{
-    m_destroyed = true;
-}
-
-bool Entity::IsDestroyed() const
-{
-    return m_destroyed;
-}
 
 void Entity::SyncPhysicsTransform()
 {
@@ -46,4 +36,14 @@ void Entity::SyncPhysicsTransform()
     physicsBody->SyncTransform(
         transform
     );
+}
+
+void Entity::Destroy()
+{
+    m_destroyed = true;
+}
+
+bool Entity::IsDestroyed() const
+{
+    return m_destroyed;
 }

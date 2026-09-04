@@ -1,7 +1,6 @@
 #include "Scene.h"
 
 #include "Entity.h"
-#include "Engine/Renderer/SpriteRenderer.h"
 #include "Engine/Debug/DebugRenderer.h"
 #include "Engine/Physics/PhysicsBody.h"
 #include "Engine/Physics/PhysicsUnits.h"
@@ -13,44 +12,6 @@
 Scene::~Scene()
 {
     ClearEntities();
-}
-
-EntityHandle Scene::AllocateEntityHandle()
-{
-    static std::atomic<
-        EntityHandle::ValueType
-    > nextValue
-    {
-        1
-    };
-
-    const EntityHandle::ValueType value =
-        nextValue.fetch_add(
-            1,
-            std::memory_order_relaxed
-        );
-
-    return EntityHandle
-    {
-        value
-    };
-}
-
-void Scene::SubmitRender(
-    RenderQueue& renderQueue)
-{
-    for (auto& entity :
-        m_entities)
-    {
-        if (!entity->active)
-        {
-            continue;
-        }
-
-        entity->SubmitRender(
-            renderQueue
-        );
-    }
 }
 
 void Scene::FixedUpdate(
@@ -113,31 +74,21 @@ void Scene::LateUpdate(
     RemoveDestroyedEntities();
 }
 
-void Scene::RemoveDestroyedEntities()
+void Scene::SubmitRender(
+    RenderQueue& renderQueue)
 {
-    std::erase_if(
-        m_entities,
-        [this](
-            const std::unique_ptr<Entity>& entity)
+    for (auto& entity :
+        m_entities)
+    {
+        if (!entity->active)
         {
-            if (!entity->IsDestroyed())
-            {
-                return false;
-            }
-
-            const EntityHandle handle =
-                entity->GetHandle();
-
-            if (handle.IsValid())
-            {
-                m_entityLookup.erase(
-                    handle.value
-                );
-            }
-
-            return true;
+            continue;
         }
-    );
+
+        entity->SubmitRender(
+            renderQueue
+        );
+    }
 }
 
 void Scene::DebugRender(
@@ -178,11 +129,6 @@ void Scene::DebugRender(
         {
             continue;
         }
-
-        //
-        // 실제 Box2D simulation에 등록된
-        // shape의 world-space AABB를 가져온다.
-        //
 
         const b2AABB aabb =
             b2Shape_GetAABB(
@@ -243,13 +189,6 @@ void Scene::SyncPhysicsTransforms()
         entity->
             SyncPhysicsTransform();
     }
-}
-
-void Scene::CollectDebugStats(
-    DebugStats& stats
-) const
-{
-
 }
 
 Entity* Scene::ResolveEntity(
@@ -327,6 +266,40 @@ bool Scene::IsEntityAlive(
         ResolveEntity(handle) != nullptr;
 }
 
+void Scene::CollectDebugStats(
+    DebugStats& stats
+) const
+{
+
+}
+
+void Scene::RemoveDestroyedEntities()
+{
+    std::erase_if(
+        m_entities,
+        [this](
+            const std::unique_ptr<Entity>& entity)
+        {
+            if (!entity->IsDestroyed())
+            {
+                return false;
+            }
+
+            const EntityHandle handle =
+                entity->GetHandle();
+
+            if (handle.IsValid())
+            {
+                m_entityLookup.erase(
+                    handle.value
+                );
+            }
+
+            return true;
+        }
+    );
+}
+
 void Scene::ClearEntities()
 {
     //
@@ -336,4 +309,25 @@ void Scene::ClearEntities()
     m_entityLookup.clear();
 
     m_entities.clear();
+}
+
+EntityHandle Scene::AllocateEntityHandle()
+{
+    static std::atomic<
+        EntityHandle::ValueType
+    > nextValue
+    {
+        1
+    };
+
+    const EntityHandle::ValueType value =
+        nextValue.fetch_add(
+            1,
+            std::memory_order_relaxed
+        );
+
+    return EntityHandle
+    {
+        value
+    };
 }

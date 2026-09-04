@@ -2,12 +2,10 @@
 
 #include "Engine/Components/Transform.h"
 #include "Engine/Components/Sprite.h"
-#include "Engine/Animation/Animator.h"
 #include "Engine/Scene/EntityHandle.h"
 
 #include <memory>
 
-class SpriteRenderer;
 class PhysicsBody;
 class RenderQueue;
 class Animator;
@@ -43,6 +41,8 @@ public:
         RenderQueue& renderQueue
     );
 
+    void SyncPhysicsTransform();
+
     void Destroy();
 
     bool IsDestroyed() const;
@@ -62,8 +62,6 @@ public:
     {
     }
 
-    void SyncPhysicsTransform();
-
 public:
     Transform transform;
     Sprite sprite;
@@ -77,7 +75,6 @@ public:
         animator;
 
 private:
-
     friend class Scene;
 
     void SetHandle(

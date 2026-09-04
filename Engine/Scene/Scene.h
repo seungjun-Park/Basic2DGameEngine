@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include <unordered_map>
+#include <cstddef>
 
 #include "Engine/Scene/EntityHandle.h"
 
@@ -18,10 +19,10 @@ class Scene
 {
 public:
     Scene() = default;
-    virtual ~Scene();
-
     Scene(const Scene&) = delete;
     Scene& operator=(const Scene&) = delete;
+
+    virtual ~Scene();
 
     virtual void Initialize()
     {
@@ -51,23 +52,6 @@ public:
     virtual void DrawGui()
     {
     }
-
-    std::size_t GetEntityCount() const
-    {
-        return m_entities.size();
-    }
-
-    Entity* ResolveEntity(
-        EntityHandle handle
-    );
-
-    const Entity* ResolveEntity(
-        EntityHandle handle
-    ) const;
-
-    bool IsEntityAlive(
-        EntityHandle handle
-    ) const;
 
     template<typename T, typename... Args>
     T* CreateEntity(
@@ -107,6 +91,23 @@ public:
 
     virtual void SyncPhysicsTransforms();
 
+    std::size_t GetEntityCount() const
+    {
+        return m_entities.size();
+    }
+
+    Entity* ResolveEntity(
+        EntityHandle handle
+    );
+
+    const Entity* ResolveEntity(
+        EntityHandle handle
+    ) const;
+
+    bool IsEntityAlive(
+        EntityHandle handle
+    ) const;
+
     virtual void CollectDebugStats(
         DebugStats& stats
     ) const;
@@ -117,7 +118,6 @@ protected:
     void ClearEntities();
 
 private:
-
     static EntityHandle
         AllocateEntityHandle();
 
