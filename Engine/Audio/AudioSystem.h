@@ -54,6 +54,15 @@ public:
 
     void Update() noexcept;
 
+    //
+    // AudioClip data is referenced directly by XAudio2.
+    //
+    // The clip must remain alive and unmodified until
+    // the submitted playback has completed or been stopped.
+    //
+    // Engine resource policy:
+    // use ResourceManager-managed AudioClip instances.
+    //
 
     bool PlayOneShot(
         const AudioClip& clip,

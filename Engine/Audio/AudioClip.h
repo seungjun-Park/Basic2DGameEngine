@@ -17,6 +17,22 @@ public:
         std::vector<std::uint8_t> audioData
     );
 
+    AudioClip(
+        const AudioClip&
+    ) = delete;
+
+    AudioClip& operator=(
+        const AudioClip&
+        ) = delete;
+
+    AudioClip(
+        AudioClip&&
+    ) = delete;
+
+    AudioClip& operator=(
+        AudioClip&&
+        ) = delete;
+
 
     const WAVEFORMATEX&
         GetFormat() const noexcept;
