@@ -278,9 +278,6 @@
     <ClCompile Include="Game\GameEntityFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Scene\EntityHandle.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Event\EventBus.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

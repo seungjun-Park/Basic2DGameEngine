@@ -217,7 +217,7 @@ void Engine::FixedUpdate(
     }
 
     {
-        ScopedCpuProfile profileScope(
+        ScopedCpuProfile subsystemScope(
             m_cpuProfiler,
             CpuProfileZone::FixedUpdate
         );
@@ -229,7 +229,7 @@ void Engine::FixedUpdate(
     }
 
     {
-        ScopedCpuProfile profileScope(
+        ScopedCpuProfile subsystemScope(
             m_cpuProfiler,
             CpuProfileZone::FixedUpdate
         );
@@ -241,7 +241,7 @@ void Engine::FixedUpdate(
     }
 
     {
-        ScopedCpuProfile profileScope(
+        ScopedCpuProfile subsystemScope(
             m_cpuProfiler,
             CpuProfileZone::FixedUpdate
         );
@@ -252,7 +252,7 @@ void Engine::FixedUpdate(
     }
 
     {
-        ScopedCpuProfile profileScope(
+        ScopedCpuProfile subsystemScope(
             m_cpuProfiler,
             CpuProfileZone::FixedUpdate
         );
@@ -314,7 +314,7 @@ void Engine::LateUpdate(
 {
     ScopedCpuProfile profileScope(
         m_cpuProfiler,
-        CpuProfileZone::Update
+        CpuProfileZone::LateUpdate
     );
 
     if (!m_scene)

@@ -220,7 +220,6 @@
     <ClCompile Include="Engine\Renderer\SprtieRenderer.cpp" />
     <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Engine\Scene\Entity.cpp" />
-    <ClCompile Include="Engine\Scene\EntityHandle.cpp" />
     <ClCompile Include="Engine\Scene\Scene.cpp" />
     <ClCompile Include="Engine\Serialization\SceneSerializer.cpp" />
     <ClCompile Include="Engine\Tile\TileMap.cpp" />

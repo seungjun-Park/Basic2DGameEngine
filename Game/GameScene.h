@@ -109,6 +109,8 @@ private:
     Player* m_player =
         nullptr;
 
+    EntityHandle m_playerHandle{};
+
     Camera& m_camera;
 
     PhysicsSystem& m_physics;
@@ -126,8 +128,6 @@ private:
 
     AudioPlaybackHandle
         m_bgmHandle{};
-
-    EntityHandle m_playerHandle{};
 
     EventSubscription
         m_collisionEnterSubscription;
