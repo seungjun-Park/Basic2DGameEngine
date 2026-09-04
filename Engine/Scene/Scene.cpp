@@ -20,7 +20,8 @@ void Scene::FixedUpdate(
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -37,7 +38,8 @@ void Scene::Update(
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -61,7 +63,8 @@ void Scene::LateUpdate(
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -80,7 +83,8 @@ void Scene::SubmitRender(
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -98,7 +102,8 @@ void Scene::DebugRender(
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -181,7 +186,8 @@ void Scene::SyncPhysicsTransforms()
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }

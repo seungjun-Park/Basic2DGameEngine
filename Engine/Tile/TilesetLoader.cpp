@@ -79,13 +79,6 @@ TilesetLoader::Load(
                 0
             );
 
-        //
-        // Stage 8:
-        //
-        // 기존 asset과의 호환성을 위해
-        // optional + default 0.
-        //
-
         const int margin =
             json.value(
                 "margin",
@@ -164,22 +157,6 @@ TilesetLoader::Load(
 
             return nullptr;
         }
-
-        //
-        // --------------------------------------------------
-        // Stage 8 Layout Validation
-        // --------------------------------------------------
-        //
-        // 더 이상:
-        //
-        // textureWidth ==
-        //     tileWidth * columns
-        //
-        // 을 요구하지 않는다.
-        //
-        // 마지막 tile이 texture 내부에만
-        // 들어오면 유효하다.
-        //
 
         const std::int64_t
             strideX =
