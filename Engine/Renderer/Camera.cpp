@@ -13,6 +13,23 @@ void Camera::Initialize(
         screenHeight;
 }
 
+void Camera::Resize(
+    float screenWidth,
+    float screenHeight)
+{
+    if (screenWidth <= 0.0f ||
+        screenHeight <= 0.0f)
+    {
+        return;
+    }
+
+    m_screenWidth =
+        screenWidth;
+
+    m_screenHeight =
+        screenHeight;
+}
+
 void Camera::SetPosition(
     float x,
     float y)
@@ -60,19 +77,30 @@ Camera::GetProjectionMatrix() const
         );
 }
 
-void Camera::Resize(
-    float screenWidth,
-    float screenHeight)
+float Camera::GetLeft() const
 {
-    if (screenWidth <= 0.0f ||
-        screenHeight <= 0.0f)
-    {
-        return;
-    }
+    return
+        m_position.x -
+        m_screenWidth * 0.5f;
+}
 
-    m_screenWidth =
-        screenWidth;
+float Camera::GetRight() const
+{
+    return
+        m_position.x +
+        m_screenWidth * 0.5f;
+}
 
-    m_screenHeight =
-        screenHeight;
+float Camera::GetTop() const
+{
+    return
+        m_position.y -
+        m_screenHeight * 0.5f;
+}
+
+float Camera::GetBottom() const
+{
+    return
+        m_position.y +
+        m_screenHeight * 0.5f;
 }

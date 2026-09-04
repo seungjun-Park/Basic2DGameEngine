@@ -1,4 +1,5 @@
 #include "DX11Renderer.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include <cassert>
 #include <d3dcompiler.h>
@@ -6,6 +7,7 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+
 
 bool DX11Renderer::Initialize(
     HWND hwnd,
@@ -32,6 +34,109 @@ bool DX11Renderer::Initialize(
 
     return true;
 }
+
+void DX11Renderer::Resize(
+    int width,
+    int height)
+{
+    if (width <= 0 ||
+        height <= 0)
+    {
+        return;
+    }
+
+    if (!m_swapChain ||
+        !m_context)
+    {
+        return;
+    }
+
+    m_context->OMSetRenderTargets(
+        0,
+        nullptr,
+        nullptr
+    );
+
+    m_renderTargetView.Reset();
+
+    HRESULT hr =
+        m_swapChain->ResizeBuffers(
+            0,
+            static_cast<UINT>(width),
+            static_cast<UINT>(height),
+            DXGI_FORMAT_UNKNOWN,
+            0
+        );
+
+    if (FAILED(hr))
+    {
+        ENGINE_DEBUG_LOG(
+            "[DX11Renderer] ResizeBuffers failed.\n"
+        );
+
+        return;
+    }
+
+    if (!CreateRenderTarget())
+    {
+        ENGINE_DEBUG_LOG(
+            "[DX11Renderer] Failed to recreate RenderTarget.\n"
+        );
+
+        return;
+    }
+
+    SetViewport(
+        width,
+        height
+    );
+}
+
+void DX11Renderer::BeginFrame()
+{
+    m_context->OMSetRenderTargets(
+        1,
+        m_renderTargetView.GetAddressOf(),
+        nullptr
+    );
+
+    Clear();
+}
+
+void DX11Renderer::EndFrame(
+    bool vsync)
+{
+    const UINT syncInterval =
+        vsync
+        ? 1
+        : 0;
+
+    HRESULT hr =
+        m_swapChain->Present(
+            syncInterval,
+            0
+        );
+
+#ifdef _DEBUG
+
+    if (FAILED(hr))
+    {
+        ENGINE_DEBUG_LOG(
+            "[DX11Renderer] Present failed.\n"
+        );
+    }
+
+#endif
+}
+
+void DX11Renderer::Clear()
+{
+    m_context->ClearRenderTargetView(
+        m_renderTargetView.Get(),
+        m_clearColor
+    );
+}
+
 
 bool DX11Renderer::CreateDeviceAndSwapChain(
     HWND hwnd,
@@ -70,8 +175,6 @@ bool DX11Renderer::CreateDeviceAndSwapChain(
     UINT creationFlags = 0;
 
 #ifdef _DEBUG
-    // 개발 중에는 Direct3D 디버그 레이어를
-    // 사용할 수 있다.
     creationFlags |=
         D3D11_CREATE_DEVICE_DEBUG;
 #endif
@@ -142,51 +245,6 @@ bool DX11Renderer::CreateRenderTarget()
     return true;
 }
 
-void DX11Renderer::BeginFrame()
-{
-    m_context->OMSetRenderTargets(
-        1,
-        m_renderTargetView.GetAddressOf(),
-        nullptr
-    );
-
-    Clear();
-}
-
-void DX11Renderer::Clear()
-{
-    m_context->ClearRenderTargetView(
-        m_renderTargetView.Get(),
-        m_clearColor
-    );
-}
-
-void DX11Renderer::EndFrame(
-    bool vsync)
-{
-    const UINT syncInterval =
-        vsync
-        ? 1
-        : 0;
-
-    HRESULT hr =
-        m_swapChain->Present(
-            syncInterval,
-            0
-        );
-
-#ifdef _DEBUG
-
-    if (FAILED(hr))
-    {
-        OutputDebugStringA(
-            "[DX11Renderer] Present failed.\n"
-        );
-    }
-
-#endif
-}
-
 void DX11Renderer::SetViewport(
     int width,
     int height)
@@ -212,63 +270,5 @@ void DX11Renderer::SetViewport(
     m_context->RSSetViewports(
         1,
         &viewport
-    );
-}
-
-void DX11Renderer::Resize(
-    int width,
-    int height)
-{
-    if (width <= 0 ||
-        height <= 0)
-    {
-        return;
-    }
-
-    if (!m_swapChain ||
-        !m_context)
-    {
-        return;
-    }
-
-    // BackBuffer 참조 해제
-    m_context->OMSetRenderTargets(
-        0,
-        nullptr,
-        nullptr
-    );
-
-    m_renderTargetView.Reset();
-
-    HRESULT hr =
-        m_swapChain->ResizeBuffers(
-            0,
-            static_cast<UINT>(width),
-            static_cast<UINT>(height),
-            DXGI_FORMAT_UNKNOWN,
-            0
-        );
-
-    if (FAILED(hr))
-    {
-        OutputDebugStringA(
-            "[DX11Renderer] ResizeBuffers failed.\n"
-        );
-
-        return;
-    }
-
-    if (!CreateRenderTarget())
-    {
-        OutputDebugStringA(
-            "[DX11Renderer] Failed to recreate RenderTarget.\n"
-        );
-
-        return;
-    }
-
-    SetViewport(
-        width,
-        height
     );
 }

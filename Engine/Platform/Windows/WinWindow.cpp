@@ -1,6 +1,15 @@
 #include "WinWindow.h"
 
-#include <cassert>
+#include <imgui.h>
+#include <imgui_impl_win32.h>
+
+extern IMGUI_IMPL_API LRESULT
+ImGui_ImplWin32_WndProcHandler(
+    HWND hWnd,
+    UINT msg,
+    WPARAM wParam,
+    LPARAM lParam);
+
 
 WinWindow::~WinWindow()
 {
@@ -87,6 +96,51 @@ bool WinWindow::Initialize(
     return true;
 }
 
+
+bool WinWindow::ProcessMessages()
+{
+    MSG message{};
+
+    while (PeekMessageW(
+        &message,
+        nullptr,
+        0,
+        0,
+        PM_REMOVE))
+    {
+        if (message.message == WM_QUIT)
+        {
+            return false;
+        }
+
+        TranslateMessage(&message);
+        DispatchMessageW(&message);
+    }
+
+    return true;
+}
+
+bool WinWindow::ConsumeResize(
+    int& width,
+    int& height)
+{
+    if (!m_hasPendingResize)
+    {
+        return false;
+    }
+
+    width =
+        m_pendingWidth;
+
+    height =
+        m_pendingHeight;
+
+    m_hasPendingResize =
+        false;
+
+    return true;
+}
+
 bool WinWindow::RegisterWindowClass(
     HINSTANCE hInstance)
 {
@@ -122,35 +176,21 @@ bool WinWindow::RegisterWindowClass(
     return true;
 }
 
-bool WinWindow::ProcessMessages()
-{
-    MSG message{};
-
-    while (PeekMessageW(
-        &message,
-        nullptr,
-        0,
-        0,
-        PM_REMOVE))
-    {
-        if (message.message == WM_QUIT)
-        {
-            return false;
-        }
-
-        TranslateMessage(&message);
-        DispatchMessageW(&message);
-    }
-
-    return true;
-}
-
 LRESULT CALLBACK WinWindow::WindowProc(
     HWND hwnd,
     UINT message,
     WPARAM wParam,
     LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(
+        hwnd,
+        message,
+        wParam,
+        lParam))
+    {
+        return 1;
+    }
+
     WinWindow* window = nullptr;
 
     if (message == WM_NCCREATE)
@@ -253,25 +293,4 @@ LRESULT CALLBACK WinWindow::WindowProc(
         wParam,
         lParam
     );
-}
-
-bool WinWindow::ConsumeResize(
-    int& width,
-    int& height)
-{
-    if (!m_hasPendingResize)
-    {
-        return false;
-    }
-
-    width =
-        m_pendingWidth;
-
-    height =
-        m_pendingHeight;
-
-    m_hasPendingResize =
-        false;
-
-    return true;
 }

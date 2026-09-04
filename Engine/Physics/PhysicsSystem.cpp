@@ -1,8 +1,11 @@
 #include "PhysicsSystem.h"
 
+#include "PhysicsBody.h"
 #include "Engine/Scene/Entity.h"
-
-#include <Windows.h>
+#include "Engine/Scene/Scene.h"
+#include "Engine/Event/EventBus.h"
+#include "Engine/Physics/CollisionEvents.h"
+#include "Engine/Debug/DebugLog.h"
 
 PhysicsSystem::PhysicsSystem() = default;
 
@@ -21,7 +24,6 @@ bool PhysicsSystem::Initialize()
     b2WorldDef worldDef =
         b2DefaultWorldDef();
 
-    // Top-down 2D 게임이므로 중력 없음
     worldDef.gravity =
     {
         0.0f,
@@ -36,7 +38,7 @@ bool PhysicsSystem::Initialize()
     if (B2_IS_NULL(
         m_worldId))
     {
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Physics] Failed to create Box2D world.\n"
         );
 
@@ -45,7 +47,7 @@ bool PhysicsSystem::Initialize()
 
     m_initialized = true;
 
-    OutputDebugStringA(
+    ENGINE_DEBUG_LOG(
         "[Physics] Box2D world initialized.\n"
     );
 
@@ -93,7 +95,9 @@ void PhysicsSystem::Step(
     );
 }
 
-void PhysicsSystem::DispatchContactEvents()
+void PhysicsSystem::DispatchContactEvents(
+    Scene& scene,
+    EventBus& eventBus)
 {
     if (!m_initialized)
     {
@@ -123,6 +127,8 @@ void PhysicsSystem::DispatchContactEvents()
         }
 
         HandleBeginContact(
+            scene,
+            eventBus,
             event.shapeIdA,
             event.shapeIdB
         );
@@ -146,6 +152,8 @@ void PhysicsSystem::DispatchContactEvents()
         }
 
         HandleEndContact(
+            scene,
+            eventBus,
             event.shapeIdA,
             event.shapeIdB
         );
@@ -153,6 +161,8 @@ void PhysicsSystem::DispatchContactEvents()
 }
 
 void PhysicsSystem::HandleBeginContact(
+    Scene& scene,
+    EventBus& eventBus,
     b2ShapeId shapeA,
     b2ShapeId shapeB)
 {
@@ -173,21 +183,31 @@ void PhysicsSystem::HandleBeginContact(
         );
 
     Entity* entityA =
-        static_cast<Entity*>(
-            b2Body_GetUserData(
-                bodyA
-            )
-            );
+        ResolveBodyEntity(
+            scene,
+            bodyA
+        );
 
     Entity* entityB =
-        static_cast<Entity*>(
-            b2Body_GetUserData(
-                bodyB
-            )
-            );
+        ResolveBodyEntity(
+            scene,
+            bodyB
+        );
 
     if (!entityA ||
         !entityB)
+    {
+        return;
+    }
+
+    const EntityHandle handleA =
+        entityA->GetHandle();
+
+    const EntityHandle handleB =
+        entityB->GetHandle();
+
+    if (!handleA.IsValid() ||
+        !handleB.IsValid())
     {
         return;
     }
@@ -199,17 +219,22 @@ void PhysicsSystem::HandleBeginContact(
     entityB->OnCollisionEnter(
         *entityA
     );
+
+    eventBus.Publish(
+        CollisionEnterEvent
+        {
+            handleA,
+            handleB
+        }
+    );
 }
 
 void PhysicsSystem::HandleEndContact(
+    Scene& scene,
+    EventBus& eventBus,
     b2ShapeId shapeA,
     b2ShapeId shapeB)
 {
-    // Box2D에서는 body/shape가 파괴될 때도
-    // EndContact가 생성될 수 있다.
-    //
-    // 따라서 End event의 Shape ID가 이미
-    // 무효화되었을 가능성이 있다.
     if (!b2Shape_IsValid(shapeA) ||
         !b2Shape_IsValid(shapeB))
     {
@@ -227,21 +252,31 @@ void PhysicsSystem::HandleEndContact(
         );
 
     Entity* entityA =
-        static_cast<Entity*>(
-            b2Body_GetUserData(
-                bodyA
-            )
-            );
+        ResolveBodyEntity(
+            scene,
+            bodyA
+        );
 
     Entity* entityB =
-        static_cast<Entity*>(
-            b2Body_GetUserData(
-                bodyB
-            )
-            );
+        ResolveBodyEntity(
+            scene,
+            bodyB
+        );
 
     if (!entityA ||
         !entityB)
+    {
+        return;
+    }
+
+    const EntityHandle handleA =
+        entityA->GetHandle();
+
+    const EntityHandle handleB =
+        entityB->GetHandle();
+
+    if (!handleA.IsValid() ||
+        !handleB.IsValid())
     {
         return;
     }
@@ -252,5 +287,48 @@ void PhysicsSystem::HandleEndContact(
 
     entityB->OnCollisionExit(
         *entityA
+    );
+
+    eventBus.Publish(
+        CollisionExitEvent
+        {
+            handleA,
+            handleB
+        }
+    );
+}
+
+Entity* PhysicsSystem::ResolveBodyEntity(
+    Scene& scene,
+    b2BodyId body) const
+{
+    if (!b2Body_IsValid(
+        body))
+    {
+        return nullptr;
+    }
+
+    const auto* userData =
+        static_cast<
+        const PhysicsBodyUserData*
+        >(
+            b2Body_GetUserData(
+                body
+            )
+            );
+
+    if (!userData)
+    {
+        return nullptr;
+    }
+
+    if (!userData->
+        entityHandle.IsValid())
+    {
+        return nullptr;
+    }
+
+    return scene.ResolveEntity(
+        userData->entityHandle
     );
 }

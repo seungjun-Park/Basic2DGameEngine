@@ -12,6 +12,11 @@ public:
         float screenHeight
     );
 
+    void Resize(
+        float screenWidth,
+        float screenHeight
+    );
+
     void SetPosition(
         float x,
         float y
@@ -26,10 +31,11 @@ public:
     DirectX::XMMATRIX
         GetProjectionMatrix() const;
 
-    void Resize(
-        float screenWidth,
-        float screenHeight
-    );
+    float GetLeft() const;
+    float GetRight() const;
+
+    float GetTop() const;
+    float GetBottom() const;
 
 private:
     DirectX::XMFLOAT2 m_position

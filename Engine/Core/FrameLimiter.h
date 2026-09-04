@@ -6,10 +6,16 @@ class FrameLimiter
 {
 public:
     FrameLimiter();
+    ~FrameLimiter();
+
+    FrameLimiter(
+        const FrameLimiter&) = delete;
+
+    FrameLimiter& operator=(
+        const FrameLimiter&) = delete;
 
     void BeginFrame();
 
-    // targetFPS == 0ÀÌ¸י Unlimited
     void EndFrame(
         std::uint32_t targetFPS
     );
@@ -21,5 +27,5 @@ private:
     double m_frequency = 0.0;
     double m_frameStartTime = 0.0;
 
-    bool m_timerResolutionEnabled = false;
+    void* m_waitableTimer = nullptr;
 };

@@ -15,14 +15,6 @@ namespace PhysicsUnits
             PixelsPerMeter;
     }
 
-    inline float ToPixels(
-        float meters)
-    {
-        return
-            meters *
-            PixelsPerMeter;
-    }
-
     inline DirectX::XMFLOAT2
         ToMeters(
             const DirectX::XMFLOAT2& value)
@@ -32,6 +24,15 @@ namespace PhysicsUnits
             ToMeters(value.x),
             ToMeters(value.y)
         };
+    }
+
+
+    inline float ToPixels(
+        float meters)
+    {
+        return
+            meters *
+            PixelsPerMeter;
     }
 
     inline DirectX::XMFLOAT2

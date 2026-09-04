@@ -1,23 +1,17 @@
 #include "Scene.h"
 
 #include "Entity.h"
-#include "Engine/Renderer/SpriteRenderer.h"
 #include "Engine/Debug/DebugRenderer.h"
+#include "Engine/Physics/PhysicsBody.h"
+#include "Engine/Physics/PhysicsUnits.h"
+#include "Engine/Animation/Animator.h"
 
 #include <algorithm>
+#include <atomic>
 
-void Scene::Render(
-    SpriteRenderer& renderer)
+Scene::~Scene()
 {
-    for (auto& entity : m_entities)
-    {
-        if (!entity->active)
-            continue;
-
-        entity->Render(
-            renderer
-        );
-    }
+    ClearEntities();
 }
 
 void Scene::FixedUpdate(
@@ -26,7 +20,8 @@ void Scene::FixedUpdate(
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -43,7 +38,8 @@ void Scene::Update(
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -51,6 +47,13 @@ void Scene::Update(
         entity->Update(
             deltaTime
         );
+
+        if (entity->animator)
+        {
+            entity->animator->Update(
+                deltaTime
+            );
+        }
     }
 }
 
@@ -60,7 +63,8 @@ void Scene::LateUpdate(
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -73,26 +77,107 @@ void Scene::LateUpdate(
     RemoveDestroyedEntities();
 }
 
-void Scene::RemoveDestroyedEntities()
+void Scene::SubmitRender(
+    RenderQueue& renderQueue)
 {
-    std::erase_if(
-        m_entities,
-        [](const std::unique_ptr<Entity>& entity)
+    for (auto& entity :
+        m_entities)
+    {
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
-            return
-                entity->IsDestroyed();
+            continue;
         }
-    );
+
+        entity->SubmitRender(
+            renderQueue
+        );
+    }
 }
 
 void Scene::DebugRender(
     SpriteRenderer& renderer,
     DebugRenderer& debugRenderer)
 {
-    for (auto& entity : m_entities)
+    for (auto& entity :
+        m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
+        {
             continue;
+        }
+
+        if (!entity->physicsBody)
+        {
+            continue;
+        }
+
+        if (!entity->physicsBody->
+            IsValid())
+        {
+            continue;
+        }
+
+        const b2ShapeId shapeId =
+            entity->physicsBody->
+            GetShapeId();
+
+        if (B2_IS_NULL(
+            shapeId))
+        {
+            continue;
+        }
+
+        if (!b2Shape_IsValid(
+            shapeId))
+        {
+            continue;
+        }
+
+        const b2AABB aabb =
+            b2Shape_GetAABB(
+                shapeId
+            );
+
+        const float left =
+            PhysicsUnits::ToPixels(
+                aabb.lowerBound.x
+            );
+
+        const float top =
+            PhysicsUnits::ToPixels(
+                aabb.lowerBound.y
+            );
+
+        const float right =
+            PhysicsUnits::ToPixels(
+                aabb.upperBound.x
+            );
+
+        const float bottom =
+            PhysicsUnits::ToPixels(
+                aabb.upperBound.y
+            );
+
+        const DirectX::XMFLOAT2 center
+        {
+            (left + right) * 0.5f,
+            (top + bottom) * 0.5f
+        };
+
+        const DirectX::XMFLOAT2 size
+        {
+            right - left,
+            bottom - top
+        };
+
+        debugRenderer.DrawRect(
+            renderer,
+            center,
+            size,
+            2.0f
+        );
     }
 }
 
@@ -101,7 +186,8 @@ void Scene::SyncPhysicsTransforms()
     for (auto& entity :
         m_entities)
     {
-        if (!entity->active)
+        if (!entity->active ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -109,4 +195,145 @@ void Scene::SyncPhysicsTransforms()
         entity->
             SyncPhysicsTransform();
     }
+}
+
+Entity* Scene::ResolveEntity(
+    EntityHandle handle)
+{
+    if (!handle.IsValid())
+    {
+        return nullptr;
+    }
+
+    const auto it =
+        m_entityLookup.find(
+            handle.value
+        );
+
+    if (it == m_entityLookup.end())
+    {
+        return nullptr;
+    }
+
+    Entity* entity =
+        it->second;
+
+    if (!entity)
+    {
+        return nullptr;
+    }
+
+    if (entity->IsDestroyed())
+    {
+        return nullptr;
+    }
+
+    return entity;
+}
+
+const Entity* Scene::ResolveEntity(
+    EntityHandle handle) const
+{
+    if (!handle.IsValid())
+    {
+        return nullptr;
+    }
+
+    const auto it =
+        m_entityLookup.find(
+            handle.value
+        );
+
+    if (it == m_entityLookup.end())
+    {
+        return nullptr;
+    }
+
+    const Entity* entity =
+        it->second;
+
+    if (!entity)
+    {
+        return nullptr;
+    }
+
+    if (entity->IsDestroyed())
+    {
+        return nullptr;
+    }
+
+    return entity;
+}
+
+bool Scene::IsEntityAlive(
+    EntityHandle handle) const
+{
+    return
+        ResolveEntity(handle) != nullptr;
+}
+
+void Scene::CollectDebugStats(
+    DebugStats& stats
+) const
+{
+
+}
+
+void Scene::RemoveDestroyedEntities()
+{
+    std::erase_if(
+        m_entities,
+        [this](
+            const std::unique_ptr<Entity>& entity)
+        {
+            if (!entity->IsDestroyed())
+            {
+                return false;
+            }
+
+            const EntityHandle handle =
+                entity->GetHandle();
+
+            if (handle.IsValid())
+            {
+                m_entityLookup.erase(
+                    handle.value
+                );
+            }
+
+            return true;
+        }
+    );
+}
+
+void Scene::ClearEntities()
+{
+    //
+    // Handle resolution부터 차단한 뒤
+    // 실제 Entity를 파괴한다.
+    //
+    m_entityLookup.clear();
+
+    m_entities.clear();
+}
+
+EntityHandle Scene::AllocateEntityHandle()
+{
+    static std::atomic<
+        EntityHandle::ValueType
+    > nextValue
+    {
+        1
+    };
+
+    const EntityHandle::ValueType value =
+        nextValue.fetch_add(
+            1,
+            std::memory_order_relaxed
+        );
+
+    return EntityHandle
+    {
+        value
+    };
 }

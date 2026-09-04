@@ -9,29 +9,18 @@ public:
     );
 
     static void Tick();
-
-    // TimeScale 적용 시간
-    static float DeltaTime();
-
-    // 실제 frame 시간
-    static float UnscaledDeltaTime();
-
-    static float FixedDeltaTime();
-
-    static float TotalTime();
-    static float UnscaledTotalTime();
-
-    static float FPS();
-
-    static float TimeScale();
+    static void ResetFrameTimer();
 
     static void SetTimeScale(
         float scale
     );
-
-    // Alt+Tab / 최소화 복귀 시
-    // 큰 DeltaTime이 발생하지 않도록 기준 시간 재설정
-    static void ResetFrameTimer();
+    static float DeltaTime();
+    static float UnscaledDeltaTime();
+    static float FixedDeltaTime();
+    static float TotalTime();
+    static float UnscaledTotalTime();
+    static float FPS();
+    static float TimeScale();
 
 private:
     static double s_frequency;

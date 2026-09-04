@@ -1,0 +1,119 @@
+{
+    "version": 1,
+    "entities": [
+
+        {
+            "type": "Enemy",
+            "active": true,
+            "transform": {
+                "position": [300.0, 200.0],
+                "scale": [80.0, 80.0],
+                "rotation": 0.0
+            },
+            "sprite": {
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "visible": true,
+                "layer": "World",
+                "zIndex": 5.0,
+                "useYSort": true,
+                "blendMode": "Alpha",
+                "uv": [0.33333334, 0.0, 0.6666667, 0.25]
+            }
+        },
+
+        {
+            "type": "Enemy",
+            "active": true,
+            "transform": {
+                "position": [450.0, 200.0],
+                "scale": [80.0, 80.0],
+                "rotation": 0.0
+            },
+            "sprite": {
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "visible": true,
+                "layer": "World",
+                "zIndex": 5.0,
+                "useYSort": true,
+                "blendMode": "Alpha",
+                "uv": [0.33333334, 0.0, 0.6666667, 0.25]
+            }
+        },
+
+        {
+            "type": "Enemy",
+            "active": true,
+            "transform": {
+                "position": [600.0, 200.0],
+                "scale": [80.0, 80.0],
+                "rotation": 0.0
+            },
+            "sprite": {
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "visible": true,
+                "layer": "World",
+                "zIndex": 5.0,
+                "useYSort": true,
+                "blendMode": "Alpha",
+                "uv": [0.33333334, 0.0, 0.6666667, 0.25]
+            }
+        },
+
+        {
+            "type": "Enemy",
+            "active": true,
+            "transform": {
+                "position": [750.0, 200.0],
+                "scale": [80.0, 80.0],
+                "rotation": 0.0
+            },
+            "sprite": {
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "visible": true,
+                "layer": "World",
+                "zIndex": 5.0,
+                "useYSort": true,
+                "blendMode": "Alpha",
+                "uv": [0.33333334, 0.0, 0.6666667, 0.25]
+            }
+        },
+
+        {
+            "type": "Enemy",
+            "active": true,
+            "transform": {
+                "position": [900.0, 200.0],
+                "scale": [80.0, 80.0],
+                "rotation": 0.0
+            },
+            "sprite": {
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "visible": true,
+                "layer": "World",
+                "zIndex": 5.0,
+                "useYSort": true,
+                "blendMode": "Alpha",
+                "uv": [0.33333334, 0.0, 0.6666667, 0.25]
+            }
+        },
+
+        {
+            "type": "Player",
+            "active": true,
+            "transform": {
+                "position": [128.0, 128.0],
+                "scale": [96.0, 96.0],
+                "rotation": 0.0
+            },
+            "sprite": {
+                "texture": "Engine/Assets/Textures/Aemeath.png",
+                "visible": true,
+                "layer": "World",
+                "zIndex": 10.0,
+                "useYSort": true,
+                "blendMode": "Alpha",
+                "uv": [0.0, 0.0, 1.0, 1.0]
+            }
+        }
+    ]
+}

@@ -5,6 +5,7 @@
 
 #include <string>
 
+
 class Texture
 {
 public:
@@ -30,6 +31,7 @@ public:
     {
         return m_height;
     }
+
 
 private:
     Microsoft::WRL::ComPtr<

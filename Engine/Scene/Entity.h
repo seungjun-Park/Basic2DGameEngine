@@ -2,12 +2,14 @@
 
 #include "Engine/Components/Transform.h"
 #include "Engine/Components/Sprite.h"
-#include "Engine/Collision/Collider.h"
+#include "Engine/Scene/EntityHandle.h"
+#include "Engine/Animation/Animator.h"
 
 #include <memory>
 
-class SpriteRenderer;
 class PhysicsBody;
+class RenderQueue;
+class Scene;
 
 class Entity
 {
@@ -35,13 +37,20 @@ public:
     {
     }
 
-    virtual void Render(
-        SpriteRenderer& renderer
+    virtual void SubmitRender(
+        RenderQueue& renderQueue
     );
+
+    void SyncPhysicsTransform();
 
     void Destroy();
 
     bool IsDestroyed() const;
+
+    EntityHandle GetHandle() const noexcept
+    {
+        return m_handle;
+    }
 
     virtual void OnCollisionEnter(
         Entity& other)
@@ -53,8 +62,6 @@ public:
     {
     }
 
-    void SyncPhysicsTransform();
-
 public:
     Transform transform;
     Sprite sprite;
@@ -64,6 +71,21 @@ public:
     std::unique_ptr<PhysicsBody>
         physicsBody;
 
+    std::unique_ptr<Animator>
+        animator;
+
 private:
+    friend class Scene;
+
+    void SetHandle(
+        EntityHandle handle
+    ) noexcept
+    {
+        m_handle = handle;
+    }
+
+private:
+    EntityHandle m_handle{};
+
     bool m_destroyed = false;
 };

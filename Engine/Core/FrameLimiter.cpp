@@ -2,8 +2,24 @@
 
 #include <Windows.h>
 
+#include <algorithm>
 #include <chrono>
 #include <thread>
+
+namespace
+{
+    constexpr double
+        HundredNanosecondsPerSecond =
+        10'000'000.0;
+
+    constexpr DWORD
+        HighResolutionTimerFlag =
+        0x00000002;
+
+    constexpr double
+        MaxSpinSeconds =
+        0.0002; // 0.2 ms
+}
 
 FrameLimiter::FrameLimiter()
 {
@@ -17,20 +33,43 @@ FrameLimiter::FrameLimiter()
         static_cast<double>(
             frequency.QuadPart
             );
+
+    HANDLE timer =
+        CreateWaitableTimerExW(
+            nullptr,
+            nullptr,
+            HighResolutionTimerFlag,
+            TIMER_MODIFY_STATE |
+            SYNCHRONIZE
+        );
+
+    if (!timer)
+    {
+        timer =
+            CreateWaitableTimerW(
+                nullptr,
+                FALSE,
+                nullptr
+            );
+    }
+
+    m_waitableTimer =
+        timer;
 }
 
-double FrameLimiter::GetTimestampSeconds() const
+FrameLimiter::~FrameLimiter()
 {
-    LARGE_INTEGER counter{};
+    if (m_waitableTimer)
+    {
+        CloseHandle(
+            static_cast<HANDLE>(
+                m_waitableTimer
+                )
+        );
 
-    QueryPerformanceCounter(
-        &counter
-    );
-
-    return
-        static_cast<double>(
-            counter.QuadPart
-            ) / m_frequency;
+        m_waitableTimer =
+            nullptr;
+    }
 }
 
 void FrameLimiter::BeginFrame()
@@ -53,39 +92,100 @@ void FrameLimiter::EndFrame(
             targetFPS
             );
 
+    const double targetEndTime =
+        m_frameStartTime +
+        targetFrameTime;
+
+    const double spinSeconds =
+        std::min(
+            MaxSpinSeconds,
+            targetFrameTime * 0.25
+        );
+
     while (true)
     {
-        const double elapsed =
-            GetTimestampSeconds() -
-            m_frameStartTime;
+        const double now =
+            GetTimestampSeconds();
 
         const double remaining =
-            targetFrameTime -
-            elapsed;
+            targetEndTime - now;
 
         if (remaining <= 0.0)
         {
             break;
         }
 
-        // 충분한 시간이 남았으면
-        // CPU를 잠시 OS에 양보
-        if (remaining > 0.002)
+        if (remaining > spinSeconds)
         {
-            const double sleepTime =
-                remaining - 0.001;
+            const double waitSeconds =
+                remaining -
+                spinSeconds;
+
+            HANDLE timer =
+                static_cast<HANDLE>(
+                    m_waitableTimer
+                    );
+
+            if (timer)
+            {
+                LARGE_INTEGER dueTime{};
+
+                auto dueTicks =
+                    static_cast<LONGLONG>(
+                        waitSeconds *
+                        HundredNanosecondsPerSecond
+                        );
+
+                dueTicks =
+                    std::max<LONGLONG>(
+                        dueTicks,
+                        1
+                    );
+
+                dueTime.QuadPart =
+                    -dueTicks;
+
+                if (SetWaitableTimer(
+                    timer,
+                    &dueTime,
+                    0,
+                    nullptr,
+                    nullptr,
+                    FALSE))
+                {
+                    WaitForSingleObject(
+                        timer,
+                        INFINITE
+                    );
+
+                    continue;
+                }
+            }
 
             std::this_thread::sleep_for(
                 std::chrono::duration<double>(
-                    sleepTime
+                    waitSeconds
                 )
             );
+
+            continue;
         }
-        else
-        {
-            // 마지막 짧은 구간은
-            // coarse한 Sleep 대신 yield
-            std::this_thread::yield();
-        }
+
+        YieldProcessor();
     }
+}
+
+double FrameLimiter::GetTimestampSeconds() const
+{
+    LARGE_INTEGER counter{};
+
+    QueryPerformanceCounter(
+        &counter
+    );
+
+    return
+        static_cast<double>(
+            counter.QuadPart
+            ) /
+        m_frequency;
 }

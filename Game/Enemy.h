@@ -1,8 +1,11 @@
 #pragma once
 
+#include "CharacterAnimation.h"
 #include "Engine/Scene/Entity.h"
+#include "Engine/Scene/EntityHandle.h"
 
 class PhysicsSystem;
+class Scene;
 class Player;
 
 class Enemy :
@@ -10,28 +13,42 @@ class Enemy :
 {
 public:
     explicit Enemy(
+        Scene& scene,
         PhysicsSystem& physics
     );
 
     void Initialize() override;
 
-    void SetTarget(
-        Player* player
-    );
+    void FixedUpdate(
+        float fixedDeltaTime
+    ) override;
 
     void Update(
         float deltaTime
     ) override;
 
-    void FixedUpdate(
-        float fixedDeltaTime
-    ) override;
+    bool SetTarget(
+        EntityHandle target
+    );
+
+    bool SetAnimations(
+        const CharacterAnimationSet& animations
+    );
 
 private:
+    void UpdateAnimation();
+
+    Player* ResolveTarget();
+
+private:
+    Scene&
+        m_scene;
+
     PhysicsSystem&
         m_physics;
 
-    Player* m_target = nullptr;
+    EntityHandle
+        m_target{};
 
     DirectX::XMFLOAT2
         m_moveDirection
@@ -41,4 +58,15 @@ private:
     };
 
     float m_speed = 100.0f;
+
+    CharacterAnimationSet
+        m_animations;
+
+    CharacterAnimationState
+        m_animationState =
+        CharacterAnimationState::Idle;
+
+    FacingDirection
+        m_facingDirection =
+        FacingDirection::Down;
 };

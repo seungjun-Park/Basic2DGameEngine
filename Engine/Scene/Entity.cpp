@@ -1,38 +1,25 @@
 #include "Entity.h"
 
-#include "Engine/Renderer/SpriteRenderer.h"
-#include "Engine/Graphics/Texture.h"
+#include "Engine/Animation/Animator.h"
 #include "Engine/Physics/PhysicsBody.h"
+#include "Engine/Renderer/RenderQueue.h"
 
 Entity::~Entity() = default;
 
-void Entity::Render(
-    SpriteRenderer& renderer)
+void Entity::SubmitRender(
+    RenderQueue& renderQueue)
 {
     if (!active)
+    {
         return;
+    }
 
-    if (!sprite.visible)
-        return;
-
-    if (!sprite.texture)
-        return;
-
-    renderer.Draw(
+    renderQueue.Submit(
         sprite,
         transform
     );
 }
 
-void Entity::Destroy()
-{
-    m_destroyed = true;
-}
-
-bool Entity::IsDestroyed() const
-{
-    return m_destroyed;
-}
 
 void Entity::SyncPhysicsTransform()
 {
@@ -49,4 +36,14 @@ void Entity::SyncPhysicsTransform()
     physicsBody->SyncTransform(
         transform
     );
+}
+
+void Entity::Destroy()
+{
+    m_destroyed = true;
+}
+
+bool Entity::IsDestroyed() const
+{
+    return m_destroyed;
 }

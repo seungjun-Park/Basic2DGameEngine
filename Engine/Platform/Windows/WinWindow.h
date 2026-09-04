@@ -20,6 +20,12 @@ public:
 
     bool ProcessMessages();
 
+    bool ConsumeResize(
+        int& width,
+        int& height
+    );
+
+
     HWND GetHandle() const
     {
         return m_hwnd;
@@ -45,12 +51,9 @@ public:
         return m_isMinimized;
     }
 
-    bool ConsumeResize(
-        int& width,
-        int& height
-    );
-
 private:
+    bool RegisterWindowClass(HINSTANCE hInstance);
+    
     static LRESULT CALLBACK WindowProc(
         HWND hwnd,
         UINT message,
@@ -58,12 +61,9 @@ private:
         LPARAM lParam
     );
 
-    bool RegisterWindowClass(HINSTANCE hInstance);
-
 private:
-    HWND m_hwnd = nullptr;
-
     HINSTANCE m_hInstance = nullptr;
+    HWND m_hwnd = nullptr;
 
     int m_width = 0;
     int m_height = 0;

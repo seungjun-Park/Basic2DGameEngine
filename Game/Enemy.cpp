@@ -4,11 +4,19 @@
 #include "Engine/Physics/PhysicsBody.h"
 #include "Engine/Physics/PhysicsTypes.h"
 
+#include "CharacterAnimation.h"
+
+#include "Engine/Animation/AnimationClip.h"
+#include "Engine/Animation/Animator.h"
+#include "Engine/Scene/Scene.h"
+
 #include <cmath>
 
 Enemy::Enemy(
+    Scene& scene,
     PhysicsSystem& physics)
     :
+    m_scene(scene),
     m_physics(physics)
 {
 }
@@ -24,6 +32,19 @@ void Enemy::Initialize()
     {
         64.0f,
         64.0f
+    };
+
+    desc.offset =
+    {
+        (
+            transform.scale.x -
+            desc.size.x
+        ) * 0.5f,
+
+        (
+            transform.scale.y -
+            desc.size.y
+        ) * 0.5f
     };
 
     desc.density = 1.0f;
@@ -45,56 +66,6 @@ void Enemy::Initialize()
     }
 }
 
-void Enemy::SetTarget(
-    Player* player)
-{
-    m_target = player;
-}
-
-void Enemy::Update(
-    float deltaTime)
-{
-    m_moveDirection =
-    {
-        0.0f,
-        0.0f
-    };
-
-    if (!m_target)
-    {
-        return;
-    }
-
-    float dx =
-        m_target->transform.position.x -
-        transform.position.x;
-
-    float dy =
-        m_target->transform.position.y -
-        transform.position.y;
-
-    const float lengthSquared =
-        dx * dx +
-        dy * dy;
-
-    if (lengthSquared <=
-        0.001f)
-    {
-        return;
-    }
-
-    const float length =
-        std::sqrt(
-            lengthSquared
-        );
-
-    m_moveDirection =
-    {
-        dx / length,
-        dy / length
-    };
-}
-
 void Enemy::FixedUpdate(
     float fixedDeltaTime)
 {
@@ -110,4 +81,256 @@ void Enemy::FixedUpdate(
         m_moveDirection.y *
         m_speed
     );
+}
+
+void Enemy::Update(
+    float deltaTime)
+{
+    m_moveDirection =
+    {
+        0.0f,
+        0.0f
+    };
+
+    Player* target =
+        ResolveTarget();
+
+    if (!target)
+    {
+        UpdateAnimation();
+
+        return;
+    }
+
+    float dx =
+        target->
+        transform.position.x -
+        transform.position.x;
+
+    float dy =
+        target->
+        transform.position.y -
+        transform.position.y;
+
+    const float lengthSquared =
+        dx * dx +
+        dy * dy;
+
+    if (lengthSquared <=
+        0.001f)
+    {
+        UpdateAnimation();
+
+        return;
+    }
+
+    const float length =
+        std::sqrt(
+            lengthSquared
+        );
+
+    m_moveDirection =
+    {
+        dx / length,
+        dy / length
+    };
+
+    UpdateAnimation();
+}
+
+bool Enemy::SetTarget(
+    EntityHandle target)
+{
+    if (!target.IsValid())
+    {
+        m_target =
+            EntityHandle{};
+
+        return false;
+    }
+
+    Entity* entity =
+        m_scene.ResolveEntity(
+            target
+        );
+
+    Player* player =
+        dynamic_cast<Player*>(
+            entity
+            );
+
+    if (!player)
+    {
+        m_target =
+            EntityHandle{};
+
+        return false;
+    }
+
+    m_target =
+        target;
+
+    return true;
+}
+
+bool Enemy::SetAnimations(
+    const CharacterAnimationSet& animations)
+{
+    if (!animations.IsValid())
+    {
+        return false;
+    }
+
+    m_animations =
+        animations;
+
+    if (!animator)
+    {
+        animator =
+            std::make_unique<Animator>(
+                sprite
+            );
+    }
+
+    m_animationState =
+        CharacterAnimationState::Idle;
+
+    m_facingDirection =
+        FacingDirection::Down;
+
+    AnimationClip* clip =
+        m_animations.GetClip(
+            m_animationState,
+            m_facingDirection
+        );
+
+    if (!clip)
+    {
+        animator.reset();
+
+        return false;
+    }
+
+    return
+        animator->Play(
+            *clip,
+            true
+        );
+}
+
+void Enemy::UpdateAnimation()
+{
+    if (!animator ||
+        !m_animations.IsValid())
+    {
+        return;
+    }
+
+    constexpr float
+        MovementEpsilon =
+        0.0001f;
+
+    const float absX =
+        std::abs(
+            m_moveDirection.x
+        );
+
+    const float absY =
+        std::abs(
+            m_moveDirection.y
+        );
+
+    const bool isMoving =
+        absX > MovementEpsilon ||
+        absY > MovementEpsilon;
+
+    CharacterAnimationState
+        newState =
+        CharacterAnimationState::Idle;
+
+    FacingDirection
+        newDirection =
+        m_facingDirection;
+
+    if (isMoving)
+    {
+        newState =
+            CharacterAnimationState::Walk;
+
+        if (absX > absY)
+        {
+            if (m_moveDirection.x < 0.0f)
+            {
+                newDirection =
+                    FacingDirection::Left;
+            }
+            else
+            {
+                newDirection =
+                    FacingDirection::Right;
+            }
+        }
+        else
+        {
+            if (m_moveDirection.y < 0.0f)
+            {
+                newDirection =
+                    FacingDirection::Up;
+            }
+            else
+            {
+                newDirection =
+                    FacingDirection::Down;
+            }
+        }
+    }
+
+    m_animationState =
+        newState;
+
+    m_facingDirection =
+        newDirection;
+
+    AnimationClip* clip =
+        m_animations.GetClip(
+            m_animationState,
+            m_facingDirection
+        );
+
+    if (!clip)
+    {
+        return;
+    }
+
+    animator->Play(
+        *clip
+    );
+}
+
+Player* Enemy::ResolveTarget()
+{
+    if (!m_target.IsValid())
+    {
+        return nullptr;
+    }
+
+    Entity* entity =
+        m_scene.ResolveEntity(
+            m_target
+        );
+
+    Player* player =
+        dynamic_cast<Player*>(
+            entity
+            );
+
+    if (!player)
+    {
+        m_target =
+            EntityHandle{};
+
+        return nullptr;
+    }
+
+    return player;
 }

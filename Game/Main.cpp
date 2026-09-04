@@ -1,10 +1,11 @@
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Engine.h"
-#include "Engine/Resource/ResourceManager.h"
-
 #include "Game/GameScene.h"
 
+#include <Windows.h>
+
 #include <memory>
+#include <utility>
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -15,11 +16,10 @@ int WINAPI WinMain(
     EngineConfig config;
 
     config.windowWidth = 1280;
-    config.windowHeight = 720;
+    config.windowHeight = 960;
 
     config.vsync = false;
 
-    // 0ÀÌ¸י Unlimited
     config.targetFPS = 0;
 
     config.fixedUpdateHz = 60.0f;
@@ -54,7 +54,9 @@ int WINAPI WinMain(
         std::make_unique<GameScene>(
             engine.GetResourceManager(),
             engine.GetCamera(),
-            engine.GetPhysicsSystem()
+            engine.GetPhysicsSystem(),
+            engine.GetEventBus(),
+            engine.GetAudioSystem()
         );
 
     engine.SetScene(

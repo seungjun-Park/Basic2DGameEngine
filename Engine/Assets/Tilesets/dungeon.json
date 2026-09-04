@@ -1,0 +1,12 @@
+{
+  "texture": "Engine/Assets/Textures/dungeon_1280x960.png",
+
+  "tileWidth": 160,
+  "tileHeight": 160,
+
+  "columns": 8,
+  "rows": 6,
+
+  "margin": 0,
+  "spacing": 0
+}

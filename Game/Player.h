@@ -15,23 +15,17 @@ public:
 
     void Initialize() override;
 
-    void Update(
-        float deltaTime
-    ) override;
-
     void FixedUpdate(
         float fixedDeltaTime
+    ) override;
+
+    void Update(
+        float deltaTime
     ) override;
 
     bool IsAttacking() const;
 
     float GetAttackRange() const;
-
-    void OnCollisionEnter(
-        Entity& other) override;
-
-    void OnCollisionExit(
-        Entity& other) override;
 
 private:
     PhysicsSystem& m_physics;

@@ -1,5 +1,6 @@
 #include "Player.h"
 
+#include "Engine/Debug/DebugLog.h"
 #include "Engine/Platform/Windows/WinInput.h"
 #include "Engine/Physics/PhysicsBody.h"
 #include "Engine/Physics/PhysicsSystem.h"
@@ -30,6 +31,19 @@ void Player::Initialize()
         64.0f
     };
 
+    desc.offset =
+    {
+        (
+            transform.scale.x -
+            desc.size.x
+        ) * 0.5f,
+
+        (
+            transform.scale.y -
+            desc.size.y
+        ) * 0.5f
+    };
+
     desc.density = 1.0f;
     desc.friction = 0.0f;
 
@@ -42,6 +56,7 @@ void Player::Initialize()
     physicsBody =
         std::make_unique<PhysicsBody>();
 
+
     if (!physicsBody->Create(
         m_physics,
         *this,
@@ -50,10 +65,27 @@ void Player::Initialize()
     {
         physicsBody.reset();
 
-        OutputDebugStringA(
+        ENGINE_DEBUG_LOG(
             "[Player] Failed to create PhysicsBody.\n"
         );
     }
+}
+
+void Player::FixedUpdate(
+    float fixedDeltaTime)
+{
+    if (!physicsBody)
+    {
+        return;
+    }
+
+    physicsBody->SetLinearVelocity(
+        m_moveDirection.x *
+        m_speed,
+
+        m_moveDirection.y *
+        m_speed
+    );
 }
 
 void Player::Update(
@@ -114,23 +146,6 @@ void Player::Update(
         );
 }
 
-void Player::FixedUpdate(
-    float fixedDeltaTime)
-{
-    if (!physicsBody)
-    {
-        return;
-    }
-
-    physicsBody->SetLinearVelocity(
-        m_moveDirection.x *
-        m_speed,
-
-        m_moveDirection.y *
-        m_speed
-    );
-}
-
 bool Player::IsAttacking() const
 {
     return m_isAttacking;
@@ -139,20 +154,4 @@ bool Player::IsAttacking() const
 float Player::GetAttackRange() const
 {
     return m_attackRange;
-}
-
-void Player::OnCollisionEnter(
-    Entity& other)
-{
-    OutputDebugStringA(
-        "[Player] Collision Enter\n"
-    );
-}
-
-void Player::OnCollisionExit(
-    Entity& other)
-{
-    OutputDebugStringA(
-        "[Player] Collision Exit\n"
-    );
 }

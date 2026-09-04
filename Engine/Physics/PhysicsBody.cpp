@@ -1,5 +1,6 @@
 #include "PhysicsBody.h"
 
+#include "PhysicsTypes.h"
 #include "PhysicsSystem.h"
 #include "PhysicsUnits.h"
 
@@ -41,11 +42,16 @@ bool PhysicsBody::Create(
 {
     Destroy();
 
-    m_physics =
-        &physics;
+    const EntityHandle ownerHandle =
+        owner.GetHandle();
 
-    m_owner =
-        &owner;
+    if (!ownerHandle.IsValid())
+    {
+        return false;
+    }
+
+    m_userData.entityHandle =
+        ownerHandle;
 
     b2BodyDef bodyDef =
         b2DefaultBodyDef();
@@ -74,10 +80,8 @@ bool PhysicsBody::Create(
     bodyDef.fixedRotation =
         desc.fixedRotation;
 
-    // 충돌 이벤트에서 Entity를 찾기 위해
-    // owner 포인터를 Box2D userData로 연결
     bodyDef.userData =
-        &owner;
+        &m_userData;
 
     m_bodyId =
         b2CreateBody(
@@ -88,8 +92,8 @@ bool PhysicsBody::Create(
     if (B2_IS_NULL(
         m_bodyId))
     {
-        m_physics = nullptr;
-        m_owner = nullptr;
+        m_userData.entityHandle =
+            EntityHandle{};
 
         return false;
     }
@@ -122,40 +126,26 @@ bool PhysicsBody::Create(
             desc.size.y * 0.5f
         );
 
-    b2Polygon box;
+    const b2Vec2 center
+    {
+        PhysicsUnits::ToMeters(
+            desc.size.x * 0.5f +
+            desc.offset.x
+        ),
 
-    if (
-        desc.offset.x == 0.0f &&
-        desc.offset.y == 0.0f
+        PhysicsUnits::ToMeters(
+            desc.size.y * 0.5f +
+            desc.offset.y
         )
-    {
-        box =
-            b2MakeBox(
-                halfWidth,
-                halfHeight
-            );
-    }
-    else
-    {
-        const b2Vec2 center
-        {
-            PhysicsUnits::ToMeters(
-                desc.offset.x
-            ),
+    };
 
-            PhysicsUnits::ToMeters(
-                desc.offset.y
-            )
-        };
-
-        box =
-            b2MakeOffsetBox(
-                halfWidth,
-                halfHeight,
-                center,
-                b2MakeRot(0.0f)
-            );
-    }
+    const b2Polygon box =
+        b2MakeOffsetBox(
+            halfWidth,
+            halfHeight,
+            center,
+            b2MakeRot(0.0f)
+        );
 
     m_shapeId =
         b2CreatePolygonShape(
@@ -167,6 +157,11 @@ bool PhysicsBody::Create(
     if (B2_IS_NULL(
         m_shapeId))
     {
+        b2Body_SetUserData(
+            m_bodyId,
+            nullptr
+        );
+
         b2DestroyBody(
             m_bodyId
         );
@@ -174,8 +169,11 @@ bool PhysicsBody::Create(
         m_bodyId =
             b2_nullBodyId;
 
-        m_physics = nullptr;
-        m_owner = nullptr;
+        m_shapeId =
+            b2_nullShapeId;
+
+        m_userData.entityHandle =
+            EntityHandle{};
 
         return false;
     }
@@ -191,8 +189,6 @@ void PhysicsBody::Destroy()
         if (b2Body_IsValid(
             m_bodyId))
         {
-            // Box2D가 더 이상 삭제될 Entity를
-            // 가리키지 않도록 먼저 끊는다.
             b2Body_SetUserData(
                 m_bodyId,
                 nullptr
@@ -210,18 +206,42 @@ void PhysicsBody::Destroy()
             b2_nullShapeId;
     }
 
-    m_owner = nullptr;
-    m_physics = nullptr;
+    m_userData.entityHandle =
+        EntityHandle{};
 }
 
-bool PhysicsBody::IsValid() const
+void PhysicsBody::SyncTransform(
+    Transform& transform) const
 {
-    return
-        B2_IS_NON_NULL(
+    if (!IsValid())
+    {
+        return;
+    }
+
+    const b2Vec2 position =
+        b2Body_GetPosition(
             m_bodyId
-        ) &&
-        b2Body_IsValid(
+        );
+
+    transform.position =
+    {
+        PhysicsUnits::ToPixels(
+            position.x
+        ),
+
+        PhysicsUnits::ToPixels(
+            position.y
+        )
+    };
+
+    const b2Rot rotation =
+        b2Body_GetRotation(
             m_bodyId
+        );
+
+    transform.rotation =
+        b2Rot_GetAngle(
+            rotation
         );
 }
 
@@ -303,37 +323,13 @@ void PhysicsBody::SetRotation(
     );
 }
 
-void PhysicsBody::SyncTransform(
-    Transform& transform) const
+bool PhysicsBody::IsValid() const
 {
-    if (!IsValid())
-    {
-        return;
-    }
-
-    const b2Vec2 position =
-        b2Body_GetPosition(
+    return
+        B2_IS_NON_NULL(
             m_bodyId
-        );
-
-    transform.position =
-    {
-        PhysicsUnits::ToPixels(
-            position.x
-        ),
-
-        PhysicsUnits::ToPixels(
-            position.y
-        )
-    };
-
-    const b2Rot rotation =
-        b2Body_GetRotation(
+        ) &&
+        b2Body_IsValid(
             m_bodyId
-        );
-
-    transform.rotation =
-        b2Rot_GetAngle(
-            rotation
         );
 }

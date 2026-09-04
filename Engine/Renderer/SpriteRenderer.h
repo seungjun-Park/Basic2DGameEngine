@@ -4,13 +4,16 @@
 #include <wrl/client.h>
 
 #include <DirectXMath.h>
+#include <cstddef>
 
-#include "Engine/Components/Transform.h"
+#include "RenderTypes.h"
 
 class DX11Renderer;
+class Transform;
 class Texture;
 class Camera;
 struct Sprite;
+struct SpriteRenderCommand;
 
 class SpriteRenderer
 {
@@ -34,10 +37,19 @@ public:
         const Transform& transform
     );
 
+    void DrawBatch(
+        const SpriteRenderCommand* commands,
+        std::size_t commandCount
+    );
+
     void End();
 
     void SetCamera(
         const Camera& camera
+    );
+
+    void SetBlendMode(
+        BlendMode mode
     );
 
     int GetDrawCallCount() const
@@ -50,6 +62,7 @@ private:
     bool CreateInputLayout();
     bool CreateBuffers();
     bool CreateSampler();
+    bool CreateBlendStates();
 
     bool CompileShader(
         const wchar_t* filename,
@@ -57,8 +70,6 @@ private:
         const char* target,
         Microsoft::WRL::ComPtr<ID3DBlob>& blob
     );
-
-    bool CreateBlendState();
 
 private:
     DX11Renderer* m_renderer = nullptr;
@@ -84,14 +95,20 @@ private:
     Microsoft::WRL::ComPtr<ID3D11SamplerState>
         m_samplerState;
 
-    Microsoft::WRL::ComPtr<ID3D11BlendState> 
-        m_blendState;
-
     DirectX::XMMATRIX m_viewMatrix;
     DirectX::XMMATRIX m_projectionMatrix;
 
-    int m_screenWidth = 0;
-    int m_screenHeight = 0;
-
     int m_drawCallCount = 0;
+
+private:
+    Microsoft::WRL::ComPtr<
+        ID3D11BlendState
+    > m_alphaBlendState;
+
+    Microsoft::WRL::ComPtr<
+        ID3D11BlendState
+    > m_opaqueBlendState;
+
+    BlendMode m_currentBlendMode =
+        BlendMode::Alpha;
 };

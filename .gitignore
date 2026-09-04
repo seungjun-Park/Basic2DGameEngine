@@ -427,7 +427,10 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
-*.jpg
-*.png
-vcpkg_installed/*
-vcpkg*
+
+# --------------------------------------------------
+# Project-specific dependencies
+# --------------------------------------------------
+
+# vcpkg manifest dependencies are restored locally.
+vcpkg_installed/
