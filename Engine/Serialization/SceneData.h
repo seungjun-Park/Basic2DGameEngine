@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <utility>
 
 struct SerializedSprite
 {
