@@ -24,32 +24,24 @@ enum class AudioCategory :
 class AudioSystem final
 {
 public:
-
     static constexpr std::size_t
         MaxActiveSfxVoices = 64;
-
     static constexpr std::size_t
         MaxPersistentVoices = 8;
 
 
     AudioSystem() = default;
-
     ~AudioSystem();
-
-
     AudioSystem(
         const AudioSystem&
     ) = delete;
-
     AudioSystem&
         operator=(
             const AudioSystem&
             ) = delete;
-
     AudioSystem(
         AudioSystem&&
     ) = delete;
-
     AudioSystem&
         operator=(
             AudioSystem&&
@@ -57,41 +49,29 @@ public:
 
 
     bool Initialize();
-
     void Shutdown() noexcept;
 
 
-    //
-    // Main-thread maintenance.
-    //
-    // 완료된 one-shot SourceVoice를 회수한다.
-    //
     void Update() noexcept;
 
 
-    //
-    // volume:
-    // engine policy상 0.0 ~ 1.0
-    //
     bool PlayOneShot(
         const AudioClip& clip,
         float volume = 1.0f
     );
+
 
     [[nodiscard]]
     AudioPlaybackHandle PlayLoop(
         const AudioClip& clip,
         float volume = 1.0f
     );
-
-
     [[nodiscard]]
     AudioPlaybackHandle PlayLoop(
         const AudioClip& clip,
         AudioCategory category,
         float volume
     );
-
     [[nodiscard]]
     AudioPlaybackHandle PlayMusic(
         const AudioClip& clip,
@@ -102,74 +82,55 @@ public:
     bool Pause(
         AudioPlaybackHandle handle
     );
-
-
     bool Resume(
+        AudioPlaybackHandle handle
+    );
+    bool Stop(
         AudioPlaybackHandle handle
     );
 
 
-    bool Stop(
-        AudioPlaybackHandle handle
+    bool SetMasterVolume(
+        float volume
+    );
+    bool SetSfxVolume(
+        float volume
+    );
+    bool SetMusicVolume(
+        float volume
     );
 
 
     bool IsPlaybackValid(
         AudioPlaybackHandle handle
     ) const noexcept;
-
-
     bool IsPaused(
         AudioPlaybackHandle handle
     ) const noexcept;
-
+    bool IsInitialized()
+        const noexcept;
 
     std::size_t
         GetPersistentVoiceCount()
         const noexcept;
-    
-    bool SetMasterVolume(
-        float volume
-    );
-
-    bool SetSfxVolume(
-        float volume
-    );
-
-    bool SetMusicVolume(
-        float volume
-    );
-
-
     float GetMasterVolume()
         const noexcept;
-
     float GetSfxVolume()
         const noexcept;
-
     float GetMusicVolume()
         const noexcept;
-
-    bool IsInitialized()
-        const noexcept;
-
 
     std::uint32_t
         GetOutputChannels()
         const noexcept;
-
     std::uint32_t
         GetOutputSampleRate()
         const noexcept;
-
-
     std::size_t
         GetActiveVoiceCount()
         const noexcept;
 
-
 private:
-
     struct ActiveVoice
     {
         IXAudio2SourceVoice*
@@ -188,55 +149,8 @@ private:
             false;
     };
 
-
-    ActiveVoice*
-        FindFreeVoiceSlot()
-        noexcept;
-
-
-    void DestroySourceVoice(
-        ActiveVoice& activeVoice
-    ) noexcept;
-
-
-    void DestroyAllSourceVoices()
-        noexcept;
-
     static AudioPlaybackHandle
         AllocatePlaybackHandle();
-
-
-    PersistentVoice*
-        FindFreePersistentVoice()
-        noexcept;
-
-
-    PersistentVoice*
-        FindPersistentVoice(
-            AudioPlaybackHandle handle
-        ) noexcept;
-
-
-    const PersistentVoice*
-        FindPersistentVoice(
-            AudioPlaybackHandle handle
-        ) const noexcept;
-
-
-    void DestroyPersistentVoice(
-        PersistentVoice& persistentVoice
-    ) noexcept;
-
-
-    void DestroyAllPersistentVoices()
-        noexcept;
-
-
-    IXAudio2Voice*
-        GetCategoryOutputVoice(
-            AudioCategory category
-        ) const noexcept;
-
 
     HRESULT CreateRoutedSourceVoice(
         IXAudio2SourceVoice** outVoice,
@@ -245,20 +159,56 @@ private:
     ) noexcept;
 
 
+    void DestroySourceVoice(
+        ActiveVoice& activeVoice
+    ) noexcept;
+
+    void DestroyAllSourceVoices()
+        noexcept;
+
+    void DestroyPersistentVoice(
+        PersistentVoice& persistentVoice
+    ) noexcept;
+
+    void DestroyAllPersistentVoices()
+        noexcept;
+
+
+    ActiveVoice*
+        FindFreeVoiceSlot()
+        noexcept;
+
+    PersistentVoice*
+        FindFreePersistentVoice()
+        noexcept;
+
+    PersistentVoice*
+        FindPersistentVoice(
+            AudioPlaybackHandle handle
+        ) noexcept;
+
+    const PersistentVoice*
+        FindPersistentVoice(
+            AudioPlaybackHandle handle
+        ) const noexcept;
+
+
+    IXAudio2Voice*
+        GetCategoryOutputVoice(
+            AudioCategory category
+        ) const noexcept;
+
+
 private:
 
-    Microsoft::WRL::ComPtr<
-        IXAudio2
-    >
+    Microsoft::WRL::ComPtr<IXAudio2>
         m_xaudio2;
 
 
     IXAudio2MasteringVoice*
         m_masterVoice = nullptr;
-
     IXAudio2SubmixVoice*
         m_sfxSubmixVoice = nullptr;
-
     IXAudio2SubmixVoice*
         m_musicSubmixVoice = nullptr;
 
@@ -267,29 +217,25 @@ private:
         MaxActiveSfxVoices
     >
         m_activeVoices{};
-
     std::array<
         PersistentVoice,
         MaxPersistentVoices
     >
         m_persistentVoices{};
 
+
     float m_masterVolume =
         1.0f;
-
     float m_sfxVolume =
         1.0f;
-
     float m_musicVolume =
         1.0f;
 
 
     std::uint32_t
         m_outputChannels = 0;
-
     std::uint32_t
         m_outputSampleRate = 0;
-
 
     bool
         m_initialized = false;

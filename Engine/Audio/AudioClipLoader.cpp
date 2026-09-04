@@ -6,11 +6,12 @@
 #include <Windows.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <limits>
+#include <utility>
 #include <vector>
 
 
@@ -142,14 +143,6 @@ AudioClipLoader::Load(
         return nullptr;
     }
 
-
-    //
-    // RIFF header:
-    //
-    // 4 bytes "RIFF"
-    // 4 bytes file/chunk size
-    // 4 bytes "WAVE"
-    //
     std::array<char, 4>
         riffId{};
 
@@ -257,10 +250,6 @@ AudioClipLoader::Load(
             chunkId,
             "fmt "))
         {
-            //
-            // Standard PCM fmt payload는
-            // 최소 16 bytes.
-            //
             if (chunkSize < 16)
             {
                 AUDIOLOADER_DEBUG_LOG(
@@ -270,11 +259,6 @@ AudioClipLoader::Load(
                 return nullptr;
             }
 
-
-            //
-            // fmt chunk가 비정상적으로 거대하면
-            // 불필요한 allocation 방지.
-            //
             if (chunkSize >
                 64 * 1024)
             {
@@ -363,11 +347,6 @@ AudioClipLoader::Load(
                 return nullptr;
             }
 
-
-            //
-            // Phase 13-B contract:
-            // uncompressed integer PCM only.
-            //
             if (formatTag !=
                 WAVE_FORMAT_PCM)
             {
@@ -392,11 +371,6 @@ AudioClipLoader::Load(
                 return nullptr;
             }
 
-
-            //
-            // 현재 common PCM sample widths만
-            // 명시적으로 허용한다.
-            //
             if (bitsPerSample != 8 &&
                 bitsPerSample != 16 &&
                 bitsPerSample != 24 &&
@@ -557,10 +531,6 @@ AudioClipLoader::Load(
         }
         else
         {
-            //
-            // LIST, JUNK, fact 등
-            // 모르는 RIFF chunk를 안전하게 skip.
-            //
             file.seekg(
                 static_cast<
                 std::streamoff
@@ -578,10 +548,6 @@ AudioClipLoader::Load(
             }
         }
 
-
-        //
-        // RIFF chunks are word-aligned.
-        //
         if ((chunkSize & 1u) != 0)
         {
             file.seekg(
