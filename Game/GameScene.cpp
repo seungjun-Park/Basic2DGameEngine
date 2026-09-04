@@ -67,6 +67,10 @@ GameScene::GameScene(
 
 GameScene::~GameScene()
 {
+    m_collisionEnterSubscription.Reset();
+    m_collisionExitSubscription.Reset();
+    m_enemyDefeatedAudioSubscription.Reset();
+
     StopGameplayAudio();
 }
 
@@ -205,12 +209,26 @@ void GameScene::Update(
                 );
             }
         }
+
+        m_player =
+            dynamic_cast<Player*>(
+                ResolveEntity(
+                    m_playerHandle
+                )
+                );
     }
 }
 
 void GameScene::LateUpdate(
     float deltaTime)
 {
+    m_player =
+        dynamic_cast<Player*>(
+            ResolveEntity(
+                m_playerHandle
+            )
+            );
+
     if (m_player)
     {
         m_camera.SetPosition(
@@ -222,6 +240,13 @@ void GameScene::LateUpdate(
     Scene::LateUpdate(
         deltaTime
     );
+
+    m_player =
+        dynamic_cast<Player*>(
+            ResolveEntity(
+                m_playerHandle
+            )
+            );
 }
 
 void GameScene::SubmitRender(
@@ -636,6 +661,9 @@ bool GameScene::LoadEnemyAnimations()
 bool GameScene::LoadSerializedEntities(
     const std::wstring& path)
 {
+    ClearEntities();
+
+    m_player = nullptr;
     m_playerHandle =
         EntityHandle{};
 
