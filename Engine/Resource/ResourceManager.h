@@ -28,15 +28,6 @@ public:
         const std::wstring& path
     );
 
-    bool TryGetTexturePath(
-        const Texture* texture,
-        std::wstring& outPath
-    ) const;
-
-    bool IsTextureManaged(
-        const Texture* texture
-    ) const noexcept;
-
     Tileset* LoadTileset(
         const std::wstring& path
     );
@@ -52,6 +43,15 @@ public:
     AudioClip* LoadAudioClip(
         const std::wstring& path
     );
+
+    bool TryGetTexturePath(
+        const Texture* texture,
+        std::wstring& outPath
+    ) const;
+
+    bool IsTextureManaged(
+        const Texture* texture
+    ) const noexcept;
 
 private:
     void ReleaseAllResources() noexcept;

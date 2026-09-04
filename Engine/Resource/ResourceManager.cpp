@@ -1,49 +1,24 @@
 #include "ResourceManager.h"
 
-#include "Engine/Graphics/Texture.h"
-#include "Engine/Renderer/DX11Renderer.h"
-#include "Engine/Tile/TilesetLoader.h"
-#include "Engine/Tile/TileMapLoader.h"
 #include "Engine/Animation/AnimationClip.h"
 #include "Engine/Animation/AnimationClipLoader.h"
 #include "Engine/Audio/AudioClip.h"
 #include "Engine/Audio/AudioClipLoader.h"
 #include "Engine/Debug/DebugLog.h"
+#include "Engine/Graphics/Texture.h"
+#include "Engine/Renderer/DX11Renderer.h"
+#include "Engine/Tile/TileMap.h"
+#include "Engine/Tile/TileMapLoader.h"
+#include "Engine/Tile/Tileset.h"
+#include "Engine/Tile/TilesetLoader.h"
+
+#include <utility>
 
 ResourceManager::ResourceManager() = default;
 
 ResourceManager::~ResourceManager()
 {
     ReleaseAllResources();
-}
-
-void ResourceManager::ReleaseAllResources() noexcept
-{
-    //
-    // Pointer identity index를 먼저 무효화한다.
-    //
-    m_texturePathsByPointer.clear();
-
-    //
-    // Texture를 참조할 수 있는 dependent
-    // resources부터 제거한다.
-    //
-    m_tileMaps.clear();
-
-    m_animationClips.clear();
-
-    m_audioClips.clear();
-
-    m_tilesets.clear();
-
-    //
-    // 모든 dependent resource가 제거된 뒤
-    // Texture를 마지막으로 파괴한다.
-    //
-    m_textures.clear();
-
-    m_renderer =
-        nullptr;
 }
 
 bool ResourceManager::Initialize(
@@ -244,49 +219,6 @@ ResourceManager::LoadAnimationClip(
     return result;
 }
 
-bool ResourceManager::TryGetTexturePath(
-    const Texture* texture,
-    std::wstring& outPath) const
-{
-    outPath.clear();
-
-    if (!texture)
-    {
-        return false;
-    }
-
-    const auto it =
-        m_texturePathsByPointer.find(
-            texture
-        );
-
-    if (it ==
-        m_texturePathsByPointer.end())
-    {
-        return false;
-    }
-
-    outPath =
-        it->second;
-
-    return true;
-}
-
-bool ResourceManager::IsTextureManaged(
-    const Texture* texture) const noexcept
-{
-    if (!texture)
-    {
-        return false;
-    }
-
-    return
-        m_texturePathsByPointer.find(
-            texture
-        ) !=
-        m_texturePathsByPointer.end();
-}
-
 AudioClip* ResourceManager::LoadAudioClip(
     const std::wstring& path)
 {
@@ -335,4 +267,65 @@ AudioClip* ResourceManager::LoadAudioClip(
 
 
     return result;
+}
+
+bool ResourceManager::TryGetTexturePath(
+    const Texture* texture,
+    std::wstring& outPath) const
+{
+    outPath.clear();
+
+    if (!texture)
+    {
+        return false;
+    }
+
+    const auto it =
+        m_texturePathsByPointer.find(
+            texture
+        );
+
+    if (it ==
+        m_texturePathsByPointer.end())
+    {
+        return false;
+    }
+
+    outPath =
+        it->second;
+
+    return true;
+}
+
+bool ResourceManager::IsTextureManaged(
+    const Texture* texture) const noexcept
+{
+    if (!texture)
+    {
+        return false;
+    }
+
+    return
+        m_texturePathsByPointer.find(
+            texture
+        ) !=
+        m_texturePathsByPointer.end();
+}
+
+void ResourceManager::ReleaseAllResources() noexcept
+{
+    m_texturePathsByPointer.clear();
+
+    m_tileMaps.clear();
+
+    m_animationClips.clear();
+
+    m_audioClips.clear();
+
+    m_tilesets.clear();
+
+    m_textures.clear();
+
+    m_renderer =
+        nullptr;
 }
