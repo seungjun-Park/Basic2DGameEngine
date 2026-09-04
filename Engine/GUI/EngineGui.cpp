@@ -7,6 +7,8 @@
 
 #include <imgui.h>
 
+#include <cstddef>
+
 namespace EngineGui
 {
     void DrawAudioSettings(
@@ -108,7 +110,7 @@ namespace EngineGui
         ImGui::End();
     }
 
-    void EngineGui::DrawTileMapSettings(
+    void DrawTileMapSettings(
         const TileMap& tileMap,
         TileMapRenderer& renderer,
         const TileMapCollider* collider)
