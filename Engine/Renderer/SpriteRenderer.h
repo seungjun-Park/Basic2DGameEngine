@@ -95,14 +95,8 @@ private:
     Microsoft::WRL::ComPtr<ID3D11SamplerState>
         m_samplerState;
 
-    Microsoft::WRL::ComPtr<ID3D11BlendState> 
-        m_blendState;
-
     DirectX::XMMATRIX m_viewMatrix;
     DirectX::XMMATRIX m_projectionMatrix;
-
-    int m_screenWidth = 0;
-    int m_screenHeight = 0;
 
     int m_drawCallCount = 0;
 

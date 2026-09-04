@@ -190,11 +190,6 @@ bool SpriteRenderer::Initialize(
 {
     m_renderer = &renderer;
 
-    m_screenWidth = screenWidth;
-    m_screenHeight = screenHeight;
-
-    // 2D 화면에서는 카메라를 따로 두지 않고
-    // 기본적으로 화면 전체를 바라보도록 한다.
     m_viewMatrix =
         XMMatrixIdentity();
 
