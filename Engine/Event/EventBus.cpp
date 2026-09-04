@@ -15,13 +15,6 @@ EventSubscription(
 
 
 EventSubscription::
-~EventSubscription()
-{
-    Reset();
-}
-
-
-EventSubscription::
 EventSubscription(
     EventSubscription&& other
 ) noexcept
@@ -33,6 +26,13 @@ EventSubscription(
     )
 {
     other.m_disconnect = {};
+}
+
+
+EventSubscription::
+~EventSubscription()
+{
+    Reset();
 }
 
 

@@ -59,7 +59,6 @@ private:
 class EventBus final
 {
 public:
-
     EventBus() = default;
     ~EventBus() = default;
 
@@ -557,9 +556,7 @@ private:
             );
     }
 
-
 private:
-
     std::unordered_map<
         std::type_index,
         std::shared_ptr<
