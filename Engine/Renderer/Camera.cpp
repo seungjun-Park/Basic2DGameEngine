@@ -13,6 +13,23 @@ void Camera::Initialize(
         screenHeight;
 }
 
+void Camera::Resize(
+    float screenWidth,
+    float screenHeight)
+{
+    if (screenWidth <= 0.0f ||
+        screenHeight <= 0.0f)
+    {
+        return;
+    }
+
+    m_screenWidth =
+        screenWidth;
+
+    m_screenHeight =
+        screenHeight;
+}
+
 void Camera::SetPosition(
     float x,
     float y)
@@ -86,21 +103,4 @@ float Camera::GetBottom() const
     return
         m_position.y +
         m_screenHeight * 0.5f;
-}
-
-void Camera::Resize(
-    float screenWidth,
-    float screenHeight)
-{
-    if (screenWidth <= 0.0f ||
-        screenHeight <= 0.0f)
-    {
-        return;
-    }
-
-    m_screenWidth =
-        screenWidth;
-
-    m_screenHeight =
-        screenHeight;
 }

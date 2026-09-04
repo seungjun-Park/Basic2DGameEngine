@@ -6,10 +6,10 @@
 #include <DirectXMath.h>
 #include <cstddef>
 
-#include "Engine/Components/Transform.h"
 #include "RenderTypes.h"
 
 class DX11Renderer;
+class Transform;
 class Texture;
 class Camera;
 struct Sprite;
@@ -48,20 +48,21 @@ public:
         const Camera& camera
     );
 
+    void SetBlendMode(
+        BlendMode mode
+    );
+
     int GetDrawCallCount() const
     {
         return m_drawCallCount;
     }
-
-    void SetBlendMode(
-        BlendMode mode
-    );
 
 private:
     bool CreateShaders();
     bool CreateInputLayout();
     bool CreateBuffers();
     bool CreateSampler();
+    bool CreateBlendStates();
 
     bool CompileShader(
         const wchar_t* filename,
@@ -69,8 +70,6 @@ private:
         const char* target,
         Microsoft::WRL::ComPtr<ID3DBlob>& blob
     );
-
-    bool CreateBlendStates();
 
 private:
     DX11Renderer* m_renderer = nullptr;

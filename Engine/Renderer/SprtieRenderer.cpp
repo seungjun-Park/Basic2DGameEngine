@@ -5,6 +5,7 @@
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Components/Sprite.h"
 #include "Engine/Debug/DebugLog.h"
+#include "Engine/Components/Transform.h"
 #include "RenderCommand.h"
 
 #include <d3dcompiler.h>
@@ -14,7 +15,6 @@
 #include <cstdint>
 #include <cstring>
 #include <vector>
-#include <fstream>
 
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;
@@ -226,337 +226,6 @@ bool SpriteRenderer::Initialize(
     return true;
 }
 
-bool SpriteRenderer::CompileShader(
-    const wchar_t* filename,
-    const char* entryPoint,
-    const char* target,
-    ComPtr<ID3DBlob>& blob)
-{
-    UINT flags =
-        D3DCOMPILE_ENABLE_STRICTNESS;
-
-#ifdef _DEBUG
-    flags |=
-        D3DCOMPILE_DEBUG;
-
-    flags |=
-        D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-    ComPtr<ID3DBlob> errorBlob;
-
-    HRESULT hr =
-        D3DCompileFromFile(
-            filename,
-            nullptr,
-            D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            entryPoint,
-            target,
-            flags,
-            0,
-            blob.GetAddressOf(),
-            errorBlob.GetAddressOf()
-        );
-
-    if (FAILED(hr))
-    {
-        if (errorBlob)
-        {
-            ENGINE_DEBUG_LOG(
-                static_cast<const char*>(
-                    errorBlob->GetBufferPointer()
-                    )
-            );
-        }
-
-        return false;
-    }
-
-    return true;
-}
-
-bool SpriteRenderer::CreateShaders()
-{
-    ComPtr<ID3DBlob> vertexShaderBlob;
-    ComPtr<ID3DBlob> pixelShaderBlob;
-
-    if (!CompileShader(
-        L"Engine/Assets/Shaders/SpriteVS.hlsl",
-        "main",
-        "vs_5_0",
-        vertexShaderBlob))
-    {
-        return false;
-    }
-
-    if (!CompileShader(
-        L"Engine/Assets/Shaders/SpritePS.hlsl",
-        "main",
-        "ps_5_0",
-        pixelShaderBlob))
-    {
-        return false;
-    }
-
-    ID3D11Device* device =
-        m_renderer->GetDevice();
-
-    HRESULT hr =
-        device->CreateVertexShader(
-            vertexShaderBlob->GetBufferPointer(),
-            vertexShaderBlob->GetBufferSize(),
-            nullptr,
-            m_vertexShader.GetAddressOf()
-        );
-
-    if (FAILED(hr))
-        return false;
-
-    hr =
-        device->CreatePixelShader(
-            pixelShaderBlob->GetBufferPointer(),
-            pixelShaderBlob->GetBufferSize(),
-            nullptr,
-            m_pixelShader.GetAddressOf()
-        );
-
-    if (FAILED(hr))
-        return false;
-
-    return true;
-}
-
-bool SpriteRenderer::CreateInputLayout()
-{
-    ComPtr<ID3DBlob> vertexShaderBlob;
-
-    if (!CompileShader(
-        L"Engine/Assets/Shaders/SpriteVS.hlsl",
-        "main",
-        "vs_5_0",
-        vertexShaderBlob))
-    {
-        return false;
-    }
-
-    D3D11_INPUT_ELEMENT_DESC layout[] =
-    {
-        {
-            "POSITION",
-            0,
-            DXGI_FORMAT_R32G32B32_FLOAT,
-            0,
-            0,
-            D3D11_INPUT_PER_VERTEX_DATA,
-            0
-        },
-
-        {
-            "TEXCOORD",
-            0,
-            DXGI_FORMAT_R32G32_FLOAT,
-            0,
-            sizeof(float) * 3,
-            D3D11_INPUT_PER_VERTEX_DATA,
-            0
-        }
-    };
-
-    HRESULT hr =
-        m_renderer->GetDevice()->CreateInputLayout(
-            layout,
-            ARRAYSIZE(layout),
-            vertexShaderBlob->GetBufferPointer(),
-            vertexShaderBlob->GetBufferSize(),
-            m_inputLayout.GetAddressOf()
-        );
-
-    return SUCCEEDED(hr);
-}
-
-bool SpriteRenderer::CreateBuffers()
-{
-    ID3D11Device* device =
-        m_renderer->GetDevice();
-
-    //
-    // Dynamic batch vertex buffer
-    //
-    D3D11_BUFFER_DESC
-        vertexBufferDesc{};
-
-    vertexBufferDesc.Usage =
-        D3D11_USAGE_DYNAMIC;
-
-    vertexBufferDesc.ByteWidth =
-        static_cast<UINT>(
-            sizeof(SpriteVertex) *
-            VerticesPerSprite *
-            MaxBatchSprites
-            );
-
-    vertexBufferDesc.BindFlags =
-        D3D11_BIND_VERTEX_BUFFER;
-
-    vertexBufferDesc.CPUAccessFlags =
-        D3D11_CPU_ACCESS_WRITE;
-
-    HRESULT hr =
-        device->CreateBuffer(
-            &vertexBufferDesc,
-            nullptr,
-            m_vertexBuffer.GetAddressOf()
-        );
-
-    if (FAILED(hr))
-    {
-        return false;
-    }
-
-    //
-    // Static batch index buffer
-    //
-    std::vector<std::uint32_t> indices(
-        MaxBatchSprites *
-        IndicesPerSprite
-    );
-
-    for (std::size_t spriteIndex = 0;
-        spriteIndex < MaxBatchSprites;
-        ++spriteIndex)
-    {
-        const std::uint32_t baseVertex =
-            static_cast<std::uint32_t>(
-                spriteIndex *
-                VerticesPerSprite
-                );
-
-        const std::size_t baseIndex =
-            spriteIndex *
-            IndicesPerSprite;
-
-        indices[baseIndex + 0] =
-            baseVertex + 0;
-
-        indices[baseIndex + 1] =
-            baseVertex + 1;
-
-        indices[baseIndex + 2] =
-            baseVertex + 2;
-
-        indices[baseIndex + 3] =
-            baseVertex + 2;
-
-        indices[baseIndex + 4] =
-            baseVertex + 1;
-
-        indices[baseIndex + 5] =
-            baseVertex + 3;
-    }
-
-    D3D11_BUFFER_DESC
-        indexBufferDesc{};
-
-    indexBufferDesc.Usage =
-        D3D11_USAGE_DEFAULT;
-
-    indexBufferDesc.ByteWidth =
-        static_cast<UINT>(
-            sizeof(std::uint32_t) *
-            indices.size()
-            );
-
-    indexBufferDesc.BindFlags =
-        D3D11_BIND_INDEX_BUFFER;
-
-    D3D11_SUBRESOURCE_DATA
-        indexData{};
-
-    indexData.pSysMem =
-        indices.data();
-
-    hr =
-        device->CreateBuffer(
-            &indexBufferDesc,
-            &indexData,
-            m_indexBuffer.GetAddressOf()
-        );
-
-    if (FAILED(hr))
-    {
-        return false;
-    }
-
-    //
-    // Frame constant buffer.
-    //
-    // World matrix는 batch vertex 생성 시
-    // CPU에서 이미 적용된다.
-    //
-    D3D11_BUFFER_DESC
-        constantBufferDesc{};
-
-    constantBufferDesc.Usage =
-        D3D11_USAGE_DYNAMIC;
-
-    constantBufferDesc.ByteWidth =
-        sizeof(
-            SpriteFrameConstantBuffer
-            );
-
-    constantBufferDesc.BindFlags =
-        D3D11_BIND_CONSTANT_BUFFER;
-
-    constantBufferDesc.CPUAccessFlags =
-        D3D11_CPU_ACCESS_WRITE;
-
-    hr =
-        device->CreateBuffer(
-            &constantBufferDesc,
-            nullptr,
-            m_constantBuffer.GetAddressOf()
-        );
-
-    if (FAILED(hr))
-    {
-        return false;
-    }
-
-    return true;
-}
-
-bool SpriteRenderer::CreateSampler()
-{
-    D3D11_SAMPLER_DESC samplerDesc{};
-
-    samplerDesc.Filter =
-        D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-
-    samplerDesc.AddressU =
-        D3D11_TEXTURE_ADDRESS_CLAMP;
-
-    samplerDesc.AddressV =
-        D3D11_TEXTURE_ADDRESS_CLAMP;
-
-    samplerDesc.AddressW =
-        D3D11_TEXTURE_ADDRESS_CLAMP;
-
-    samplerDesc.ComparisonFunc =
-        D3D11_COMPARISON_NEVER;
-
-    samplerDesc.MinLOD = 0;
-    samplerDesc.MaxLOD =
-        D3D11_FLOAT32_MAX;
-
-    HRESULT hr =
-        m_renderer->GetDevice()->CreateSamplerState(
-            &samplerDesc,
-            m_samplerState.GetAddressOf()
-        );
-
-    return SUCCEEDED(hr);
-}
-
 void SpriteRenderer::Begin()
 {
     m_drawCallCount = 0;
@@ -674,10 +343,6 @@ void SpriteRenderer::Begin()
     );
 }
 
-void SpriteRenderer::End()
-{
-}
-
 void SpriteRenderer::Draw(
     const Sprite& sprite,
     const Transform& transform)
@@ -717,128 +382,6 @@ void SpriteRenderer::Draw(
         &command,
         1
     );
-}
-
-bool SpriteRenderer::CreateBlendStates()
-{
-    D3D11_BLEND_DESC alphaDesc{};
-
-    alphaDesc.RenderTarget[0].BlendEnable =
-        TRUE;
-
-    alphaDesc.RenderTarget[0].SrcBlend =
-        D3D11_BLEND_SRC_ALPHA;
-
-    alphaDesc.RenderTarget[0].DestBlend =
-        D3D11_BLEND_INV_SRC_ALPHA;
-
-    alphaDesc.RenderTarget[0].BlendOp =
-        D3D11_BLEND_OP_ADD;
-
-    alphaDesc.RenderTarget[0].SrcBlendAlpha =
-        D3D11_BLEND_ONE;
-
-    alphaDesc.RenderTarget[0].DestBlendAlpha =
-        D3D11_BLEND_INV_SRC_ALPHA;
-
-    alphaDesc.RenderTarget[0].BlendOpAlpha =
-        D3D11_BLEND_OP_ADD;
-
-    alphaDesc.RenderTarget[0].
-        RenderTargetWriteMask =
-        D3D11_COLOR_WRITE_ENABLE_ALL;
-
-    HRESULT hr =
-        m_renderer->GetDevice()->
-        CreateBlendState(
-            &alphaDesc,
-            m_alphaBlendState.
-            GetAddressOf()
-        );
-
-    if (FAILED(hr))
-    {
-        return false;
-    }
-
-    D3D11_BLEND_DESC opaqueDesc{};
-
-    opaqueDesc.RenderTarget[0].
-        BlendEnable =
-        FALSE;
-
-    opaqueDesc.RenderTarget[0].
-        RenderTargetWriteMask =
-        D3D11_COLOR_WRITE_ENABLE_ALL;
-
-    hr =
-        m_renderer->GetDevice()->
-        CreateBlendState(
-            &opaqueDesc,
-            m_opaqueBlendState.
-            GetAddressOf()
-        );
-
-    return SUCCEEDED(hr);
-}
-
-void SpriteRenderer::SetCamera(
-    const Camera& camera)
-{
-    m_viewMatrix =
-        camera.GetViewMatrix();
-
-    m_projectionMatrix =
-        camera.GetProjectionMatrix();
-}
-
-void SpriteRenderer::SetBlendMode(
-    BlendMode mode)
-{
-    if (m_currentBlendMode ==
-        mode)
-    {
-        return;
-    }
-
-    m_currentBlendMode =
-        mode;
-
-    float blendFactor[4] =
-    {
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f
-    };
-
-    ID3D11BlendState* state =
-        nullptr;
-
-    switch (mode)
-    {
-    case BlendMode::Opaque:
-
-        state =
-            m_opaqueBlendState.Get();
-
-        break;
-
-    case BlendMode::Alpha:
-    default:
-
-        state =
-            m_alphaBlendState.Get();
-
-        break;
-    }
-
-    m_renderer->GetContext()->
-        OMSetBlendState(
-            state,
-            blendFactor,
-            0xffffffff
-        );
 }
 
 void SpriteRenderer::DrawBatch(
@@ -1009,4 +552,449 @@ void SpriteRenderer::DrawBatch(
         commandOffset +=
             batchCount;
     }
+}
+
+void SpriteRenderer::End()
+{
+}
+
+void SpriteRenderer::SetCamera(
+    const Camera& camera)
+{
+    m_viewMatrix =
+        camera.GetViewMatrix();
+
+    m_projectionMatrix =
+        camera.GetProjectionMatrix();
+}
+
+void SpriteRenderer::SetBlendMode(
+    BlendMode mode)
+{
+    if (m_currentBlendMode ==
+        mode)
+    {
+        return;
+    }
+
+    m_currentBlendMode =
+        mode;
+
+    float blendFactor[4] =
+    {
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f
+    };
+
+    ID3D11BlendState* state =
+        nullptr;
+
+    switch (mode)
+    {
+    case BlendMode::Opaque:
+
+        state =
+            m_opaqueBlendState.Get();
+
+        break;
+
+    case BlendMode::Alpha:
+    default:
+
+        state =
+            m_alphaBlendState.Get();
+
+        break;
+    }
+
+    m_renderer->GetContext()->
+        OMSetBlendState(
+            state,
+            blendFactor,
+            0xffffffff
+        );
+}
+
+bool SpriteRenderer::CreateShaders()
+{
+    ComPtr<ID3DBlob> vertexShaderBlob;
+    ComPtr<ID3DBlob> pixelShaderBlob;
+
+    if (!CompileShader(
+        L"Engine/Assets/Shaders/SpriteVS.hlsl",
+        "main",
+        "vs_5_0",
+        vertexShaderBlob))
+    {
+        return false;
+    }
+
+    if (!CompileShader(
+        L"Engine/Assets/Shaders/SpritePS.hlsl",
+        "main",
+        "ps_5_0",
+        pixelShaderBlob))
+    {
+        return false;
+    }
+
+    ID3D11Device* device =
+        m_renderer->GetDevice();
+
+    HRESULT hr =
+        device->CreateVertexShader(
+            vertexShaderBlob->GetBufferPointer(),
+            vertexShaderBlob->GetBufferSize(),
+            nullptr,
+            m_vertexShader.GetAddressOf()
+        );
+
+    if (FAILED(hr))
+        return false;
+
+    hr =
+        device->CreatePixelShader(
+            pixelShaderBlob->GetBufferPointer(),
+            pixelShaderBlob->GetBufferSize(),
+            nullptr,
+            m_pixelShader.GetAddressOf()
+        );
+
+    if (FAILED(hr))
+        return false;
+
+    return true;
+}
+
+bool SpriteRenderer::CreateInputLayout()
+{
+    ComPtr<ID3DBlob> vertexShaderBlob;
+
+    if (!CompileShader(
+        L"Engine/Assets/Shaders/SpriteVS.hlsl",
+        "main",
+        "vs_5_0",
+        vertexShaderBlob))
+    {
+        return false;
+    }
+
+    D3D11_INPUT_ELEMENT_DESC layout[] =
+    {
+        {
+            "POSITION",
+            0,
+            DXGI_FORMAT_R32G32B32_FLOAT,
+            0,
+            0,
+            D3D11_INPUT_PER_VERTEX_DATA,
+            0
+        },
+
+        {
+            "TEXCOORD",
+            0,
+            DXGI_FORMAT_R32G32_FLOAT,
+            0,
+            sizeof(float) * 3,
+            D3D11_INPUT_PER_VERTEX_DATA,
+            0
+        }
+    };
+
+    HRESULT hr =
+        m_renderer->GetDevice()->CreateInputLayout(
+            layout,
+            ARRAYSIZE(layout),
+            vertexShaderBlob->GetBufferPointer(),
+            vertexShaderBlob->GetBufferSize(),
+            m_inputLayout.GetAddressOf()
+        );
+
+    return SUCCEEDED(hr);
+}
+
+bool SpriteRenderer::CreateBuffers()
+{
+    ID3D11Device* device =
+        m_renderer->GetDevice();
+
+    D3D11_BUFFER_DESC
+        vertexBufferDesc{};
+
+    vertexBufferDesc.Usage =
+        D3D11_USAGE_DYNAMIC;
+
+    vertexBufferDesc.ByteWidth =
+        static_cast<UINT>(
+            sizeof(SpriteVertex) *
+            VerticesPerSprite *
+            MaxBatchSprites
+            );
+
+    vertexBufferDesc.BindFlags =
+        D3D11_BIND_VERTEX_BUFFER;
+
+    vertexBufferDesc.CPUAccessFlags =
+        D3D11_CPU_ACCESS_WRITE;
+
+    HRESULT hr =
+        device->CreateBuffer(
+            &vertexBufferDesc,
+            nullptr,
+            m_vertexBuffer.GetAddressOf()
+        );
+
+    if (FAILED(hr))
+    {
+        return false;
+    }
+
+    std::vector<std::uint32_t> indices(
+        MaxBatchSprites *
+        IndicesPerSprite
+    );
+
+    for (std::size_t spriteIndex = 0;
+        spriteIndex < MaxBatchSprites;
+        ++spriteIndex)
+    {
+        const std::uint32_t baseVertex =
+            static_cast<std::uint32_t>(
+                spriteIndex *
+                VerticesPerSprite
+                );
+
+        const std::size_t baseIndex =
+            spriteIndex *
+            IndicesPerSprite;
+
+        indices[baseIndex + 0] =
+            baseVertex + 0;
+
+        indices[baseIndex + 1] =
+            baseVertex + 1;
+
+        indices[baseIndex + 2] =
+            baseVertex + 2;
+
+        indices[baseIndex + 3] =
+            baseVertex + 2;
+
+        indices[baseIndex + 4] =
+            baseVertex + 1;
+
+        indices[baseIndex + 5] =
+            baseVertex + 3;
+    }
+
+    D3D11_BUFFER_DESC
+        indexBufferDesc{};
+
+    indexBufferDesc.Usage =
+        D3D11_USAGE_DEFAULT;
+
+    indexBufferDesc.ByteWidth =
+        static_cast<UINT>(
+            sizeof(std::uint32_t) *
+            indices.size()
+            );
+
+    indexBufferDesc.BindFlags =
+        D3D11_BIND_INDEX_BUFFER;
+
+    D3D11_SUBRESOURCE_DATA
+        indexData{};
+
+    indexData.pSysMem =
+        indices.data();
+
+    hr =
+        device->CreateBuffer(
+            &indexBufferDesc,
+            &indexData,
+            m_indexBuffer.GetAddressOf()
+        );
+
+    if (FAILED(hr))
+    {
+        return false;
+    }
+
+    D3D11_BUFFER_DESC
+        constantBufferDesc{};
+
+    constantBufferDesc.Usage =
+        D3D11_USAGE_DYNAMIC;
+
+    constantBufferDesc.ByteWidth =
+        sizeof(
+            SpriteFrameConstantBuffer
+            );
+
+    constantBufferDesc.BindFlags =
+        D3D11_BIND_CONSTANT_BUFFER;
+
+    constantBufferDesc.CPUAccessFlags =
+        D3D11_CPU_ACCESS_WRITE;
+
+    hr =
+        device->CreateBuffer(
+            &constantBufferDesc,
+            nullptr,
+            m_constantBuffer.GetAddressOf()
+        );
+
+    if (FAILED(hr))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool SpriteRenderer::CreateSampler()
+{
+    D3D11_SAMPLER_DESC samplerDesc{};
+
+    samplerDesc.Filter =
+        D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+
+    samplerDesc.AddressU =
+        D3D11_TEXTURE_ADDRESS_CLAMP;
+
+    samplerDesc.AddressV =
+        D3D11_TEXTURE_ADDRESS_CLAMP;
+
+    samplerDesc.AddressW =
+        D3D11_TEXTURE_ADDRESS_CLAMP;
+
+    samplerDesc.ComparisonFunc =
+        D3D11_COMPARISON_NEVER;
+
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD =
+        D3D11_FLOAT32_MAX;
+
+    HRESULT hr =
+        m_renderer->GetDevice()->CreateSamplerState(
+            &samplerDesc,
+            m_samplerState.GetAddressOf()
+        );
+
+    return SUCCEEDED(hr);
+}
+
+bool SpriteRenderer::CreateBlendStates()
+{
+    D3D11_BLEND_DESC alphaDesc{};
+
+    alphaDesc.RenderTarget[0].BlendEnable =
+        TRUE;
+
+    alphaDesc.RenderTarget[0].SrcBlend =
+        D3D11_BLEND_SRC_ALPHA;
+
+    alphaDesc.RenderTarget[0].DestBlend =
+        D3D11_BLEND_INV_SRC_ALPHA;
+
+    alphaDesc.RenderTarget[0].BlendOp =
+        D3D11_BLEND_OP_ADD;
+
+    alphaDesc.RenderTarget[0].SrcBlendAlpha =
+        D3D11_BLEND_ONE;
+
+    alphaDesc.RenderTarget[0].DestBlendAlpha =
+        D3D11_BLEND_INV_SRC_ALPHA;
+
+    alphaDesc.RenderTarget[0].BlendOpAlpha =
+        D3D11_BLEND_OP_ADD;
+
+    alphaDesc.RenderTarget[0].
+        RenderTargetWriteMask =
+        D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    HRESULT hr =
+        m_renderer->GetDevice()->
+        CreateBlendState(
+            &alphaDesc,
+            m_alphaBlendState.
+            GetAddressOf()
+        );
+
+    if (FAILED(hr))
+    {
+        return false;
+    }
+
+    D3D11_BLEND_DESC opaqueDesc{};
+
+    opaqueDesc.RenderTarget[0].
+        BlendEnable =
+        FALSE;
+
+    opaqueDesc.RenderTarget[0].
+        RenderTargetWriteMask =
+        D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    hr =
+        m_renderer->GetDevice()->
+        CreateBlendState(
+            &opaqueDesc,
+            m_opaqueBlendState.
+            GetAddressOf()
+        );
+
+    return SUCCEEDED(hr);
+}
+
+bool SpriteRenderer::CompileShader(
+    const wchar_t* filename,
+    const char* entryPoint,
+    const char* target,
+    ComPtr<ID3DBlob>& blob)
+{
+    UINT flags =
+        D3DCOMPILE_ENABLE_STRICTNESS;
+
+#ifdef _DEBUG
+    flags |=
+        D3DCOMPILE_DEBUG;
+
+    flags |=
+        D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+    ComPtr<ID3DBlob> errorBlob;
+
+    HRESULT hr =
+        D3DCompileFromFile(
+            filename,
+            nullptr,
+            D3D_COMPILE_STANDARD_FILE_INCLUDE,
+            entryPoint,
+            target,
+            flags,
+            0,
+            blob.GetAddressOf(),
+            errorBlob.GetAddressOf()
+        );
+
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            ENGINE_DEBUG_LOG(
+                static_cast<const char*>(
+                    errorBlob->GetBufferPointer()
+                    )
+            );
+        }
+
+        return false;
+    }
+
+    return true;
 }

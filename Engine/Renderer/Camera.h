@@ -12,6 +12,11 @@ public:
         float screenHeight
     );
 
+    void Resize(
+        float screenWidth,
+        float screenHeight
+    );
+
     void SetPosition(
         float x,
         float y
@@ -31,11 +36,6 @@ public:
 
     float GetTop() const;
     float GetBottom() const;
-
-    void Resize(
-        float screenWidth,
-        float screenHeight
-    );
 
 private:
     DirectX::XMFLOAT2 m_position
