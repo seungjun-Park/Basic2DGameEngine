@@ -8,23 +8,19 @@ public:
     static void Initialize();
     static void Update();
 
-    static bool IsKeyDown(int key);
-    static bool IsKeyPressed(int key);
-    static bool IsKeyReleased(int key);
-
-    //
-    // Engine/global input.
-    // GUI capture 상태와 무관한 physical snapshot.
-    //
-    static bool IsRawKeyDown(int key);
-    static bool IsRawKeyPressed(int key);
-    static bool IsRawKeyReleased(int key);
+    static void Reset();
 
     static void SetCaptureState(
         bool keyboardCaptured,
         bool mouseCaptured);
 
-    static void Reset();
+    static bool IsKeyDown(int key);
+    static bool IsKeyPressed(int key);
+    static bool IsKeyReleased(int key);
+
+    static bool IsRawKeyDown(int key);
+    static bool IsRawKeyPressed(int key);
+    static bool IsRawKeyReleased(int key);
 
 private:
     static bool IsValidKey(

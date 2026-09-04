@@ -31,6 +31,23 @@ void WinInput::Update()
     }
 }
 
+void WinInput::Reset()
+{
+    s_currentKeys.fill(false);
+    s_previousKeys.fill(false);
+}
+
+void WinInput::SetCaptureState(
+    bool keyboardCaptured,
+    bool mouseCaptured)
+{
+    s_keyboardCaptured =
+        keyboardCaptured;
+
+    s_mouseCaptured =
+        mouseCaptured;
+}
+
 bool WinInput::IsKeyDown(
     int key)
 {
@@ -77,12 +94,6 @@ bool WinInput::IsKeyReleased(
     }
 
     return IsRawKeyReleased(key);
-}
-
-void WinInput::Reset()
-{
-    s_currentKeys.fill(false);
-    s_previousKeys.fill(false);
 }
 
 bool WinInput::IsRawKeyDown(
@@ -165,15 +176,4 @@ bool WinInput::IsValidKey(
     return
         key >= 0 &&
         key < 256;
-}
-
-void WinInput::SetCaptureState(
-    bool keyboardCaptured,
-    bool mouseCaptured)
-{
-    s_keyboardCaptured =
-        keyboardCaptured;
-
-    s_mouseCaptured =
-        mouseCaptured;
 }
