@@ -19,17 +19,17 @@ public:
 
     void Initialize() override;
 
-    bool SetTarget(
-        EntityHandle target
-    );
+    void FixedUpdate(
+        float fixedDeltaTime
+    ) override;
 
     void Update(
         float deltaTime
     ) override;
 
-    void FixedUpdate(
-        float fixedDeltaTime
-    ) override;
+    bool SetTarget(
+        EntityHandle target
+    );
 
     bool SetAnimations(
         const CharacterAnimationSet& animations

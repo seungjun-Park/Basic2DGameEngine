@@ -71,6 +71,23 @@ void Player::Initialize()
     }
 }
 
+void Player::FixedUpdate(
+    float fixedDeltaTime)
+{
+    if (!physicsBody)
+    {
+        return;
+    }
+
+    physicsBody->SetLinearVelocity(
+        m_moveDirection.x *
+        m_speed,
+
+        m_moveDirection.y *
+        m_speed
+    );
+}
+
 void Player::Update(
     float deltaTime)
 {
@@ -127,23 +144,6 @@ void Player::Update(
         WinInput::IsKeyPressed(
             VK_SPACE
         );
-}
-
-void Player::FixedUpdate(
-    float fixedDeltaTime)
-{
-    if (!physicsBody)
-    {
-        return;
-    }
-
-    physicsBody->SetLinearVelocity(
-        m_moveDirection.x *
-        m_speed,
-
-        m_moveDirection.y *
-        m_speed
-    );
 }
 
 bool Player::IsAttacking() const

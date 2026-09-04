@@ -17,7 +17,6 @@
 
 #include <utility>
 
-#include <Windows.h>
 
 GameEntityFactory::GameEntityFactory(
     Scene& scene,
@@ -30,76 +29,6 @@ GameEntityFactory::GameEntityFactory(
     m_physics(physics),
     m_enemyAnimations(enemyAnimations)
 {
-}
-
-bool GameEntityFactory::IsSupportedType(
-    const std::string& type) const noexcept
-{
-    return
-        type == "Player" ||
-        type == "Enemy";
-}
-
-bool GameEntityFactory::ApplySerializedState(
-    Entity& entity,
-    const SerializedEntity& data)
-{
-    //
-    // PhysicsBody 생성 전에 Transform이
-    // 완성되어 있어야 한다.
-    //
-    entity.transform =
-        data.transform;
-
-    entity.active =
-        data.active;
-
-    if (!data.sprite)
-    {
-        return false;
-    }
-
-    const SerializedSprite&
-        serializedSprite =
-        *data.sprite;
-
-    Texture* texture =
-        m_resources.LoadTexture(
-            serializedSprite.texturePath
-        );
-
-    if (!texture)
-    {
-        ENGINE_DEBUG_LOG(
-            "[GameEntityFactory] "
-            "Failed to load sprite texture.\n"
-        );
-
-        return false;
-    }
-
-    entity.sprite.texture =
-        texture;
-
-    entity.sprite.visible =
-        serializedSprite.visible;
-
-    entity.sprite.layer =
-        serializedSprite.layer;
-
-    entity.sprite.zIndex =
-        serializedSprite.zIndex;
-
-    entity.sprite.useYSort =
-        serializedSprite.useYSort;
-
-    entity.sprite.blendMode =
-        serializedSprite.blendMode;
-
-    entity.sprite.uv =
-        serializedSprite.uv;
-
-    return true;
 }
 
 Entity* GameEntityFactory::Create(
@@ -122,9 +51,6 @@ Entity* GameEntityFactory::Create(
             return nullptr;
         }
 
-        //
-        // 반드시 serialized Transform 적용 후.
-        //
         player->Initialize();
 
         return player;
@@ -170,9 +96,6 @@ Entity* GameEntityFactory::Create(
             return nullptr;
         }
 
-        //
-        // 역시 Transform 적용 후 Physics 생성.
-        //
         enemy->Initialize();
 
         if (!enemy->SetAnimations(
@@ -261,16 +184,6 @@ bool GameEntityFactory::Serialize(
     UVRect uv =
         entity.sprite.uv;
 
-    //
-    // Enemy의 현재 Sprite UV는 Animator에 의해
-    // 계속 변경되는 transient runtime state이다.
-    //
-    // Scene asset에는 animation playback frame을
-    // 저장하지 않는다.
-    //
-    // 따라서 Enemy는 canonical initial pose인
-    // Idle / Down 첫 frame으로 저장한다.
-    //
     if (isEnemy)
     {
         AnimationClip* idleDown =
@@ -337,6 +250,72 @@ bool GameEntityFactory::Serialize(
         std::move(
             serializedSprite
         );
+
+    return true;
+}
+
+bool GameEntityFactory::IsSupportedType(
+    const std::string& type) const noexcept
+{
+    return
+        type == "Player" ||
+        type == "Enemy";
+}
+
+bool GameEntityFactory::ApplySerializedState(
+    Entity& entity,
+    const SerializedEntity& data)
+{
+    entity.transform =
+        data.transform;
+
+    entity.active =
+        data.active;
+
+    if (!data.sprite)
+    {
+        return false;
+    }
+
+    const SerializedSprite&
+        serializedSprite =
+        *data.sprite;
+
+    Texture* texture =
+        m_resources.LoadTexture(
+            serializedSprite.texturePath
+        );
+
+    if (!texture)
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameEntityFactory] "
+            "Failed to load sprite texture.\n"
+        );
+
+        return false;
+    }
+
+    entity.sprite.texture =
+        texture;
+
+    entity.sprite.visible =
+        serializedSprite.visible;
+
+    entity.sprite.layer =
+        serializedSprite.layer;
+
+    entity.sprite.zIndex =
+        serializedSprite.zIndex;
+
+    entity.sprite.useYSort =
+        serializedSprite.useYSort;
+
+    entity.sprite.blendMode =
+        serializedSprite.blendMode;
+
+    entity.sprite.uv =
+        serializedSprite.uv;
 
     return true;
 }

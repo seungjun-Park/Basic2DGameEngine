@@ -52,10 +52,6 @@ public:
         RenderQueue& renderQueue
     ) override;
 
-    void CollectDebugStats(
-        DebugStats& stats
-    ) const override;
-
     void DebugRender(
         SpriteRenderer& renderer,
         DebugRenderer& debugRenderer
@@ -67,6 +63,10 @@ public:
         const std::wstring& path
     );
 
+    void CollectDebugStats(
+        DebugStats& stats
+    ) const override;
+
 private:
     bool LoadEnemyAnimations();
     
@@ -74,7 +74,17 @@ private:
         const std::wstring& path
     );
 
+    bool InitializeGameplayAudio();
+
+    void StopGameplayAudio() noexcept;
+
+    void DefeatEnemy(
+        Enemy& enemy
+    );
+
     void SubscribeCollisionEvents();
+
+    void SubscribeGameplayAudioEvents();
 
     void HandleCollisionEnterEvent(
         const CollisionEnterEvent& event
@@ -84,24 +94,14 @@ private:
         const CollisionExitEvent& event
     );
 
+    void HandleEnemyDefeatedAudio(
+        const EnemyDefeatedEvent& event
+    );
+
     bool IsPlayerCollision(
         EntityHandle entityA,
         EntityHandle entityB
     ) const noexcept;
-
-    void DefeatEnemy(
-        Enemy& enemy
-    );
-
-    bool InitializeGameplayAudio();
-
-    void StopGameplayAudio() noexcept;
-
-    void SubscribeGameplayAudioEvents();
-
-    void HandleEnemyDefeatedAudio(
-        const EnemyDefeatedEvent& event
-    );
 
 private:
     ResourceManager& m_resources;

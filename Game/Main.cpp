@@ -1,17 +1,11 @@
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Engine.h"
-#include "Engine/Resource/ResourceManager.h"
-#include "Engine/Event/EventBus.h"
-#include "Engine/Physics/CollisionEvents.h"
-#include "Game/GameplayEvents.h"
-#include "Engine/Audio/AudioClip.h"
-#include "Engine/Audio/AudioSystem.h"
-#include "Engine/Audio/AudioPlaybackHandle.h"
-
-#include <cassert>
-#include <memory>
-
 #include "Game/GameScene.h"
+
+#include <Windows.h>
+
+#include <memory>
+#include <utility>
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -26,7 +20,6 @@ int WINAPI WinMain(
 
     config.vsync = false;
 
-    // 0ÀÌ¸י Unlimited
     config.targetFPS = 0;
 
     config.fixedUpdateHz = 60.0f;

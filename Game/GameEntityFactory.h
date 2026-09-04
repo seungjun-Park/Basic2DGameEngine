@@ -23,10 +23,6 @@ public:
         const CharacterAnimationSet& enemyAnimations
     );
 
-    bool IsSupportedType(
-        const std::string& type
-    ) const noexcept;
-
     Entity* Create(
         const SerializedEntity& data,
         EntityHandle playerTarget
@@ -36,6 +32,10 @@ public:
         const Entity& entity,
         SerializedEntity& outData
     ) const;
+
+    bool IsSupportedType(
+        const std::string& type
+    ) const noexcept;
 
 private:
     bool ApplySerializedState(

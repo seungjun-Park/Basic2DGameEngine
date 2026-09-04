@@ -66,39 +66,21 @@ void Enemy::Initialize()
     }
 }
 
-bool Enemy::SetTarget(
-    EntityHandle target)
+void Enemy::FixedUpdate(
+    float fixedDeltaTime)
 {
-    if (!target.IsValid())
+    if (!physicsBody)
     {
-        m_target =
-            EntityHandle{};
-
-        return false;
+        return;
     }
 
-    Entity* entity =
-        m_scene.ResolveEntity(
-            target
-        );
+    physicsBody->SetLinearVelocity(
+        m_moveDirection.x *
+        m_speed,
 
-    Player* player =
-        dynamic_cast<Player*>(
-            entity
-            );
-
-    if (!player)
-    {
-        m_target =
-            EntityHandle{};
-
-        return false;
-    }
-
-    m_target =
-        target;
-
-    return true;
+        m_moveDirection.y *
+        m_speed
+    );
 }
 
 void Enemy::Update(
@@ -156,21 +138,39 @@ void Enemy::Update(
     UpdateAnimation();
 }
 
-void Enemy::FixedUpdate(
-    float fixedDeltaTime)
+bool Enemy::SetTarget(
+    EntityHandle target)
 {
-    if (!physicsBody)
+    if (!target.IsValid())
     {
-        return;
+        m_target =
+            EntityHandle{};
+
+        return false;
     }
 
-    physicsBody->SetLinearVelocity(
-        m_moveDirection.x *
-        m_speed,
+    Entity* entity =
+        m_scene.ResolveEntity(
+            target
+        );
 
-        m_moveDirection.y *
-        m_speed
-    );
+    Player* player =
+        dynamic_cast<Player*>(
+            entity
+            );
+
+    if (!player)
+    {
+        m_target =
+            EntityHandle{};
+
+        return false;
+    }
+
+    m_target =
+        target;
+
+    return true;
 }
 
 bool Enemy::SetAnimations(
@@ -257,12 +257,6 @@ void Enemy::UpdateAnimation()
         newState =
             CharacterAnimationState::Walk;
 
-        //
-        // Dominant-axis facing.
-        //
-        // Diagonal 이동 시 더 큰 축을
-        // character facing으로 사용한다.
-        //
         if (absX > absY)
         {
             if (m_moveDirection.x < 0.0f)
@@ -332,11 +326,6 @@ Player* Enemy::ResolveTarget()
 
     if (!player)
     {
-        //
-        // Target Entity가 Destroy() 되었거나
-        // 더 이상 유효하지 않으면 stale handle도
-        // Enemy에서 버린다.
-        //
         m_target =
             EntityHandle{};
 
