@@ -11,12 +11,6 @@ void Tileset::SetTexture(
         texture;
 }
 
-Texture* Tileset::GetTexture() const
-{
-    return
-        m_texture;
-}
-
 void Tileset::SetTileSize(
     int width,
     int height)
@@ -51,6 +45,12 @@ void Tileset::SetSpacing(
 {
     m_spacing =
         spacing;
+}
+
+Texture* Tileset::GetTexture() const
+{
+    return
+        m_texture;
 }
 
 int Tileset::GetTileWidth() const
@@ -89,51 +89,9 @@ int Tileset::GetSpacing() const
         m_spacing;
 }
 
-bool Tileset::IsValidTileId(
-    TileId tileId) const
-{
-    if (tileId ==
-        InvalidTileId)
-    {
-        return false;
-    }
-
-    if (m_columns <= 0 ||
-        m_rows <= 0)
-    {
-        return false;
-    }
-
-    const std::uint64_t
-        tileCount =
-        static_cast<std::uint64_t>(
-            m_columns
-            )
-        *
-        static_cast<std::uint64_t>(
-            m_rows
-            );
-
-    return
-        static_cast<std::uint64_t>(
-            tileId
-            )
-        <=
-        tileCount;
-}
-
 UVRect Tileset::GetTileUV(
     TileId tileId) const
 {
-    //
-    // Invalid UV.
-    //
-    // UVRect{}의 기본값은
-    // { 0, 0, 1, 1 }이므로
-    // invalid case에서는 명시적으로
-    // zero rect를 반환해야 한다.
-    //
-
     UVRect result
     {
         0.0f,
@@ -177,13 +135,6 @@ UVRect Tileset::GetTileUV(
         return result;
     }
 
-    //
-    // TileId:
-    //
-    // 0 = Empty
-    // 1 = 첫 번째 atlas tile
-    //
-
     const std::uint64_t
         zeroBased =
         static_cast<std::uint64_t>(
@@ -205,14 +156,6 @@ UVRect Tileset::GetTileUV(
         static_cast<std::uint64_t>(
             m_columns
             );
-
-    //
-    // 실제 atlas pixel 좌표.
-    //
-    // margin
-    // +
-    // index * (tileSize + spacing)
-    //
 
     const std::int64_t
         strideX =
@@ -273,12 +216,6 @@ UVRect Tileset::GetTileUV(
         static_cast<std::int64_t>(
             m_tileHeight
             );
-
-    //
-    // Setters가 public이므로
-    // Loader를 거치지 않고 잘못된 값을
-    // 입력한 경우도 방어한다.
-    //
 
     if (pixelX < 0 ||
         pixelY < 0)
@@ -341,4 +278,37 @@ UVRect Tileset::GetTileUV(
         inverseTextureHeight;
 
     return result;
+}
+
+bool Tileset::IsValidTileId(
+    TileId tileId) const
+{
+    if (tileId ==
+        InvalidTileId)
+    {
+        return false;
+    }
+
+    if (m_columns <= 0 ||
+        m_rows <= 0)
+    {
+        return false;
+    }
+
+    const std::uint64_t
+        tileCount =
+        static_cast<std::uint64_t>(
+            m_columns
+            )
+        *
+        static_cast<std::uint64_t>(
+            m_rows
+            );
+
+    return
+        static_cast<std::uint64_t>(
+            tileId
+            )
+        <=
+        tileCount;
 }

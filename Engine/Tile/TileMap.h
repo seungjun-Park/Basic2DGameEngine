@@ -50,6 +50,17 @@ public:
         Tileset* tileset
     );
 
+    void SetTile(
+        std::size_t layerIndex,
+        int x,
+        int y,
+        TileId tileId
+    );
+
+    void AddLayer(
+        TileLayer layer
+    );
+
     int GetWidth() const;
     int GetHeight() const;
 
@@ -64,13 +75,6 @@ public:
         int y
     ) const;
 
-    void SetTile(
-        std::size_t layerIndex,
-        int x,
-        int y,
-        TileId tileId
-    );
-
     TileLayer* GetLayer(
         std::size_t index
     );
@@ -80,10 +84,6 @@ public:
     ) const;
 
     std::size_t GetLayerCount() const;
-
-    void AddLayer(
-        TileLayer layer
-    );
 
 private:
     bool IsInside(

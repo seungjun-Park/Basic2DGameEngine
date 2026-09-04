@@ -30,77 +30,6 @@ void TileMap::SetTileset(
         tileset;
 }
 
-int TileMap::GetWidth() const
-{
-    return m_width;
-}
-
-int TileMap::GetHeight() const
-{
-    return m_height;
-}
-
-int TileMap::GetTileWidth() const
-{
-    return m_tileWidth;
-}
-
-int TileMap::GetTileHeight() const
-{
-    return m_tileHeight;
-}
-
-Tileset*
-TileMap::GetTileset() const
-{
-    return m_tileset;
-}
-
-bool TileMap::IsInside(
-    int x,
-    int y) const
-{
-    return
-        x >= 0 &&
-        y >= 0 &&
-        x < m_width &&
-        y < m_height;
-}
-
-TileId TileMap::GetTile(
-    std::size_t layerIndex,
-    int x,
-    int y) const
-{
-    if (layerIndex >=
-        m_layers.size())
-    {
-        return InvalidTileId;
-    }
-
-    if (!IsInside(x, y))
-    {
-        return InvalidTileId;
-    }
-
-    const TileLayer& layer =
-        m_layers[layerIndex];
-
-    const std::size_t index =
-        static_cast<std::size_t>(
-            y * m_width + x
-            );
-
-    if (index >=
-        layer.tiles.size())
-    {
-        return InvalidTileId;
-    }
-
-    return
-        layer.tiles[index];
-}
-
 void TileMap::SetTile(
     std::size_t layerIndex,
     int x,
@@ -144,6 +73,88 @@ void TileMap::SetTile(
         tileId;
 }
 
+void TileMap::AddLayer(
+    TileLayer layer)
+{
+    const std::size_t expectedSize =
+        static_cast<std::size_t>(
+            m_width * m_height
+            );
+
+    if (layer.tiles.size() <
+        expectedSize)
+    {
+        layer.tiles.resize(
+            expectedSize,
+            InvalidTileId
+        );
+    }
+
+    m_layers.emplace_back(
+        std::move(layer)
+    );
+}
+
+int TileMap::GetWidth() const
+{
+    return m_width;
+}
+
+int TileMap::GetHeight() const
+{
+    return m_height;
+}
+
+int TileMap::GetTileWidth() const
+{
+    return m_tileWidth;
+}
+
+int TileMap::GetTileHeight() const
+{
+    return m_tileHeight;
+}
+
+Tileset*
+TileMap::GetTileset() const
+{
+    return m_tileset;
+}
+
+TileId TileMap::GetTile(
+    std::size_t layerIndex,
+    int x,
+    int y) const
+{
+    if (layerIndex >=
+        m_layers.size())
+    {
+        return InvalidTileId;
+    }
+
+    if (!IsInside(x, y))
+    {
+        return InvalidTileId;
+    }
+
+    const TileLayer& layer =
+        m_layers[layerIndex];
+
+    const std::size_t index =
+        static_cast<std::size_t>(
+            y * m_width + x
+            );
+
+    if (index >=
+        layer.tiles.size())
+    {
+        return InvalidTileId;
+    }
+
+    return
+        layer.tiles[index];
+}
+
 TileLayer*
 TileMap::GetLayer(
     std::size_t index)
@@ -179,24 +190,13 @@ TileMap::GetLayerCount() const
         m_layers.size();
 }
 
-void TileMap::AddLayer(
-    TileLayer layer)
+bool TileMap::IsInside(
+    int x,
+    int y) const
 {
-    const std::size_t expectedSize =
-        static_cast<std::size_t>(
-            m_width * m_height
-            );
-
-    if (layer.tiles.size() <
-        expectedSize)
-    {
-        layer.tiles.resize(
-            expectedSize,
-            InvalidTileId
-        );
-    }
-
-    m_layers.emplace_back(
-        std::move(layer)
-    );
+    return
+        x >= 0 &&
+        y >= 0 &&
+        x < m_width &&
+        y < m_height;
 }

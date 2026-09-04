@@ -1,11 +1,10 @@
 #pragma once
-#pragma once
 
 #include <memory>
 #include <string>
-#include "TileMap.h"
 
 class ResourceManager;
+class TileMap;
 
 class TileMapLoader
 {

@@ -8,8 +8,6 @@
 
 #include <nlohmann/json.hpp>
 
-#include <Windows.h>
-
 #include <cstdint>
 #include <filesystem>
 #include <fstream>

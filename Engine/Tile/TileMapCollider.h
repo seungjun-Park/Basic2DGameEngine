@@ -23,23 +23,17 @@ public:
 public:
     TileMapCollider() = default;
 
-    ~TileMapCollider();
-
     TileMapCollider(
         const TileMapCollider&
     ) = delete;
+
+    ~TileMapCollider();
 
     TileMapCollider&
         operator=(
             const TileMapCollider&
             ) = delete;
 
-    //
-    // Static TileMap contract.
-    //
-    // PhysicsSystem::Step() / contact dispatch 중에는
-    // Build() 또는 Destroy()를 호출하지 않는다.
-    //
     bool Build(
         const TileMap& tileMap,
         PhysicsSystem& physics

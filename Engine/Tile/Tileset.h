@@ -13,8 +13,6 @@ public:
         Texture* texture
     );
 
-    Texture* GetTexture() const;
-
     void SetTileSize(
         int width,
         int height
@@ -33,6 +31,8 @@ public:
         int spacing
     );
 
+    Texture* GetTexture() const;
+
     int GetTileWidth() const;
     int GetTileHeight() const;
 
@@ -42,11 +42,11 @@ public:
     int GetMargin() const;
     int GetSpacing() const;
 
-    bool IsValidTileId(
+    UVRect GetTileUV(
         TileId tileId
     ) const;
 
-    UVRect GetTileUV(
+    bool IsValidTileId(
         TileId tileId
     ) const;
 

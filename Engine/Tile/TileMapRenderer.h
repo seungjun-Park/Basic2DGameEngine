@@ -5,7 +5,6 @@
 
 #include <cstddef>
 #include <vector>
-#include <cassert>
 
 class Camera;
 class TileMap;
@@ -52,11 +51,11 @@ class TileMapRenderer
 {
 public:
     TileMapRenderer() = default;
-    ~TileMapRenderer() = default;
-
     TileMapRenderer(
         const TileMapRenderer&
     ) = delete;
+
+    ~TileMapRenderer() = default;
 
     TileMapRenderer&
         operator=(
@@ -74,6 +73,11 @@ public:
         RenderQueue& renderQueue
     );
 
+    bool SetRenderLayerVisible(
+        std::size_t sourceLayerIndex,
+        bool visible
+    );
+
     std::size_t
         GetRenderItemCount() const
     {
@@ -86,11 +90,6 @@ public:
     {
         return m_stats;
     }
-
-    bool SetRenderLayerVisible(
-        std::size_t sourceLayerIndex,
-        bool visible
-    );
 
     [[nodiscard]]
     bool IsRenderLayerVisible(
@@ -161,11 +160,6 @@ private:
     };
 
 private:
-    std::size_t GetCellIndex(
-        int x,
-        int y
-    ) const;
-
     VisibleTileBounds
         CalculateVisibleTileBounds(
             const Camera& camera
@@ -183,6 +177,11 @@ private:
 
     std::size_t
         GetVisibleRenderLayerCount() const;
+
+    std::size_t GetCellIndex(
+        int x,
+        int y
+    ) const;
 
 private:
     int m_mapWidth = 0;

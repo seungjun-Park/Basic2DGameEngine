@@ -75,11 +75,6 @@ bool TileMapRenderer::Build(
             m_mapHeight
             );
 
-    //
-    // TileMap의 Render layer만
-    // 별도 cache로 만든다.
-    //
-
     for (
         std::size_t layerIndex = 0;
         layerIndex <
@@ -163,10 +158,6 @@ bool TileMapRenderer::Build(
                 item.occupied =
                     true;
 
-                //
-                // Sprite
-                //
-
                 item.sprite.texture =
                     texture;
 
@@ -192,15 +183,6 @@ bool TileMapRenderer::Build(
                     GetTileUV(
                         tileId
                     );
-
-                //
-                // Transform
-                //
-                // 현재 Renderer contract:
-                //
-                // position = 좌상단
-                // scale    = 실제 pixel size
-                //
 
                 item.transform.position =
                 {
@@ -308,49 +290,10 @@ void TileMapRenderer::Clear()
         TileMapRenderStats{};
 }
 
-std::size_t
-TileMapRenderer::GetCellIndex(
-    int x,
-    int y) const
-{
-#ifdef _DEBUG
-
-    assert(
-        x >= 0 &&
-        x < m_mapWidth
-    );
-
-    assert(
-        y >= 0 &&
-        y < m_mapHeight
-    );
-
-#endif
-
-    return
-        static_cast<std::size_t>(
-            y
-            )
-        *
-        static_cast<std::size_t>(
-            m_mapWidth
-            )
-        +
-        static_cast<std::size_t>(
-            x
-            );
-}
-
 void TileMapRenderer::Submit(
     const Camera& camera,
     RenderQueue& renderQueue)
 {
-    //
-    // --------------------------------------------
-    // Static stats
-    // --------------------------------------------
-    //
-
     const std::size_t
         visibleRenderLayerCount =
         GetVisibleRenderLayerCount();
@@ -382,11 +325,6 @@ void TileMapRenderer::Submit(
         *
         visibleRenderLayerCount;
 
-    //
-    // --------------------------------------------
-    // Per-frame stats
-    // --------------------------------------------
-    //
 
     m_stats.visibleRenderItems = 0;
 
@@ -416,11 +354,6 @@ void TileMapRenderer::Submit(
     m_stats.cameraBottom =
         camera.GetBottom();
 
-    //
-    // --------------------------------------------
-    // Visible bounds
-    // --------------------------------------------
-    //
 
     const VisibleTileBounds bounds =
         CalculateVisibleTileBounds(
@@ -461,11 +394,6 @@ void TileMapRenderer::Submit(
         *
         m_renderLayers.size();
 
-    //
-    // --------------------------------------------
-    // Submit visible cells
-    // --------------------------------------------
-    //
 
     for (const auto& layer :
         m_renderLayers)
@@ -513,12 +441,6 @@ void TileMapRenderer::Submit(
         }
     }
 
-    //
-    // --------------------------------------------
-    // Final stats
-    // --------------------------------------------
-    //
-
     if (m_renderItemCount >
         m_stats.visibleRenderItems)
     {
@@ -530,6 +452,73 @@ void TileMapRenderer::Submit(
     {
         m_stats.culledRenderItems = 0;
     }
+}
+
+bool TileMapRenderer::
+SetRenderLayerVisible(
+    std::size_t sourceLayerIndex,
+    bool visible)
+{
+    TileRenderLayerCache* layer =
+        FindRenderLayer(
+            sourceLayerIndex);
+
+    if (!layer)
+    {
+        return false;
+    }
+
+    if (layer->visible == visible)
+    {
+        return true;
+    }
+
+    if (visible)
+    {
+        m_renderItemCount +=
+            layer->renderItemCount;
+    }
+    else
+    {
+#ifdef _DEBUG
+        assert(
+            m_renderItemCount >=
+            layer->renderItemCount
+        );
+#endif
+
+        m_renderItemCount -=
+            layer->renderItemCount;
+    }
+
+    layer->visible = visible;
+
+    return true;
+}
+
+bool TileMapRenderer::
+IsRenderLayerCached(
+    std::size_t sourceLayerIndex) const
+{
+    return
+        FindRenderLayer(
+            sourceLayerIndex) != nullptr;
+}
+
+bool TileMapRenderer::
+IsRenderLayerVisible(
+    std::size_t sourceLayerIndex) const
+{
+    const TileRenderLayerCache* layer =
+        FindRenderLayer(
+            sourceLayerIndex);
+
+    if (!layer)
+    {
+        return false;
+    }
+
+    return layer->visible;
 }
 
 TileMapRenderer::VisibleTileBounds
@@ -603,13 +592,6 @@ TileMapRenderer::CalculateVisibleTileBounds(
                 tileHeight
             )
             ) - 1;
-
-    //
-    // Camera와 TileMap이
-    // 완전히 떨어져 있다.
-    //
-    // Clamp보다 먼저 검사해야 한다.
-    //
 
     if (maxTileX < 0 ||
         maxTileY < 0 ||
@@ -728,73 +710,6 @@ TileMapRenderer::FindRenderLayer(
     return nullptr;
 }
 
-bool TileMapRenderer::
-IsRenderLayerCached(
-    std::size_t sourceLayerIndex) const
-{
-    return
-        FindRenderLayer(
-            sourceLayerIndex) != nullptr;
-}
-
-bool TileMapRenderer::
-IsRenderLayerVisible(
-    std::size_t sourceLayerIndex) const
-{
-    const TileRenderLayerCache* layer =
-        FindRenderLayer(
-            sourceLayerIndex);
-
-    if (!layer)
-    {
-        return false;
-    }
-
-    return layer->visible;
-}
-
-bool TileMapRenderer::
-SetRenderLayerVisible(
-    std::size_t sourceLayerIndex,
-    bool visible)
-{
-    TileRenderLayerCache* layer =
-        FindRenderLayer(
-            sourceLayerIndex);
-
-    if (!layer)
-    {
-        return false;
-    }
-
-    if (layer->visible == visible)
-    {
-        return true;
-    }
-
-    if (visible)
-    {
-        m_renderItemCount +=
-            layer->renderItemCount;
-    }
-    else
-    {
-#ifdef _DEBUG
-        assert(
-            m_renderItemCount >=
-            layer->renderItemCount
-        );
-#endif
-
-        m_renderItemCount -=
-            layer->renderItemCount;
-    }
-
-    layer->visible = visible;
-
-    return true;
-}
-
 std::size_t
 TileMapRenderer::
 GetVisibleRenderLayerCount() const
@@ -811,4 +726,37 @@ GetVisibleRenderLayerCount() const
     }
 
     return count;
+}
+
+std::size_t
+TileMapRenderer::GetCellIndex(
+    int x,
+    int y) const
+{
+#ifdef _DEBUG
+
+    assert(
+        x >= 0 &&
+        x < m_mapWidth
+    );
+
+    assert(
+        y >= 0 &&
+        y < m_mapHeight
+    );
+
+#endif
+
+    return
+        static_cast<std::size_t>(
+            y
+            )
+        *
+        static_cast<std::size_t>(
+            m_mapWidth
+            )
+        +
+        static_cast<std::size_t>(
+            x
+            );
 }

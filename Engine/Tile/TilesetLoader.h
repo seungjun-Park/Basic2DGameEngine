@@ -3,8 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "Tileset.h"
-
+class Tileset;
 class ResourceManager;
 
 class TilesetLoader
