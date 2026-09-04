@@ -7,8 +7,6 @@
 #include "Engine/Physics/CollisionEvents.h"
 #include "Engine/Debug/DebugLog.h"
 
-#include <Windows.h>
-
 PhysicsSystem::PhysicsSystem() = default;
 
 PhysicsSystem::~PhysicsSystem()
@@ -26,7 +24,6 @@ bool PhysicsSystem::Initialize()
     b2WorldDef worldDef =
         b2DefaultWorldDef();
 
-    // Top-down 2D 게임이므로 중력 없음
     worldDef.gravity =
     {
         0.0f,
@@ -238,11 +235,6 @@ void PhysicsSystem::HandleEndContact(
     b2ShapeId shapeA,
     b2ShapeId shapeB)
 {
-    // Box2D에서는 body/shape가 파괴될 때도
-    // EndContact가 생성될 수 있다.
-    //
-    // 따라서 End event의 Shape ID가 이미
-    // 무효화되었을 가능성이 있다.
     if (!b2Shape_IsValid(shapeA) ||
         !b2Shape_IsValid(shapeB))
     {

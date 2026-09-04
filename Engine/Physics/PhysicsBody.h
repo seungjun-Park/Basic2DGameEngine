@@ -1,13 +1,15 @@
 #pragma once
 
-#include "PhysicsTypes.h"
 #include "Engine/Scene/EntityHandle.h"
 
 #include <box2d/box2d.h>
 
-class PhysicsSystem;
+
 struct Transform;
 class Entity;
+
+struct PhysicsBodyDesc;
+class PhysicsSystem;
 
 struct PhysicsBodyUserData
 {
@@ -38,25 +40,24 @@ public:
 
     void Destroy();
 
-    bool IsValid() const;
+    void SyncTransform(
+        Transform& transform
+    ) const;
+
 
     void SetLinearVelocity(
         float xPixelsPerSecond,
         float yPixelsPerSecond
     );
-
     void SetPosition(
         float xPixels,
         float yPixels
     );
-
     void SetRotation(
         float radians
     );
 
-    void SyncTransform(
-        Transform& transform
-    ) const;
+    bool IsValid() const;
 
     b2BodyId GetBodyId() const
     {

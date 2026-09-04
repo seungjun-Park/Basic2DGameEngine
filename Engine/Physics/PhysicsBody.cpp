@@ -1,5 +1,6 @@
 #include "PhysicsBody.h"
 
+#include "PhysicsTypes.h"
 #include "PhysicsSystem.h"
 #include "PhysicsUnits.h"
 
@@ -79,8 +80,6 @@ bool PhysicsBody::Create(
     bodyDef.fixedRotation =
         desc.fixedRotation;
 
-    // 충돌 이벤트에서 Entity를 찾기 위해
-    // owner 포인터를 Box2D userData로 연결
     bodyDef.userData =
         &m_userData;
 
@@ -190,8 +189,6 @@ void PhysicsBody::Destroy()
         if (b2Body_IsValid(
             m_bodyId))
         {
-            // Box2D가 더 이상 삭제될 Entity를
-            // 가리키지 않도록 먼저 끊는다.
             b2Body_SetUserData(
                 m_bodyId,
                 nullptr
@@ -213,14 +210,38 @@ void PhysicsBody::Destroy()
         EntityHandle{};
 }
 
-bool PhysicsBody::IsValid() const
+void PhysicsBody::SyncTransform(
+    Transform& transform) const
 {
-    return
-        B2_IS_NON_NULL(
+    if (!IsValid())
+    {
+        return;
+    }
+
+    const b2Vec2 position =
+        b2Body_GetPosition(
             m_bodyId
-        ) &&
-        b2Body_IsValid(
+        );
+
+    transform.position =
+    {
+        PhysicsUnits::ToPixels(
+            position.x
+        ),
+
+        PhysicsUnits::ToPixels(
+            position.y
+        )
+    };
+
+    const b2Rot rotation =
+        b2Body_GetRotation(
             m_bodyId
+        );
+
+    transform.rotation =
+        b2Rot_GetAngle(
+            rotation
         );
 }
 
@@ -302,37 +323,13 @@ void PhysicsBody::SetRotation(
     );
 }
 
-void PhysicsBody::SyncTransform(
-    Transform& transform) const
+bool PhysicsBody::IsValid() const
 {
-    if (!IsValid())
-    {
-        return;
-    }
-
-    const b2Vec2 position =
-        b2Body_GetPosition(
+    return
+        B2_IS_NON_NULL(
             m_bodyId
-        );
-
-    transform.position =
-    {
-        PhysicsUnits::ToPixels(
-            position.x
-        ),
-
-        PhysicsUnits::ToPixels(
-            position.y
-        )
-    };
-
-    const b2Rot rotation =
-        b2Body_GetRotation(
+        ) &&
+        b2Body_IsValid(
             m_bodyId
-        );
-
-    transform.rotation =
-        b2Rot_GetAngle(
-            rotation
         );
 }

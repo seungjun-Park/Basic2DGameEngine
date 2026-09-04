@@ -45,11 +45,6 @@ public:
     }
 
 private:
-    Entity* ResolveBodyEntity(
-        Scene& scene,
-        b2BodyId body
-    ) const;
-
     void HandleBeginContact(
         Scene& scene,
         EventBus& eventBus,
@@ -63,6 +58,11 @@ private:
         b2ShapeId shapeA,
         b2ShapeId shapeB
     );
+
+    Entity* ResolveBodyEntity(
+        Scene& scene,
+        b2BodyId body
+    ) const;
 
 private:
     b2WorldId m_worldId =
