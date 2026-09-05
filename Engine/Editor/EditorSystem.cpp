@@ -49,8 +49,11 @@ bool EditorSystem::Initialize(
     m_assetBrowserPanel.Reset();
 
     m_animationClipEditorPanel.Close();
+
     m_tilesetEditorPanel.Close();
+
     m_tilePalettePanel.Close();
+
     m_tileMapEditorPanel.Close();
 
     m_selectedAssetPath.clear();
@@ -89,8 +92,11 @@ void EditorSystem::Shutdown()
         EntityHandle{};
 
     m_animationClipEditorPanel.Close();
+
     m_tilesetEditorPanel.Close();
+
     m_tilePalettePanel.Close();
+
     m_tileMapEditorPanel.Close();
 
     m_assetBrowserPanel.Reset();
@@ -153,6 +159,7 @@ void EditorSystem::Draw(
     ))
     {
         ImGui::End();
+
         return;
     }
 
@@ -427,6 +434,19 @@ DrawWorkspaceTabs(
                             engine.GetResourceManager()
                         ))
                     {
+                        //
+                        // Ensure that the palette uses
+                        // the exact Tileset referenced
+                        // by this TileMap document.
+                        //
+
+                        m_tilePalettePanel.
+                            OpenTileset(
+                                m_tileMapEditorPanel.
+                                GetTilesetPath(),
+                                engine.GetResourceManager()
+                            );
+
                         m_selectTileMapEditorTabRequested =
                             true;
                     }
@@ -579,7 +599,12 @@ DrawWorkspaceTabs(
     {
         m_tileMapEditorPanel.
             DrawContents(
-                engine.GetResourceManager()
+                engine.GetResourceManager(),
+                m_tilePalettePanel.
+                GetSelectedTileId(),
+                m_tilePalettePanel.
+                GetTilesetPath(),
+                IsEditMode()
             );
 
         ImGui::EndTabItem();

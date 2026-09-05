@@ -4,6 +4,7 @@
 #include "Engine/Tile/TilesetData.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <string>
 
@@ -21,7 +22,10 @@ public:
     void Close() noexcept;
 
     void DrawContents(
-        ResourceManager& resourceManager
+        ResourceManager& resourceManager,
+        TileId paletteTileId,
+        const std::wstring& paletteTilesetPath,
+        bool allowEditing
     );
 
     [[nodiscard]]
@@ -53,12 +57,41 @@ private:
 
     void DrawSelectedLayerInfo();
 
+    void DrawCanvas(
+        TileId paletteTileId,
+        const std::wstring& paletteTilesetPath,
+        bool allowEditing
+    );
+
+    void PaintCell(
+        int x,
+        int y,
+        TileId paletteTileId,
+        const std::wstring& paletteTilesetPath,
+        bool erase
+    );
+
     [[nodiscard]]
     bool ValidateAgainstTileset(
         const TileMapData& mapData,
         const TilesetData& tilesetData,
         const Texture& texture
     ) const noexcept;
+
+    [[nodiscard]]
+    bool CanPaintRenderTile(
+        TileId tileId,
+        const std::wstring& paletteTilesetPath
+    ) const noexcept;
+
+    [[nodiscard]]
+    UVRect CalculateTileUV(
+        TileId tileId
+    ) const noexcept;
+
+    [[nodiscard]]
+    std::uint64_t
+        GetTilesetTileCount() const noexcept;
 
     static const char*
         GetLayerTypeName(
@@ -97,6 +130,16 @@ private:
     std::size_t
         m_selectedLayerIndex =
         InvalidLayerIndex;
+
+    TileId
+        m_collisionBrush =
+        SolidCollisionTile;
+
+    float m_canvasCellSize =
+        48.0f;
+
+    bool m_showGrid =
+        true;
 
     bool m_lastOpenFailed =
         false;

@@ -9,9 +9,11 @@
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -167,6 +169,11 @@ bool TileMapEditorPanel::Open(
         return false;
     }
 
+    //
+    // Commit only after all loading and
+    // validation has succeeded.
+    //
+
     m_documentPath =
         path;
 
@@ -194,6 +201,9 @@ bool TileMapEditorPanel::Open(
             0;
     }
 
+    m_collisionBrush =
+        SolidCollisionTile;
+
     m_lastOpenFailed =
         false;
 
@@ -217,12 +227,24 @@ noexcept
     m_selectedLayerIndex =
         InvalidLayerIndex;
 
+    m_collisionBrush =
+        SolidCollisionTile;
+
+    m_canvasCellSize =
+        48.0f;
+
+    m_showGrid =
+        true;
+
     m_lastOpenFailed =
         false;
 }
 
 void TileMapEditorPanel::DrawContents(
-    ResourceManager& resourceManager
+    ResourceManager& resourceManager,
+    TileId paletteTileId,
+    const std::wstring& paletteTilesetPath,
+    bool allowEditing
 )
 {
     if (!IsOpen())
@@ -241,6 +263,10 @@ void TileMapEditorPanel::DrawContents(
 
         return;
     }
+
+    //
+    // Toolbar
+    //
 
     const bool reloadRequested =
         ImGui::Button(
@@ -275,16 +301,33 @@ void TileMapEditorPanel::DrawContents(
         );
     }
 
+    if (!allowEditing)
+    {
+        ImGui::TextDisabled(
+            "Tile painting is disabled "
+            "while Play Mode is active."
+        );
+    }
+
+    ImGui::TextDisabled(
+        "Stage 18 edits are in-memory only. "
+        "Save/Revert is added in Stage 20."
+    );
+
     ImGui::Separator();
 
     DrawDocumentInfo();
 
     ImGui::Separator();
 
+    //
+    // Main document workspace
+    //
+
     if (ImGui::BeginChild(
         "##TileMapLayerList",
         ImVec2(
-            240.0f,
+            220.0f,
             0.0f
         ),
         true
@@ -298,7 +341,7 @@ void TileMapEditorPanel::DrawContents(
     ImGui::SameLine();
 
     if (ImGui::BeginChild(
-        "##TileMapLayerDetails",
+        "##TileMapEditorWorkspace",
         ImVec2(
             0.0f,
             0.0f
@@ -307,6 +350,17 @@ void TileMapEditorPanel::DrawContents(
     ))
     {
         DrawSelectedLayerInfo();
+
+        if (HasSelectedLayer())
+        {
+            ImGui::Separator();
+
+            DrawCanvas(
+                paletteTileId,
+                paletteTilesetPath,
+                allowEditing
+            );
+        }
     }
 
     ImGui::EndChild();
@@ -553,28 +607,628 @@ DrawSelectedLayerInfo()
         "Tile Count: %zu",
         layer.tiles.size()
     );
+}
+
+void TileMapEditorPanel::DrawCanvas(
+    TileId paletteTileId,
+    const std::wstring& paletteTilesetPath,
+    bool allowEditing
+)
+{
+    if (!HasSelectedLayer() ||
+        !m_texture)
+    {
+        return;
+    }
+
+    TileLayer& layer =
+        m_data.layers[
+            m_selectedLayerIndex
+        ];
+
+    //
+    // Canvas controls
+    //
+
+    ImGui::TextUnformatted(
+        "Paint Canvas"
+    );
+
+    ImGui::SliderFloat(
+        "Cell Size",
+        &m_canvasCellSize,
+        16.0f,
+        128.0f,
+        "%.0f px"
+    );
+
+    m_canvasCellSize =
+        std::clamp(
+            m_canvasCellSize,
+            16.0f,
+            128.0f
+        );
+
+    ImGui::Checkbox(
+        "Show Grid",
+        &m_showGrid
+    );
 
     if (layer.type ==
-        TileLayerType::Collision)
+        TileLayerType::Render)
     {
+        const bool paletteMatches =
+            !paletteTilesetPath.empty() &&
+            paletteTilesetPath ==
+            m_data.tilesetPath;
+
+        if (paletteTileId ==
+            InvalidTileId)
+        {
+            ImGui::Text(
+                "Brush: Eraser / Empty [0]"
+            );
+        }
+        else
+        {
+            ImGui::Text(
+                "Brush TileId: %u",
+                static_cast<unsigned int>(
+                    paletteTileId
+                    )
+            );
+        }
+
+        if (!paletteMatches &&
+            paletteTileId !=
+            InvalidTileId)
+        {
+            ImGui::TextDisabled(
+                "The Tile Palette uses a "
+                "different Tileset. Painting "
+                "is blocked until the matching "
+                "Tileset is loaded."
+            );
+        }
+
         ImGui::TextDisabled(
-            "Collision values: "
-            "0 = Empty, 1 = Solid"
+            "Left drag = Paint, "
+            "Right drag = Erase"
         );
     }
     else
     {
+        ImGui::TextUnformatted(
+            "Collision Brush"
+        );
+
+        const bool emptySelected =
+            m_collisionBrush ==
+            EmptyCollisionTile;
+
+        if (ImGui::Selectable(
+            "Empty [0]",
+            emptySelected,
+            0,
+            ImVec2(
+                100.0f,
+                0.0f
+            )
+        ))
+        {
+            m_collisionBrush =
+                EmptyCollisionTile;
+        }
+
+        ImGui::SameLine();
+
+        const bool solidSelected =
+            m_collisionBrush ==
+            SolidCollisionTile;
+
+        if (ImGui::Selectable(
+            "Solid [1]",
+            solidSelected,
+            0,
+            ImVec2(
+                100.0f,
+                0.0f
+            )
+        ))
+        {
+            m_collisionBrush =
+                SolidCollisionTile;
+        }
+
         ImGui::TextDisabled(
-            "Render values: "
-            "0 = Empty, 1..N = Tileset TileId"
+            "Left drag = Apply collision brush, "
+            "Right drag = Empty"
         );
     }
 
     ImGui::Separator();
 
-    ImGui::TextDisabled(
-        "Tile painting is added in Stage 18."
+    if (m_data.width <= 0 ||
+        m_data.height <= 0)
+    {
+        ImGui::TextDisabled(
+            "Invalid map dimensions."
+        );
+
+        return;
+    }
+
+    const double canvasWidthDouble =
+        static_cast<double>(
+            m_data.width
+            ) *
+        static_cast<double>(
+            m_canvasCellSize
+            );
+
+    const double canvasHeightDouble =
+        static_cast<double>(
+            m_data.height
+            ) *
+        static_cast<double>(
+            m_canvasCellSize
+            );
+
+    if (canvasWidthDouble <= 0.0 ||
+        canvasHeightDouble <= 0.0 ||
+        canvasWidthDouble >
+        static_cast<double>(
+            std::numeric_limits<
+            float
+            >::max()
+            ) ||
+        canvasHeightDouble >
+        static_cast<double>(
+            std::numeric_limits<
+            float
+            >::max()
+            ))
+    {
+        ImGui::TextDisabled(
+            "Canvas dimensions are invalid."
+        );
+
+        return;
+    }
+
+    const ImVec2 canvasSize
+    {
+        static_cast<float>(
+            canvasWidthDouble
+        ),
+        static_cast<float>(
+            canvasHeightDouble
+        )
+    };
+
+    constexpr ImGuiWindowFlags
+        canvasFlags =
+        ImGuiWindowFlags_HorizontalScrollbar;
+
+    ImGui::BeginChild(
+        "##TileMapPaintCanvasScroll",
+        ImVec2(
+            0.0f,
+            0.0f
+        ),
+        true,
+        canvasFlags
     );
+
+    //
+    // One interaction item represents the entire
+    // map. No per-cell PushID/PopID is required.
+    //
+
+    ImGui::InvisibleButton(
+        "##TileMapPaintSurface",
+        canvasSize
+    );
+
+    const ImVec2 canvasMin =
+        ImGui::GetItemRectMin();
+
+    ImDrawList* drawList =
+        ImGui::GetWindowDrawList();
+
+    ID3D11ShaderResourceView* srv =
+        m_texture->GetSRV();
+
+    const ImU32 gridColor =
+        ImGui::GetColorU32(
+            ImGuiCol_Separator
+        );
+
+    const ImU32 collisionColor =
+        ImGui::GetColorU32(
+            ImGuiCol_ButtonActive
+        );
+
+    const ImU32 hoverColor =
+        ImGui::GetColorU32(
+            ImGuiCol_HeaderHovered
+        );
+
+    //
+    // Draw all cells.
+    //
+    // Stage 18 intentionally keeps this simple.
+    // A later editor optimization pass can cull
+    // off-screen cells for very large maps.
+    //
+
+    if (drawList)
+    {
+        for (int y = 0;
+            y < m_data.height;
+            ++y)
+        {
+            for (int x = 0;
+                x < m_data.width;
+                ++x)
+            {
+                const std::size_t tileIndex =
+                    static_cast<std::size_t>(
+                        y
+                        ) *
+                    static_cast<std::size_t>(
+                        m_data.width
+                        ) +
+                    static_cast<std::size_t>(
+                        x
+                        );
+
+                if (tileIndex >=
+                    layer.tiles.size())
+                {
+                    continue;
+                }
+
+                const float left =
+                    canvasMin.x +
+                    static_cast<float>(
+                        x
+                        ) *
+                    m_canvasCellSize;
+
+                const float top =
+                    canvasMin.y +
+                    static_cast<float>(
+                        y
+                        ) *
+                    m_canvasCellSize;
+
+                const ImVec2 cellMin
+                {
+                    left,
+                    top
+                };
+
+                const ImVec2 cellMax
+                {
+                    left +
+                        m_canvasCellSize,
+
+                    top +
+                        m_canvasCellSize
+                };
+
+                const TileId tileId =
+                    layer.tiles[
+                        tileIndex
+                    ];
+
+                if (layer.type ==
+                    TileLayerType::Render)
+                {
+                    if (srv &&
+                        tileId !=
+                        InvalidTileId)
+                    {
+                        const UVRect uv =
+                            CalculateTileUV(
+                                tileId
+                            );
+
+                        drawList->AddImage(
+                            reinterpret_cast<
+                            ImTextureID
+                            >(
+                                srv
+                                ),
+                            cellMin,
+                            cellMax,
+                            ImVec2(
+                                uv.u0,
+                                uv.v0
+                            ),
+                            ImVec2(
+                                uv.u1,
+                                uv.v1
+                            )
+                        );
+                    }
+                }
+                else
+                {
+                    if (tileId ==
+                        SolidCollisionTile)
+                    {
+                        drawList->
+                            AddRectFilled(
+                                cellMin,
+                                cellMax,
+                                collisionColor
+                            );
+                    }
+                }
+
+                if (m_showGrid)
+                {
+                    drawList->AddRect(
+                        cellMin,
+                        cellMax,
+                        gridColor
+                    );
+                }
+            }
+        }
+    }
+
+    //
+    // Mouse ¡æ cell conversion
+    //
+
+    const bool canvasHovered =
+        ImGui::IsItemHovered();
+
+    if (canvasHovered)
+    {
+        const ImVec2 mousePosition =
+            ImGui::GetMousePos();
+
+        const float localX =
+            mousePosition.x -
+            canvasMin.x;
+
+        const float localY =
+            mousePosition.y -
+            canvasMin.y;
+
+        if (localX >= 0.0f &&
+            localY >= 0.0f)
+        {
+            const int cellX =
+                static_cast<int>(
+                    localX /
+                    m_canvasCellSize
+                    );
+
+            const int cellY =
+                static_cast<int>(
+                    localY /
+                    m_canvasCellSize
+                    );
+
+            const bool inside =
+                cellX >= 0 &&
+                cellY >= 0 &&
+                cellX <
+                m_data.width &&
+                cellY <
+                m_data.height;
+
+            if (inside)
+            {
+                const ImVec2 hoverMin
+                {
+                    canvasMin.x +
+                        static_cast<float>(
+                            cellX
+                        ) *
+                        m_canvasCellSize,
+
+                    canvasMin.y +
+                        static_cast<float>(
+                            cellY
+                        ) *
+                        m_canvasCellSize
+                };
+
+                const ImVec2 hoverMax
+                {
+                    hoverMin.x +
+                        m_canvasCellSize,
+
+                    hoverMin.y +
+                        m_canvasCellSize
+                };
+
+                if (drawList)
+                {
+                    drawList->AddRect(
+                        hoverMin,
+                        hoverMax,
+                        hoverColor,
+                        0.0f,
+                        0,
+                        2.0f
+                    );
+                }
+
+                const std::size_t tileIndex =
+                    static_cast<std::size_t>(
+                        cellY
+                        ) *
+                    static_cast<std::size_t>(
+                        m_data.width
+                        ) +
+                    static_cast<std::size_t>(
+                        cellX
+                        );
+
+                if (tileIndex <
+                    layer.tiles.size())
+                {
+                    const bool leftDown =
+                        ImGui::IsMouseDown(
+                            ImGuiMouseButton_Left
+                        );
+
+                    const bool rightDown =
+                        ImGui::IsMouseDown(
+                            ImGuiMouseButton_Right
+                        );
+
+                    if (!leftDown &&
+                        !rightDown)
+                    {
+                        ImGui::BeginTooltip();
+
+                        ImGui::Text(
+                            "Cell: (%d, %d)",
+                            cellX,
+                            cellY
+                        );
+
+                        ImGui::Text(
+                            "Value: %u",
+                            static_cast<
+                            unsigned int
+                            >(
+                                layer.tiles[
+                                    tileIndex
+                                ]
+                                )
+                        );
+
+                        ImGui::EndTooltip();
+                    }
+
+                    if (allowEditing)
+                    {
+                        if (rightDown)
+                        {
+                            PaintCell(
+                                cellX,
+                                cellY,
+                                paletteTileId,
+                                paletteTilesetPath,
+                                true
+                            );
+                        }
+                        else if (leftDown)
+                        {
+                            PaintCell(
+                                cellX,
+                                cellY,
+                                paletteTileId,
+                                paletteTilesetPath,
+                                false
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ImGui::EndChild();
+}
+
+void TileMapEditorPanel::PaintCell(
+    int x,
+    int y,
+    TileId paletteTileId,
+    const std::wstring& paletteTilesetPath,
+    bool erase
+)
+{
+    if (!HasSelectedLayer())
+    {
+        return;
+    }
+
+    if (x < 0 ||
+        y < 0 ||
+        x >= m_data.width ||
+        y >= m_data.height)
+    {
+        return;
+    }
+
+    TileLayer& layer =
+        m_data.layers[
+            m_selectedLayerIndex
+        ];
+
+    const std::size_t index =
+        static_cast<std::size_t>(
+            y
+            ) *
+        static_cast<std::size_t>(
+            m_data.width
+            ) +
+        static_cast<std::size_t>(
+            x
+            );
+
+    if (index >=
+        layer.tiles.size())
+    {
+        return;
+    }
+
+    TileId newValue =
+        layer.tiles[
+            index
+        ];
+
+    if (layer.type ==
+        TileLayerType::Collision)
+    {
+        if (erase)
+        {
+            newValue =
+                EmptyCollisionTile;
+        }
+        else
+        {
+            newValue =
+                m_collisionBrush;
+        }
+    }
+    else
+    {
+        if (erase ||
+            paletteTileId ==
+            InvalidTileId)
+        {
+            newValue =
+                InvalidTileId;
+        }
+        else
+        {
+            if (!CanPaintRenderTile(
+                paletteTileId,
+                paletteTilesetPath
+            ))
+            {
+                return;
+            }
+
+            newValue =
+                paletteTileId;
+        }
+    }
+
+    layer.tiles[index] =
+        newValue;
 }
 
 bool TileMapEditorPanel::
@@ -633,7 +1287,8 @@ ValidateAgainstTileset(
         return false;
     }
 
-    const std::uint64_t tilesetTileCount =
+    const std::uint64_t
+        tilesetTileCount =
         static_cast<std::uint64_t>(
             tilesetData.columns
             ) *
@@ -661,7 +1316,9 @@ ValidateAgainstTileset(
                     continue;
                 }
 
-                if (static_cast<std::uint64_t>(
+                if (static_cast<
+                    std::uint64_t
+                >(
                     tileId
                     ) >
                     tilesetTileCount)
@@ -688,6 +1345,226 @@ ValidateAgainstTileset(
     }
 
     return true;
+}
+
+bool TileMapEditorPanel::
+CanPaintRenderTile(
+    TileId tileId,
+    const std::wstring& paletteTilesetPath
+) const noexcept
+{
+    if (tileId ==
+        InvalidTileId)
+    {
+        return true;
+    }
+
+    if (paletteTilesetPath.empty() ||
+        paletteTilesetPath !=
+        m_data.tilesetPath)
+    {
+        return false;
+    }
+
+    const std::uint64_t tileCount =
+        GetTilesetTileCount();
+
+    if (tileCount == 0)
+    {
+        return false;
+    }
+
+    return
+        static_cast<std::uint64_t>(
+            tileId
+            ) <=
+        tileCount;
+}
+
+UVRect TileMapEditorPanel::
+CalculateTileUV(
+    TileId tileId
+) const noexcept
+{
+    UVRect result
+    {
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f
+    };
+
+    if (!m_texture ||
+        tileId ==
+        InvalidTileId)
+    {
+        return result;
+    }
+
+    const std::uint64_t tileCount =
+        GetTilesetTileCount();
+
+    if (tileCount == 0 ||
+        static_cast<std::uint64_t>(
+            tileId
+            ) >
+        tileCount)
+    {
+        return result;
+    }
+
+    if (m_tilesetData.columns <= 0 ||
+        m_tilesetData.rows <= 0)
+    {
+        return result;
+    }
+
+    const std::uint64_t zeroBased =
+        static_cast<std::uint64_t>(
+            tileId -
+            1
+            );
+
+    const std::uint64_t column =
+        zeroBased %
+        static_cast<std::uint64_t>(
+            m_tilesetData.columns
+            );
+
+    const std::uint64_t row =
+        zeroBased /
+        static_cast<std::uint64_t>(
+            m_tilesetData.columns
+            );
+
+    const std::int64_t strideX =
+        static_cast<std::int64_t>(
+            m_tilesetData.tileWidth
+            ) +
+        static_cast<std::int64_t>(
+            m_tilesetData.spacing
+            );
+
+    const std::int64_t strideY =
+        static_cast<std::int64_t>(
+            m_tilesetData.tileHeight
+            ) +
+        static_cast<std::int64_t>(
+            m_tilesetData.spacing
+            );
+
+    const std::int64_t pixelX =
+        static_cast<std::int64_t>(
+            m_tilesetData.margin
+            ) +
+        static_cast<std::int64_t>(
+            column
+            ) *
+        strideX;
+
+    const std::int64_t pixelY =
+        static_cast<std::int64_t>(
+            m_tilesetData.margin
+            ) +
+        static_cast<std::int64_t>(
+            row
+            ) *
+        strideY;
+
+    const std::int64_t pixelRight =
+        pixelX +
+        static_cast<std::int64_t>(
+            m_tilesetData.tileWidth
+            );
+
+    const std::int64_t pixelBottom =
+        pixelY +
+        static_cast<std::int64_t>(
+            m_tilesetData.tileHeight
+            );
+
+    const int textureWidth =
+        m_texture->GetWidth();
+
+    const int textureHeight =
+        m_texture->GetHeight();
+
+    if (textureWidth <= 0 ||
+        textureHeight <= 0)
+    {
+        return result;
+    }
+
+    if (pixelX < 0 ||
+        pixelY < 0 ||
+        pixelRight >
+        static_cast<std::int64_t>(
+            textureWidth
+            ) ||
+        pixelBottom >
+        static_cast<std::int64_t>(
+            textureHeight
+            ))
+    {
+        return result;
+    }
+
+    const float inverseWidth =
+        1.0f /
+        static_cast<float>(
+            textureWidth
+            );
+
+    const float inverseHeight =
+        1.0f /
+        static_cast<float>(
+            textureHeight
+            );
+
+    result.u0 =
+        static_cast<float>(
+            pixelX
+            ) *
+        inverseWidth;
+
+    result.v0 =
+        static_cast<float>(
+            pixelY
+            ) *
+        inverseHeight;
+
+    result.u1 =
+        static_cast<float>(
+            pixelRight
+            ) *
+        inverseWidth;
+
+    result.v1 =
+        static_cast<float>(
+            pixelBottom
+            ) *
+        inverseHeight;
+
+    return result;
+}
+
+std::uint64_t
+TileMapEditorPanel::
+GetTilesetTileCount() const noexcept
+{
+    if (m_tilesetData.columns <= 0 ||
+        m_tilesetData.rows <= 0)
+    {
+        return 0;
+    }
+
+    return
+        static_cast<std::uint64_t>(
+            m_tilesetData.columns
+            ) *
+        static_cast<std::uint64_t>(
+            m_tilesetData.rows
+            );
 }
 
 const char*
@@ -752,7 +1629,9 @@ TileMapEditorPanel::ToUtf8(
 
     if (value.size() >
         static_cast<std::size_t>(
-            std::numeric_limits<int>::max()
+            std::numeric_limits<
+            int
+            >::max()
             ))
     {
         return {};
