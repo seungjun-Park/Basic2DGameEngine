@@ -42,7 +42,16 @@ bool EditorSystem::Initialize(
             projectSettingsPanel
         );
 
+    m_assetBrowserPanel.Reset();
+
+    m_animationClipEditorPanel.Close();
+
+    m_selectedAssetPath.clear();
+
     m_mode = Mode::Edit;
+
+    m_selectAnimationTabRequested =
+        false;
     m_initialized = true;
 
     return true;
@@ -55,11 +64,21 @@ void EditorSystem::Shutdown()
         return;
     }
 
+    m_selectedAssetPath.clear();
+
+    m_animationClipEditorPanel.Close();
+
+    m_assetBrowserPanel.Reset();
+
     m_projectSettingsPanel.reset();
 
     m_assetDatabase.Shutdown();
 
     m_mode = Mode::Edit;
+
+    m_selectAnimationTabRequested =
+        false;
+
     m_initialized = false;
 }
 
@@ -145,6 +164,22 @@ const noexcept
     return m_assetDatabase;
 }
 
+const std::wstring&
+EditorSystem::
+GetSelectedAssetPath()
+const noexcept
+{
+    return m_selectedAssetPath;
+}
+
+bool EditorSystem::
+HasSelectedAsset()
+const noexcept
+{
+    return
+        !m_selectedAssetPath.empty();
+}
+
 bool EditorSystem::IsEditMode()
 const noexcept
 {
@@ -207,6 +242,10 @@ DrawWorkspaceTabs(
         return;
     }
 
+    //
+    // Project Settings
+    //
+
     if (ImGui::BeginTabItem(
         "Project Settings"))
     {
@@ -219,16 +258,87 @@ DrawWorkspaceTabs(
         ImGui::EndTabItem();
     }
 
+    //
+    // Assets
+    //
+
+    if (ImGui::BeginTabItem(
+        "Assets"))
+    {
+        const bool openRequested =
+            m_assetBrowserPanel.
+            DrawContents(
+                m_assetDatabase,
+                m_selectedAssetPath);
+
+        if (openRequested &&
+            !m_selectedAssetPath.empty())
+        {
+            const AssetRecord* asset =
+                m_assetDatabase.FindAsset(
+                    m_selectedAssetPath);
+
+            if (asset &&
+                asset->type ==
+                AssetType::AnimationClip)
+            {
+                m_animationClipEditorPanel.
+                    Open(
+                        asset->path);
+
+                m_selectAnimationTabRequested =
+                    true;
+            }
+        }
+
+        ImGui::EndTabItem();
+    }
+
+    //
+    // Animation
+    //
+
+    ImGuiTabItemFlags
+        animationTabFlags =
+        ImGuiTabItemFlags_None;
+
+    if (m_selectAnimationTabRequested)
+    {
+        animationTabFlags |=
+            ImGuiTabItemFlags_SetSelected;
+    }
+
+    if (ImGui::BeginTabItem(
+        "Animation",
+        nullptr,
+        animationTabFlags))
+    {
+        m_animationClipEditorPanel.
+            DrawContents();
+
+        ImGui::EndTabItem();
+    }
+
+    m_selectAnimationTabRequested =
+        false;
+
+    //
+    // Audio
+    //
+
     if (ImGui::BeginTabItem(
         "Audio"))
     {
         EngineGui::
             DrawAudioSettingsContents(
-                engine.
-                GetAudioSystem());
+                engine.GetAudioSystem());
 
         ImGui::EndTabItem();
     }
+
+    //
+    // TileMap
+    //
 
     if (ImGui::BeginTabItem(
         "TileMap"))

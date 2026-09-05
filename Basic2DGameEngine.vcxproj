@@ -138,6 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Animation\AnimationClip.h" />
+    <ClInclude Include="Engine\Animation\AnimationClipData.h" />
     <ClInclude Include="Engine\Animation\AnimationClipLoader.h" />
     <ClInclude Include="Engine\Animation\Animator.h" />
     <ClInclude Include="Engine\Audio\AudioClip.h" />
@@ -156,6 +157,8 @@
     <ClInclude Include="Engine\Debug\DebugLog.h" />
     <ClInclude Include="Engine\Debug\DebugRenderer.h" />
     <ClInclude Include="Engine\Debug\DebugStats.h" />
+    <ClInclude Include="Engine\Editor\AnimationClipEditorPanel.h" />
+    <ClInclude Include="Engine\Editor\AssetBrowserPanel.h" />
     <ClInclude Include="Engine\Editor\AssetDatabase.h" />
     <ClInclude Include="Engine\Editor\EditorSystem.h" />
     <ClInclude Include="Engine\GUI\EngineGui.h" />
@@ -182,6 +185,7 @@
     <ClInclude Include="Engine\Scene\Entity.h" />
     <ClInclude Include="Engine\Scene\EntityHandle.h" />
     <ClInclude Include="Engine\Scene\Scene.h" />
+    <ClInclude Include="Engine\Serialization\AnimationClipSerializer.h" />
     <ClInclude Include="Engine\Serialization\ProjectConfigSerializer.h" />
     <ClInclude Include="Engine\Serialization\SceneData.h" />
     <ClInclude Include="Engine\Serialization\SceneSerializer.h" />
@@ -213,6 +217,8 @@
     <ClCompile Include="Engine\Debug\CpuProfiler.cpp" />
     <ClCompile Include="Engine\Debug\DebugLog.cpp" />
     <ClCompile Include="Engine\Debug\DebugRenderer.cpp" />
+    <ClCompile Include="Engine\Editor\AnimationClipEditorPanel.cpp" />
+    <ClCompile Include="Engine\Editor\AssetBrowserPanel.cpp" />
     <ClCompile Include="Engine\Editor\AssetDatabase.cpp" />
     <ClCompile Include="Engine\Editor\EditorSystem.cpp" />
     <ClCompile Include="Engine\Event\EventBus.cpp" />
@@ -231,6 +237,7 @@
     <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Engine\Scene\Entity.cpp" />
     <ClCompile Include="Engine\Scene\Scene.cpp" />
+    <ClCompile Include="Engine\Serialization\AnimationClipSerializer.cpp" />
     <ClCompile Include="Engine\Serialization\ProjectConfigSerializer.cpp" />
     <ClCompile Include="Engine\Serialization\SceneSerializer.cpp" />
     <ClCompile Include="Engine\Tile\TileMap.cpp" />

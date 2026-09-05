@@ -1,7 +1,10 @@
 #pragma once
 
-#include "Engine/Editor/AssetDatabase.h"
 #include "Engine/GUI/ProjectSettingsPanel.h"
+#include "Engine/Editor/AnimationClipEditorPanel.h"
+#include "Engine/Editor/AssetDatabase.h"
+#include "Engine/Editor/AssetBrowserPanel.h"
+
 
 #include <cstdint>
 #include <memory>
@@ -41,7 +44,8 @@ public:
 
     void Shutdown();
 
-    void Draw(Engine& engine);
+    void Draw(
+        Engine& engine);
 
     void EnterPlayMode();
     void StopPlayMode();
@@ -62,6 +66,13 @@ public:
         GetAssetDatabase() const noexcept;
 
     [[nodiscard]]
+    const std::wstring&
+        GetSelectedAssetPath() const noexcept;
+
+    [[nodiscard]]
+    bool HasSelectedAsset() const noexcept;
+
+    [[nodiscard]]
     bool IsEditMode() const noexcept;
 
     [[nodiscard]]
@@ -72,6 +83,7 @@ public:
 
 private:
     void DrawToolbar();
+
     void DrawWorkspaceTabs(
         Engine& engine);
 
@@ -81,7 +93,19 @@ private:
 
     AssetDatabase m_assetDatabase;
 
+    AssetBrowserPanel
+        m_assetBrowserPanel;
+
+    AnimationClipEditorPanel
+        m_animationClipEditorPanel;
+    
+    std::wstring
+        m_selectedAssetPath;
+
     Mode m_mode = Mode::Edit;
+
+    bool m_selectAnimationTabRequested =
+        false;
 
     bool m_initialized = false;
 };
