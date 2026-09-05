@@ -52,6 +52,8 @@ bool EditorSystem::Initialize(
 
     m_tilesetEditorPanel.Close();
 
+    m_tilePalettePanel.Close();
+
     m_selectedAssetPath.clear();
 
     m_selectedEntityHandle =
@@ -87,6 +89,8 @@ void EditorSystem::Shutdown()
     m_animationClipEditorPanel.Close();
 
     m_tilesetEditorPanel.Close();
+
+    m_tilePalettePanel.Close();
 
     m_assetBrowserPanel.Reset();
 
@@ -162,7 +166,8 @@ void EditorSystem::Draw(
 void EditorSystem::EnterPlayMode()
 {
     if (!m_initialized ||
-        m_mode == Mode::Play)
+        m_mode ==
+        Mode::Play)
     {
         return;
     }
@@ -174,7 +179,8 @@ void EditorSystem::EnterPlayMode()
 void EditorSystem::StopPlayMode()
 {
     if (!m_initialized ||
-        m_mode == Mode::Edit)
+        m_mode ==
+        Mode::Edit)
     {
         return;
     }
@@ -252,7 +258,8 @@ bool EditorSystem::
 HasSelectedEntity() const noexcept
 {
     return
-        m_selectedEntityHandle.IsValid();
+        m_selectedEntityHandle.
+        IsValid();
 }
 
 bool EditorSystem::
@@ -513,6 +520,24 @@ DrawWorkspaceTabs(
 
     m_selectTilesetTabRequested =
         false;
+
+    //
+    // Tile Palette
+    //
+
+    if (ImGui::BeginTabItem(
+        "Tile Palette"
+    ))
+    {
+        m_tilePalettePanel.
+            DrawContents(
+                m_assetDatabase,
+                m_selectedAssetPath,
+                engine.GetResourceManager()
+            );
+
+        ImGui::EndTabItem();
+    }
 
     //
     // Hierarchy

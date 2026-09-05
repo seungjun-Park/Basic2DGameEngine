@@ -5,8 +5,9 @@
 #include "Engine/Editor/AnimationClipEditorPanel.h"
 #include "Engine/Editor/AssetBrowserPanel.h"
 #include "Engine/Editor/AssetDatabase.h"
-#include "Engine/Editor/SceneHierarchyPanel.h"
 #include "Engine/Editor/InspectorPanel.h"
+#include "Engine/Editor/SceneHierarchyPanel.h"
+#include "Engine/Editor/TilePalettePanel.h"
 #include "Engine/Editor/TilesetEditorPanel.h"
 
 #include "Engine/Scene/EntityHandle.h"
@@ -108,7 +109,8 @@ private:
     std::unique_ptr<ProjectSettingsPanel>
         m_projectSettingsPanel;
 
-    AssetDatabase m_assetDatabase;
+    AssetDatabase
+        m_assetDatabase;
 
     AssetBrowserPanel
         m_assetBrowserPanel;
@@ -125,13 +127,17 @@ private:
     TilesetEditorPanel
         m_tilesetEditorPanel;
 
+    TilePalettePanel
+        m_tilePalettePanel;
+
     std::wstring
         m_selectedAssetPath;
 
     EntityHandle
         m_selectedEntityHandle{};
 
-    Mode m_mode = Mode::Edit;
+    Mode m_mode =
+        Mode::Edit;
 
     bool m_selectAnimationTabRequested =
         false;
@@ -139,5 +145,6 @@ private:
     bool m_selectTilesetTabRequested =
         false;
 
-    bool m_initialized = false;
+    bool m_initialized =
+        false;
 };
