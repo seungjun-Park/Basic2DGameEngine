@@ -4,12 +4,17 @@
 
 #include "Engine/Audio/AudioPlaybackHandle.h"
 #include "Engine/Event/EventBus.h"
+
+#include "Engine/Scene/IPlayModeSnapshotTarget.h"
 #include "Engine/Scene/ISceneDocumentTarget.h"
 #include "Engine/Scene/Scene.h"
+
 #include "Engine/Serialization/SceneData.h"
+
 #include "Engine/Tile/ITileMapRuntimeTarget.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -33,7 +38,8 @@ class AudioClip;
 class GameScene :
     public Scene,
     public ITileMapRuntimeTarget,
-    public ISceneDocumentTarget
+    public ISceneDocumentTarget,
+    public IPlayModeSnapshotTarget
 {
 public:
     explicit GameScene(
@@ -79,6 +85,17 @@ public:
         const std::wstring& path
     ) override;
 
+    bool CapturePlaySnapshot() override;
+
+    bool RestorePlaySnapshot() override;
+
+    void DiscardPlaySnapshot()
+        noexcept override;
+
+    [[nodiscard]]
+    bool HasPlaySnapshot()
+        const noexcept override;
+
     [[nodiscard]]
     bool IsUsingTileMap(
         const std::wstring& path
@@ -104,6 +121,10 @@ private:
 
     bool LoadSerializedEntities(
         const std::wstring& path
+    );
+
+    bool RestoreEntitiesFromSnapshot(
+        const SceneData& snapshot
     );
 
     bool InitializeGameplayAudio();
@@ -190,4 +211,7 @@ private:
 
     std::vector<SerializedAnimationBinding>
         m_animationBindings;
+
+    std::optional<SceneData>
+        m_playSnapshot;
 };

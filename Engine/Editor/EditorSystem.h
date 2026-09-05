@@ -56,8 +56,13 @@ public:
         Engine& engine
     );
 
-    void EnterPlayMode();
-    void StopPlayMode();
+    bool EnterPlayMode(
+        Engine& engine
+    );
+
+    bool StopPlayMode(
+        Engine& engine
+    );
 
     void ClearEntitySelection() noexcept;
 
@@ -100,7 +105,9 @@ public:
     bool IsInitialized() const noexcept;
 
 private:
-    void DrawToolbar();
+    void DrawToolbar(
+        Engine& engine
+    );
 
     void DrawSceneDocumentControls(
         Engine& engine
@@ -163,6 +170,12 @@ private:
         false;
 
     bool m_lastSceneLoadFailed =
+        false;
+
+    bool m_lastPlaySnapshotCaptureFailed =
+        false;
+
+    bool m_lastPlaySnapshotRestoreFailed =
         false;
 
     bool m_selectAnimationTabRequested =

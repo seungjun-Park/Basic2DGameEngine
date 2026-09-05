@@ -5,6 +5,7 @@
 
 #include "Engine/GUI/EngineGui.h"
 
+#include "Engine/Scene/IPlayModeSnapshotTarget.h"
 #include "Engine/Scene/ISceneDocumentTarget.h"
 #include "Engine/Scene/Scene.h"
 
@@ -49,13 +50,6 @@ bool EditorSystem::Initialize(
             projectSettingsPanel
         );
 
-    //
-    // At Initialize time draft == startup config,
-    // so this is the correct initial Scene document
-    // identity even if the Project Settings draft is
-    // changed later.
-    //
-
     m_activeSceneDocumentPath =
         m_projectSettingsPanel->
         GetDraftConfig().
@@ -92,6 +86,12 @@ bool EditorSystem::Initialize(
         false;
 
     m_lastSceneLoadFailed =
+        false;
+
+    m_lastPlaySnapshotCaptureFailed =
+        false;
+
+    m_lastPlaySnapshotRestoreFailed =
         false;
 
     m_selectAnimationTabRequested =
@@ -155,6 +155,12 @@ void EditorSystem::Shutdown()
     m_lastSceneLoadFailed =
         false;
 
+    m_lastPlaySnapshotCaptureFailed =
+        false;
+
+    m_lastPlaySnapshotRestoreFailed =
+        false;
+
     m_selectAnimationTabRequested =
         false;
 
@@ -210,7 +216,9 @@ void EditorSystem::Draw(
         return;
     }
 
-    DrawToolbar();
+    DrawToolbar(
+        engine
+    );
 
     ImGui::Separator();
 
@@ -227,30 +235,131 @@ void EditorSystem::Draw(
     ImGui::End();
 }
 
-void EditorSystem::EnterPlayMode()
+bool EditorSystem::EnterPlayMode(
+    Engine& engine
+)
 {
     if (!m_initialized ||
-        m_mode ==
-        Mode::Play)
+        m_mode !=
+        Mode::Edit)
     {
-        return;
+        return false;
+    }
+
+    m_lastPlaySnapshotCaptureFailed =
+        false;
+
+    m_lastPlaySnapshotRestoreFailed =
+        false;
+
+    Scene* scene =
+        engine.GetScene();
+
+    IPlayModeSnapshotTarget*
+        snapshotTarget =
+        dynamic_cast<
+        IPlayModeSnapshotTarget*
+        >(
+            scene
+            );
+
+    if (!snapshotTarget)
+    {
+        m_lastPlaySnapshotCaptureFailed =
+            true;
+
+        return false;
+    }
+
+    if (snapshotTarget->
+        HasPlaySnapshot())
+    {
+        m_lastPlaySnapshotCaptureFailed =
+            true;
+
+        return false;
+    }
+
+    if (!snapshotTarget->
+        CapturePlaySnapshot())
+    {
+        m_lastPlaySnapshotCaptureFailed =
+            true;
+
+        return false;
     }
 
     m_mode =
         Mode::Play;
+
+    return true;
 }
 
-void EditorSystem::StopPlayMode()
+bool EditorSystem::StopPlayMode(
+    Engine& engine
+)
 {
     if (!m_initialized ||
-        m_mode ==
-        Mode::Edit)
+        m_mode !=
+        Mode::Play)
     {
-        return;
+        return false;
+    }
+
+    m_lastPlaySnapshotRestoreFailed =
+        false;
+
+    Scene* scene =
+        engine.GetScene();
+
+    IPlayModeSnapshotTarget*
+        snapshotTarget =
+        dynamic_cast<
+        IPlayModeSnapshotTarget*
+        >(
+            scene
+            );
+
+    if (!snapshotTarget ||
+        !snapshotTarget->
+        HasPlaySnapshot())
+    {
+        m_lastPlaySnapshotRestoreFailed =
+            true;
+
+        return false;
+    }
+
+    if (!snapshotTarget->
+        RestorePlaySnapshot())
+    {
+        //
+        // Do not claim that we returned to
+        // Edit Mode when restoration failed.
+        //
+        // Snapshot remains owned by Scene and
+        // Stop may be attempted again.
+        //
+
+        m_lastPlaySnapshotRestoreFailed =
+            true;
+
+        ClearEntitySelection();
+
+        return false;
     }
 
     m_mode =
         Mode::Edit;
+
+    //
+    // Restore recreates entities, therefore every
+    // pre-Stop EntityHandle selection is stale.
+    //
+
+    ClearEntitySelection();
+
+    return true;
 }
 
 void EditorSystem::
@@ -349,16 +458,23 @@ IsInitialized() const noexcept
         m_initialized;
 }
 
-void EditorSystem::DrawToolbar()
+void EditorSystem::DrawToolbar(
+    Engine& engine
+)
 {
     if (m_mode ==
         Mode::Edit)
     {
-        if (ImGui::Button(
-            "Play"
-        ))
+        const bool playRequested =
+            ImGui::Button(
+                "Play"
+            );
+
+        if (playRequested)
         {
-            EnterPlayMode();
+            EnterPlayMode(
+                engine
+            );
         }
 
         ImGui::SameLine();
@@ -369,17 +485,38 @@ void EditorSystem::DrawToolbar()
     }
     else
     {
-        if (ImGui::Button(
-            "Stop"
-        ))
+        const bool stopRequested =
+            ImGui::Button(
+                "Stop"
+            );
+
+        if (stopRequested)
         {
-            StopPlayMode();
+            StopPlayMode(
+                engine
+            );
         }
 
         ImGui::SameLine();
 
         ImGui::Text(
             "Play Mode"
+        );
+    }
+
+    if (m_lastPlaySnapshotCaptureFailed)
+    {
+        ImGui::TextDisabled(
+            "Play failed: the Edit Mode "
+            "snapshot could not be captured."
+        );
+    }
+
+    if (m_lastPlaySnapshotRestoreFailed)
+    {
+        ImGui::TextDisabled(
+            "Stop failed: the Play snapshot "
+            "could not be restored."
         );
     }
 }
@@ -432,11 +569,6 @@ DrawSceneDocumentControls(
         m_sceneDirty &&
         !m_activeSceneDocumentPath.empty();
 
-    //
-    // Do not silently discard dirty Scene state
-    // when loading another Scene asset.
-    //
-
     const bool loadSelectedAvailable =
         editMode &&
         sceneDocumentTarget &&
@@ -464,7 +596,8 @@ DrawSceneDocumentControls(
             "| TileMap: Modified"
         );
     }
-    else if (m_tileMapEditorPanel.IsOpen())
+    else if (
+        m_tileMapEditorPanel.IsOpen())
     {
         ImGui::SameLine();
 
@@ -472,10 +605,6 @@ DrawSceneDocumentControls(
             "| TileMap: Saved"
         );
     }
-
-    //
-    // Save Scene
-    //
 
     ImGui::BeginDisabled(
         !saveAvailable
@@ -487,10 +616,6 @@ DrawSceneDocumentControls(
         );
 
     ImGui::EndDisabled();
-
-    //
-    // Revert Scene
-    //
 
     ImGui::SameLine();
 
@@ -505,10 +630,6 @@ DrawSceneDocumentControls(
 
     ImGui::EndDisabled();
 
-    //
-    // Load selected Scene
-    //
-
     ImGui::SameLine();
 
     ImGui::BeginDisabled(
@@ -521,10 +642,6 @@ DrawSceneDocumentControls(
         );
 
     ImGui::EndDisabled();
-
-    //
-    // Execute only after scopes close.
-    //
 
     if (saveRequested &&
         sceneDocumentTarget)
@@ -604,11 +721,6 @@ DrawSceneDocumentControls(
                 false;
 
             ClearEntitySelection();
-
-            //
-            // A different Scene may reference an
-            // entirely different TileMap.
-            //
 
             m_tileMapEditorPanel.Close();
 
