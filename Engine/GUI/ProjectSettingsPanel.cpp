@@ -291,12 +291,8 @@ ProjectSettingsPanel(
     SyncTextBuffers();
 }
 
-void ProjectSettingsPanel::Draw()
+void ProjectSettingsPanel::DrawContents()
 {
-    ImGui::Begin(
-        "Project Settings"
-    );
-
     if (IsDirty())
     {
         ImGui::Text(
@@ -638,8 +634,6 @@ void ProjectSettingsPanel::Draw()
             "Save failed."
         );
     }
-
-    ImGui::End();
 }
 
 const ProjectConfig&

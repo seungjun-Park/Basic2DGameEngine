@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AssetDatabase.h"
+#include "Engine/Editor/AssetDatabase.h"
 #include "Engine/GUI/ProjectSettingsPanel.h"
 
 #include <cstdint>
@@ -41,6 +41,7 @@ public:
     void Shutdown();
 
     void Draw();
+
     void EnterPlayMode();
     void StopPlayMode();
 
@@ -50,6 +51,7 @@ public:
     [[nodiscard]]
     const ProjectConfig&
         GetProjectSettingsDraftConfig() const;
+
     [[nodiscard]]
     AssetDatabase&
         GetAssetDatabase() noexcept;
@@ -68,7 +70,8 @@ public:
     bool IsInitialized() const noexcept;
 
 private:
-    void DrawModeControls();
+    void DrawToolbar();
+    void DrawWorkspaceTabs();
 
 private:
     std::unique_ptr<ProjectSettingsPanel>
@@ -77,5 +80,6 @@ private:
     AssetDatabase m_assetDatabase;
 
     Mode m_mode = Mode::Edit;
+
     bool m_initialized = false;
 };

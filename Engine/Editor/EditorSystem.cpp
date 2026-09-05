@@ -67,12 +67,28 @@ void EditorSystem::Draw()
         return;
     }
 
-    DrawModeControls();
+    ImGui::SetNextWindowSize(
+        ImVec2(
+            720.0f,
+            620.0f
+        ),
+        ImGuiCond_FirstUseEver
+    );
 
-    if (m_projectSettingsPanel)
+    if (!ImGui::Begin(
+        "Editor"))
     {
-        m_projectSettingsPanel->Draw();
+        ImGui::End();
+        return;
     }
+
+    DrawToolbar();
+
+    ImGui::Separator();
+
+    DrawWorkspaceTabs();
+
+    ImGui::End();
 }
 
 void EditorSystem::EnterPlayMode()
@@ -126,49 +142,77 @@ const noexcept
     return m_assetDatabase;
 }
 
-bool EditorSystem::IsEditMode() const noexcept
+bool EditorSystem::IsEditMode()
+const noexcept
 {
-    return m_mode == Mode::Edit;
+    return
+        m_mode == Mode::Edit;
 }
 
-bool EditorSystem::IsPlayMode() const noexcept
+bool EditorSystem::IsPlayMode()
+const noexcept
 {
-    return m_mode == Mode::Play;
+    return
+        m_mode == Mode::Play;
 }
 
-bool EditorSystem::IsInitialized() const noexcept
+bool EditorSystem::IsInitialized()
+const noexcept
 {
     return m_initialized;
 }
 
-void EditorSystem::DrawModeControls()
+void EditorSystem::DrawToolbar()
 {
-    if (!ImGui::Begin("Editor"))
-    {
-        ImGui::End();
-        return;
-    }
-
     if (m_mode == Mode::Edit)
     {
-        ImGui::TextUnformatted(
-            "Mode: Edit");
-
-        if (ImGui::Button("Play"))
+        if (ImGui::Button(
+            "Play"))
         {
             EnterPlayMode();
         }
+
+        ImGui::SameLine();
+
+        ImGui::TextDisabled(
+            "Edit Mode"
+        );
     }
     else
     {
-        ImGui::TextUnformatted(
-            "Mode: Play");
-
-        if (ImGui::Button("Stop"))
+        if (ImGui::Button(
+            "Stop"))
         {
             StopPlayMode();
         }
+
+        ImGui::SameLine();
+
+        ImGui::Text(
+            "Play Mode"
+        );
+    }
+}
+
+void EditorSystem::DrawWorkspaceTabs()
+{
+    if (!ImGui::BeginTabBar(
+        "##EditorWorkspaceTabs"))
+    {
+        return;
     }
 
-    ImGui::End();
+    if (ImGui::BeginTabItem(
+        "Project Settings"))
+    {
+        if (m_projectSettingsPanel)
+        {
+            m_projectSettingsPanel->
+                DrawContents();
+        }
+
+        ImGui::EndTabItem();
+    }
+
+    ImGui::EndTabBar();
 }

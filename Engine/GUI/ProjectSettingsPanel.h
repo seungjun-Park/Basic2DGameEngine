@@ -13,7 +13,7 @@ public:
         const std::wstring& configPath
     );
 
-    void Draw();
+    void DrawContents();
 
     const ProjectConfig&
         GetDraftConfig() const;
