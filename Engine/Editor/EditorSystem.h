@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 
+class Engine;
 class ProjectConfig;
 
 class EditorSystem
@@ -40,7 +41,7 @@ public:
 
     void Shutdown();
 
-    void Draw();
+    void Draw(Engine& engine);
 
     void EnterPlayMode();
     void StopPlayMode();
@@ -71,7 +72,8 @@ public:
 
 private:
     void DrawToolbar();
-    void DrawWorkspaceTabs();
+    void DrawWorkspaceTabs(
+        Engine& engine);
 
 private:
     std::unique_ptr<ProjectSettingsPanel>

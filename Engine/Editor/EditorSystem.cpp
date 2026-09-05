@@ -1,6 +1,9 @@
 #include "EditorSystem.h"
 
 #include "Engine/Core/ProjectConfig.h"
+#include "Engine/Core/Engine.h"
+#include "Engine/GUI/EngineGui.h"
+#include "Engine/Scene/Scene.h"
 
 #include <imgui.h>
 
@@ -60,7 +63,8 @@ void EditorSystem::Shutdown()
     m_initialized = false;
 }
 
-void EditorSystem::Draw()
+void EditorSystem::Draw(
+    Engine& engine)
 {
     if (!m_initialized)
     {
@@ -70,10 +74,8 @@ void EditorSystem::Draw()
     ImGui::SetNextWindowSize(
         ImVec2(
             720.0f,
-            620.0f
-        ),
-        ImGuiCond_FirstUseEver
-    );
+            620.0f),
+        ImGuiCond_FirstUseEver);
 
     if (!ImGui::Begin(
         "Editor"))
@@ -86,7 +88,8 @@ void EditorSystem::Draw()
 
     ImGui::Separator();
 
-    DrawWorkspaceTabs();
+    DrawWorkspaceTabs(
+        engine);
 
     ImGui::End();
 }
@@ -194,7 +197,9 @@ void EditorSystem::DrawToolbar()
     }
 }
 
-void EditorSystem::DrawWorkspaceTabs()
+void EditorSystem::
+DrawWorkspaceTabs(
+    Engine& engine)
 {
     if (!ImGui::BeginTabBar(
         "##EditorWorkspaceTabs"))
@@ -209,6 +214,37 @@ void EditorSystem::DrawWorkspaceTabs()
         {
             m_projectSettingsPanel->
                 DrawContents();
+        }
+
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem(
+        "Audio"))
+    {
+        EngineGui::
+            DrawAudioSettingsContents(
+                engine.
+                GetAudioSystem());
+
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem(
+        "TileMap"))
+    {
+        Scene* scene =
+            engine.GetScene();
+
+        if (scene)
+        {
+            scene->
+                DrawGuiContents();
+        }
+        else
+        {
+            ImGui::TextDisabled(
+                "No active scene.");
         }
 
         ImGui::EndTabItem();

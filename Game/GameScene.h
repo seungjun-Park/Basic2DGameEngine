@@ -57,7 +57,7 @@ public:
         DebugRenderer& debugRenderer
     ) override;
 
-    void DrawGui() override;
+    void DrawGuiContents() override;
 
     bool SaveSerializedEntities(
         const std::wstring& path

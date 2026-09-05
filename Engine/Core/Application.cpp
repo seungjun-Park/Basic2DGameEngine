@@ -240,7 +240,7 @@ int Application::Run(
 
         if (m_engine->IsGuiVisible())
         {
-            editorSystem.Draw();
+            editorSystem.Draw(*m_engine);
         }
 
         ApplyLiveProjectSettings(

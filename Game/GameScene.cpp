@@ -25,6 +25,8 @@
 #include "Engine/GUI/EngineGui.h"
 #include "Engine/Debug/DebugLog.h"
 
+#include <imgui.h>
+
 #include <optional>
 #include <utility>
 
@@ -353,18 +355,22 @@ void GameScene::DebugRender(
     }
 }
 
-void GameScene::DrawGui()
+void GameScene::DrawGuiContents()
 {
     if (!m_tileMap ||
         !m_tileMapRenderer)
     {
+        ImGui::TextDisabled(
+            "TileMap is unavailable.");
+
         return;
     }
 
-    EngineGui::DrawTileMapSettings(
-        *m_tileMap,
-        *m_tileMapRenderer,
-        m_tileMapCollider.get());
+    EngineGui::
+        DrawTileMapSettingsContents(
+            *m_tileMap,
+            *m_tileMapRenderer,
+            m_tileMapCollider.get());
 }
 
 bool GameScene::SaveSerializedEntities(

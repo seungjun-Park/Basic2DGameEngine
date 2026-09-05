@@ -16,7 +16,6 @@
 #include "Engine/Event/EventBus.h"
 #include "Engine/Audio/AudioSystem.h"
 #include "Engine/GUI/GuiSystem.h"
-#include "Engine/GUI/EngineGui.h"
 
 #include <algorithm>
 
@@ -461,20 +460,6 @@ void Engine::Render(
         if (m_guiSystem &&
             m_guiSystem->IsInitialized())
         {
-            if (m_showGui)
-            {
-                if (m_audioSystem)
-                {
-                    EngineGui::DrawAudioSettings(
-                        *m_audioSystem);
-                }
-
-                if (m_scene)
-                {
-                    m_scene->DrawGui();
-                }
-            }
-
             m_guiSystem->Render();
         }
     }
@@ -793,6 +778,18 @@ Engine::GetResourceManager()
 float Engine::GetInterpolationAlpha() const
 {
     return m_interpolationAlpha;
+}
+
+Scene* Engine::GetScene()
+noexcept
+{
+    return m_scene.get();
+}
+
+const Scene* Engine::GetScene()
+const noexcept
+{
+    return m_scene.get();
 }
 
 Camera& Engine::GetCamera()

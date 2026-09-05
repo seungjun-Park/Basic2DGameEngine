@@ -8,10 +8,10 @@ class TileMapCollider;
 
 namespace EngineGui
 {
-    void DrawAudioSettings(
+    void DrawAudioSettingsContents(
         AudioSystem& audioSystem);
 
-    void DrawTileMapSettings(
+    void DrawTileMapSettingsContents(
         const TileMap& tileMap,
         TileMapRenderer& renderer,
         const TileMapCollider* collider);

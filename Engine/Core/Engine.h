@@ -65,6 +65,10 @@ public:
     );
 
     float GetInterpolationAlpha() const;
+    Scene* GetScene() noexcept;
+    const Scene*
+        GetScene() const noexcept;
+
     ResourceManager& GetResourceManager();
     Camera& GetCamera();
     PhysicsSystem&

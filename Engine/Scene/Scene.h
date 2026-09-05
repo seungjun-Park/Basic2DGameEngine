@@ -49,7 +49,7 @@ public:
         DebugRenderer& debugRenderer
     );
 
-    virtual void DrawGui()
+    virtual void DrawGuiContents()
     {
     }
 
