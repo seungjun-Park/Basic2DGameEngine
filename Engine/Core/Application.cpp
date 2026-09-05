@@ -99,7 +99,9 @@ int Application::Run(
         );
 
     if (!editorSystem.Initialize(
-        std::move(projectSettingsPanel)))
+        std::move(
+            projectSettingsPanel),
+        projectConfig.assetRoot))
     {
         return -1;
     }

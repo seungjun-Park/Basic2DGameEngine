@@ -15,7 +15,8 @@ EditorSystem::~EditorSystem()
 
 bool EditorSystem::Initialize(
     std::unique_ptr<ProjectSettingsPanel>
-    projectSettingsPanel)
+    projectSettingsPanel,
+    const std::wstring& assetRoot)
 {
     if (m_initialized)
     {
@@ -27,8 +28,16 @@ bool EditorSystem::Initialize(
         return false;
     }
 
+    if (!m_assetDatabase.Initialize(
+        assetRoot))
+    {
+        return false;
+    }
+
     m_projectSettingsPanel =
-        std::move(projectSettingsPanel);
+        std::move(
+            projectSettingsPanel
+        );
 
     m_mode = Mode::Edit;
     m_initialized = true;
@@ -44,6 +53,8 @@ void EditorSystem::Shutdown()
     }
 
     m_projectSettingsPanel.reset();
+
+    m_assetDatabase.Shutdown();
 
     m_mode = Mode::Edit;
     m_initialized = false;
@@ -99,6 +110,20 @@ GetProjectSettingsDraftConfig() const
     return
         m_projectSettingsPanel->
         GetDraftConfig();
+}
+
+AssetDatabase&
+EditorSystem::GetAssetDatabase()
+noexcept
+{
+    return m_assetDatabase;
+}
+
+const AssetDatabase&
+EditorSystem::GetAssetDatabase()
+const noexcept
+{
+    return m_assetDatabase;
 }
 
 bool EditorSystem::IsEditMode() const noexcept

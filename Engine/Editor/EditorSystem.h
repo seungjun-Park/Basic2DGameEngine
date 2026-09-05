@@ -1,9 +1,11 @@
 #pragma once
 
+#include "AssetDatabase.h"
+#include "Engine/GUI/ProjectSettingsPanel.h"
+
 #include <cstdint>
 #include <memory>
-
-#include "Engine/GUI/ProjectSettingsPanel.h"
+#include <string>
 
 class ProjectConfig;
 
@@ -33,7 +35,8 @@ public:
 
     bool Initialize(
         std::unique_ptr<ProjectSettingsPanel>
-        projectSettingsPanel);
+        projectSettingsPanel,
+        const std::wstring& assetRoot);
 
     void Shutdown();
 
@@ -47,6 +50,13 @@ public:
     [[nodiscard]]
     const ProjectConfig&
         GetProjectSettingsDraftConfig() const;
+    [[nodiscard]]
+    AssetDatabase&
+        GetAssetDatabase() noexcept;
+
+    [[nodiscard]]
+    const AssetDatabase&
+        GetAssetDatabase() const noexcept;
 
     [[nodiscard]]
     bool IsEditMode() const noexcept;
@@ -64,7 +74,8 @@ private:
     std::unique_ptr<ProjectSettingsPanel>
         m_projectSettingsPanel;
 
-    Mode m_mode = Mode::Edit;
+    AssetDatabase m_assetDatabase;
 
+    Mode m_mode = Mode::Edit;
     bool m_initialized = false;
 };
