@@ -1,8 +1,10 @@
 #include "EditorSystem.h"
 
-#include "Engine/Core/ProjectConfig.h"
 #include "Engine/Core/Engine.h"
+#include "Engine/Core/ProjectConfig.h"
+
 #include "Engine/GUI/EngineGui.h"
+
 #include "Engine/Scene/Scene.h"
 
 #include <imgui.h>
@@ -55,7 +57,8 @@ bool EditorSystem::Initialize(
     m_selectedEntityHandle =
         EntityHandle{};
 
-    m_mode = Mode::Edit;
+    m_mode =
+        Mode::Edit;
 
     m_selectAnimationTabRequested =
         false;
@@ -63,7 +66,8 @@ bool EditorSystem::Initialize(
     m_selectTilesetTabRequested =
         false;
 
-    m_initialized = true;
+    m_initialized =
+        true;
 
     return true;
 }
@@ -90,7 +94,8 @@ void EditorSystem::Shutdown()
 
     m_assetDatabase.Shutdown();
 
-    m_mode = Mode::Edit;
+    m_mode =
+        Mode::Edit;
 
     m_selectAnimationTabRequested =
         false;
@@ -98,7 +103,8 @@ void EditorSystem::Shutdown()
     m_selectTilesetTabRequested =
         false;
 
-    m_initialized = false;
+    m_initialized =
+        false;
 }
 
 void EditorSystem::Draw(
@@ -112,14 +118,6 @@ void EditorSystem::Draw(
 
     Scene* scene =
         engine.GetScene();
-
-    //
-    // Persistent selection validity check.
-    //
-    // Hierarchy tab이 열려 있지 않아도
-    // logically dead Entity를 selection state로
-    // 유지하지 않는다.
-    //
 
     if (!scene)
     {
@@ -169,7 +167,8 @@ void EditorSystem::EnterPlayMode()
         return;
     }
 
-    m_mode = Mode::Play;
+    m_mode =
+        Mode::Play;
 }
 
 void EditorSystem::StopPlayMode()
@@ -180,7 +179,8 @@ void EditorSystem::StopPlayMode()
         return;
     }
 
-    m_mode = Mode::Edit;
+    m_mode =
+        Mode::Edit;
 }
 
 void EditorSystem::
@@ -191,14 +191,17 @@ ClearEntitySelection() noexcept
 }
 
 EditorSystem::Mode
-EditorSystem::GetMode() const noexcept
+EditorSystem::GetMode()
+const noexcept
 {
-    return m_mode;
+    return
+        m_mode;
 }
 
 const ProjectConfig&
 EditorSystem::
-GetProjectSettingsDraftConfig() const
+GetProjectSettingsDraftConfig()
+const
 {
     return
         m_projectSettingsPanel->
@@ -206,32 +209,27 @@ GetProjectSettingsDraftConfig() const
 }
 
 AssetDatabase&
-EditorSystem::GetAssetDatabase()
-noexcept
+EditorSystem::
+GetAssetDatabase() noexcept
 {
-    return m_assetDatabase;
+    return
+        m_assetDatabase;
 }
 
 const AssetDatabase&
-EditorSystem::GetAssetDatabase()
-const noexcept
+EditorSystem::
+GetAssetDatabase() const noexcept
 {
-    return m_assetDatabase;
+    return
+        m_assetDatabase;
 }
 
 const std::wstring&
 EditorSystem::
-GetSelectedAssetPath()
-const noexcept
+GetSelectedAssetPath() const noexcept
 {
-    return m_selectedAssetPath;
-}
-
-EntityHandle
-EditorSystem::
-GetSelectedEntityHandle() const noexcept
-{
-    return m_selectedEntityHandle;
+    return
+        m_selectedAssetPath;
 }
 
 bool EditorSystem::
@@ -241,6 +239,15 @@ HasSelectedAsset() const noexcept
         !m_selectedAssetPath.empty();
 }
 
+EntityHandle
+EditorSystem::
+GetSelectedEntityHandle()
+const noexcept
+{
+    return
+        m_selectedEntityHandle;
+}
+
 bool EditorSystem::
 HasSelectedEntity() const noexcept
 {
@@ -248,32 +255,37 @@ HasSelectedEntity() const noexcept
         m_selectedEntityHandle.IsValid();
 }
 
-bool EditorSystem::IsEditMode()
-const noexcept
+bool EditorSystem::
+IsEditMode() const noexcept
 {
     return
-        m_mode == Mode::Edit;
+        m_mode ==
+        Mode::Edit;
 }
 
-bool EditorSystem::IsPlayMode()
-const noexcept
+bool EditorSystem::
+IsPlayMode() const noexcept
 {
     return
-        m_mode == Mode::Play;
+        m_mode ==
+        Mode::Play;
 }
 
-bool EditorSystem::IsInitialized()
-const noexcept
+bool EditorSystem::
+IsInitialized() const noexcept
 {
-    return m_initialized;
+    return
+        m_initialized;
 }
 
 void EditorSystem::DrawToolbar()
 {
-    if (m_mode == Mode::Edit)
+    if (m_mode ==
+        Mode::Edit)
     {
         if (ImGui::Button(
-            "Play"))
+            "Play"
+        ))
         {
             EnterPlayMode();
         }
@@ -287,7 +299,8 @@ void EditorSystem::DrawToolbar()
     else
     {
         if (ImGui::Button(
-            "Stop"))
+            "Stop"
+        ))
         {
             StopPlayMode();
         }
@@ -379,6 +392,20 @@ DrawWorkspaceTabs(
                             true;
                     }
                 }
+                else if (
+                    asset->type ==
+                    AssetType::Tileset)
+                {
+                    if (m_tilesetEditorPanel.
+                        Open(
+                            asset->path,
+                            engine.GetResourceManager()
+                        ))
+                    {
+                        m_selectTilesetTabRequested =
+                            true;
+                    }
+                }
             }
         }
 
@@ -389,7 +416,8 @@ DrawWorkspaceTabs(
     // Animation
     //
 
-    ImGuiTabItemFlags animationTabFlags =
+    ImGuiTabItemFlags
+        animationTabFlags =
         ImGuiTabItemFlags_None;
 
     if (m_selectAnimationTabRequested)
@@ -406,8 +434,7 @@ DrawWorkspaceTabs(
     {
         m_animationClipEditorPanel.
             DrawContents(
-                engine.
-                GetResourceManager()
+                engine.GetResourceManager()
             );
 
         ImGui::EndTabItem();
@@ -433,7 +460,7 @@ DrawWorkspaceTabs(
     }
 
     //
-    // TileMap
+    // Runtime TileMap
     //
 
     if (ImGui::BeginTabItem(
@@ -458,7 +485,12 @@ DrawWorkspaceTabs(
         ImGui::EndTabItem();
     }
 
-    ImGuiTabItemFlags tilesetTabFlags =
+    //
+    // Tileset
+    //
+
+    ImGuiTabItemFlags
+        tilesetTabFlags =
         ImGuiTabItemFlags_None;
 
     if (m_selectTilesetTabRequested)
@@ -532,13 +564,14 @@ DrawWorkspaceTabs(
 
         if (entity)
         {
-            m_inspectorPanel.DrawContents(
-                *entity,
-                m_assetDatabase,
-                m_selectedAssetPath,
-                engine.GetResourceManager(),
-                IsEditMode()
-            );
+            m_inspectorPanel.
+                DrawContents(
+                    *entity,
+                    m_assetDatabase,
+                    m_selectedAssetPath,
+                    engine.GetResourceManager(),
+                    IsEditMode()
+                );
         }
         else
         {

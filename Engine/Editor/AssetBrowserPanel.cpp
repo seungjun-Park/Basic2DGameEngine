@@ -3,6 +3,7 @@
 #include <Windows.h>
 
 #include <limits>
+#include <string>
 
 AssetBrowserPanel::
 AssetBrowserPanel() = default;
@@ -12,28 +13,34 @@ AssetBrowserPanel::
 
 bool AssetBrowserPanel::DrawContents(
     AssetDatabase& assetDatabase,
-    std::wstring& selectedAssetPath)
+    std::wstring& selectedAssetPath
+)
 {
-    bool openRequested = false;
+    bool openRequested =
+        false;
 
     //
     // Toolbar
     //
 
     if (ImGui::Button(
-        "Refresh"))
+        "Refresh"
+    ))
     {
         if (!assetDatabase.Refresh())
         {
-            m_lastRefreshFailed = true;
+            m_lastRefreshFailed =
+                true;
         }
         else
         {
-            m_lastRefreshFailed = false;
+            m_lastRefreshFailed =
+                false;
 
             if (!selectedAssetPath.empty() &&
                 !assetDatabase.FindAsset(
-                    selectedAssetPath))
+                    selectedAssetPath
+                ))
             {
                 selectedAssetPath.clear();
             }
@@ -44,21 +51,23 @@ bool AssetBrowserPanel::DrawContents(
 
     ImGui::TextDisabled(
         "%zu assets",
-        assetDatabase.GetAssetCount());
+        assetDatabase.GetAssetCount()
+    );
 
     if (m_lastRefreshFailed)
     {
         ImGui::SameLine();
 
         ImGui::TextDisabled(
-            "Refresh failed.");
+            "Refresh failed."
+        );
     }
 
     ImGui::SameLine();
 
     ImGui::TextDisabled(
-        "Double-click an Animation Clip "
-        "or Texture to open it."
+        "Double-click an Animation Clip, "
+        "Texture, or Tileset to open it."
     );
 
     //
@@ -67,7 +76,8 @@ bool AssetBrowserPanel::DrawContents(
 
     m_searchFilter.Draw(
         "Search",
-        300.0f);
+        300.0f
+    );
 
     ImGui::Separator();
 
@@ -75,7 +85,8 @@ bool AssetBrowserPanel::DrawContents(
     // Asset table
     //
 
-    constexpr ImGuiTableFlags tableFlags =
+    constexpr ImGuiTableFlags
+        tableFlags =
         ImGuiTableFlags_BordersInnerV |
         ImGuiTableFlags_RowBg |
         ImGuiTableFlags_Resizable |
@@ -84,27 +95,32 @@ bool AssetBrowserPanel::DrawContents(
     if (ImGui::BeginTable(
         "##AssetBrowserTable",
         4,
-        tableFlags))
+        tableFlags
+    ))
     {
         ImGui::TableSetupColumn(
             "Name",
             ImGuiTableColumnFlags_WidthStretch,
-            0.30f);
+            0.30f
+        );
 
         ImGui::TableSetupColumn(
             "Type",
             ImGuiTableColumnFlags_WidthFixed,
-            120.0f);
+            120.0f
+        );
 
         ImGui::TableSetupColumn(
             "Path",
             ImGuiTableColumnFlags_WidthStretch,
-            0.55f);
+            0.55f
+        );
 
         ImGui::TableSetupColumn(
             "Size",
             ImGuiTableColumnFlags_WidthFixed,
-            90.0f);
+            90.0f
+        );
 
         ImGui::TableHeadersRow();
 
@@ -120,32 +136,39 @@ bool AssetBrowserPanel::DrawContents(
 
             const std::string fileName =
                 ToUtf8(
-                    asset.fileName);
+                    asset.fileName
+                );
 
             const std::string path =
                 ToUtf8(
-                    asset.path);
+                    asset.path
+                );
 
             if (!m_searchFilter.PassFilter(
-                fileName.c_str()) &&
+                fileName.c_str()
+            ) &&
                 !m_searchFilter.PassFilter(
-                    path.c_str()))
+                    path.c_str()
+                ))
             {
                 continue;
             }
 
             ImGui::PushID(
                 static_cast<int>(
-                    index));
+                    index
+                    )
+            );
 
             ImGui::TableNextRow();
 
             //
-            // Name / Selection / Open
+            // Name / Selection
             //
 
             ImGui::TableSetColumnIndex(
-                0);
+                0
+            );
 
             const bool selected =
                 selectedAssetPath ==
@@ -159,19 +182,26 @@ bool AssetBrowserPanel::DrawContents(
             if (ImGui::Selectable(
                 displayName,
                 selected,
-                ImGuiSelectableFlags_AllowDoubleClick))
+                ImGuiSelectableFlags_AllowDoubleClick
+            ))
             {
                 selectedAssetPath =
                     asset.path;
             }
 
-            if ((asset.type ==
+            const bool editorSupported =
+                asset.type ==
                 AssetType::AnimationClip ||
                 asset.type ==
-                AssetType::Texture) &&
+                AssetType::Texture ||
+                asset.type ==
+                AssetType::Tileset;
+
+            if (editorSupported &&
                 ImGui::IsItemHovered() &&
                 ImGui::IsMouseDoubleClicked(
-                    ImGuiMouseButton_Left))
+                    ImGuiMouseButton_Left
+                ))
             {
                 selectedAssetPath =
                     asset.path;
@@ -185,33 +215,40 @@ bool AssetBrowserPanel::DrawContents(
             //
 
             ImGui::TableSetColumnIndex(
-                1);
+                1
+            );
 
             ImGui::TextUnformatted(
                 GetAssetTypeLabel(
-                    asset.type));
+                    asset.type
+                )
+            );
 
             //
             // Path
             //
 
             ImGui::TableSetColumnIndex(
-                2);
+                2
+            );
 
             ImGui::TextUnformatted(
                 path.empty()
                 ? "<invalid path>"
-                : path.c_str());
+                : path.c_str()
+            );
 
             //
             // Size
             //
 
             ImGui::TableSetColumnIndex(
-                3);
+                3
+            );
 
             DrawFileSize(
-                asset.fileSize);
+                asset.fileSize
+            );
 
             ImGui::PopID();
         }
@@ -226,44 +263,52 @@ bool AssetBrowserPanel::DrawContents(
     ImGui::Separator();
 
     ImGui::TextUnformatted(
-        "Selected Asset");
+        "Selected Asset"
+    );
 
     if (selectedAssetPath.empty())
     {
         ImGui::TextDisabled(
-            "None");
+            "None"
+        );
 
         return openRequested;
     }
 
     const AssetRecord* selectedAsset =
         assetDatabase.FindAsset(
-            selectedAssetPath);
+            selectedAssetPath
+        );
 
     if (!selectedAsset)
     {
         selectedAssetPath.clear();
 
         ImGui::TextDisabled(
-            "Selected asset no longer exists.");
+            "Selected asset no longer exists."
+        );
 
         return openRequested;
     }
 
     const std::string selectedPath =
         ToUtf8(
-            selectedAsset->path);
+            selectedAsset->path
+        );
 
     ImGui::TextWrapped(
         "%s",
         selectedPath.empty()
         ? "<invalid path>"
-        : selectedPath.c_str());
+        : selectedPath.c_str()
+    );
 
     ImGui::Text(
         "Type: %s",
         GetAssetTypeLabel(
-            selectedAsset->type));
+            selectedAsset->type
+        )
+    );
 
     if (selectedAsset->type ==
         AssetType::AnimationClip)
@@ -288,6 +333,18 @@ bool AssetBrowserPanel::DrawContents(
                 true;
         }
     }
+    else if (
+        selectedAsset->type ==
+        AssetType::Tileset)
+    {
+        if (ImGui::Button(
+            "Open Tileset"
+        ))
+        {
+            openRequested =
+                true;
+        }
+    }
     else
     {
         ImGui::TextDisabled(
@@ -303,12 +360,14 @@ void AssetBrowserPanel::Reset()
 {
     m_searchFilter.Clear();
 
-    m_lastRefreshFailed = false;
+    m_lastRefreshFailed =
+        false;
 }
 
 const char*
 AssetBrowserPanel::GetAssetTypeLabel(
-    AssetType type) noexcept
+    AssetType type
+) noexcept
 {
     switch (type)
     {
@@ -341,7 +400,8 @@ AssetBrowserPanel::GetAssetTypeLabel(
 
 std::string
 AssetBrowserPanel::ToUtf8(
-    const std::wstring& value)
+    const std::wstring& value
+)
 {
     if (value.empty())
     {
@@ -350,7 +410,8 @@ AssetBrowserPanel::ToUtf8(
 
     if (value.size() >
         static_cast<std::size_t>(
-            std::numeric_limits<int>::max()))
+            std::numeric_limits<int>::max()
+            ))
     {
         return {};
     }
@@ -379,7 +440,8 @@ AssetBrowserPanel::ToUtf8(
 
     std::string result(
         static_cast<std::size_t>(
-            requiredSize),
+            requiredSize
+            ),
         '\0'
     );
 
@@ -405,7 +467,8 @@ AssetBrowserPanel::ToUtf8(
 }
 
 void AssetBrowserPanel::DrawFileSize(
-    std::uintmax_t fileSize)
+    std::uintmax_t fileSize
+)
 {
     constexpr double bytesPerKilobyte =
         1024.0;
@@ -446,7 +509,8 @@ void AssetBrowserPanel::DrawFileSize(
     ImGui::Text(
         "%llu B",
         static_cast<
-        unsigned long long>(
+        unsigned long long
+        >(
             fileSize
             )
     );

@@ -2,6 +2,7 @@
 
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Resource/ResourceManager.h"
+#include "Engine/Serialization/TilesetSerializer.h"
 
 #include <Windows.h>
 
@@ -10,14 +11,286 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <string>
+
+namespace
+{
+    bool CalculateRequiredExtent(
+        int tileSize,
+        int count,
+        int margin,
+        int spacing,
+        std::int64_t& outExtent
+    ) noexcept
+    {
+        outExtent = 0;
+
+        if (tileSize <= 0 ||
+            count <= 0 ||
+            margin < 0 ||
+            spacing < 0)
+        {
+            return false;
+        }
+
+        const std::int64_t tile =
+            static_cast<std::int64_t>(
+                tileSize
+                );
+
+        const std::int64_t itemCount =
+            static_cast<std::int64_t>(
+                count
+                );
+
+        const std::int64_t outerMargin =
+            static_cast<std::int64_t>(
+                margin
+                );
+
+        const std::int64_t gap =
+            static_cast<std::int64_t>(
+                spacing
+                );
+
+        const std::int64_t stride =
+            tile +
+            gap;
+
+        const std::int64_t stepCount =
+            itemCount -
+            1;
+
+        constexpr std::int64_t maximum =
+            std::numeric_limits<
+            std::int64_t
+            >::max();
+
+        if (outerMargin >
+            maximum - tile)
+        {
+            return false;
+        }
+
+        const std::int64_t base =
+            outerMargin +
+            tile;
+
+        if (stepCount > 0)
+        {
+            if (stride <= 0)
+            {
+                return false;
+            }
+
+            if (stepCount >
+                (maximum - base) /
+                stride)
+            {
+                return false;
+            }
+        }
+
+        outExtent =
+            base +
+            stepCount *
+            stride;
+
+        return true;
+    }
+}
+
+bool TilesetEditorPanel::Open(
+    const std::wstring& path,
+    ResourceManager& resourceManager
+)
+{
+    m_lastOpenFailed =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
+    if (path.empty())
+    {
+        m_lastOpenFailed =
+            true;
+
+        return false;
+    }
+
+    if (m_isOpen &&
+        m_hasSavedDocument &&
+        path == m_documentPath)
+    {
+        return true;
+    }
+
+    if (m_isOpen &&
+        IsDirty())
+    {
+        m_openBlockedByDirty =
+            true;
+
+        return false;
+    }
+
+    auto data =
+        TilesetSerializer::Load(
+            path
+        );
+
+    if (!data)
+    {
+        m_lastOpenFailed =
+            true;
+
+        return false;
+    }
+
+    Texture* texture =
+        resourceManager.LoadTexture(
+            data->texturePath
+        );
+
+    if (!texture)
+    {
+        m_lastOpenFailed =
+            true;
+
+        return false;
+    }
+
+    if (texture->GetWidth() <= 0 ||
+        texture->GetHeight() <= 0)
+    {
+        m_lastOpenFailed =
+            true;
+
+        return false;
+    }
+
+    std::int64_t requiredWidth = 0;
+    std::int64_t requiredHeight = 0;
+
+    if (!CalculateRequiredExtent(
+        data->tileWidth,
+        data->columns,
+        data->margin,
+        data->spacing,
+        requiredWidth
+    ) ||
+        !CalculateRequiredExtent(
+            data->tileHeight,
+            data->rows,
+            data->margin,
+            data->spacing,
+            requiredHeight
+        ))
+    {
+        m_lastOpenFailed =
+            true;
+
+        return false;
+    }
+
+    if (requiredWidth >
+        static_cast<std::int64_t>(
+            texture->GetWidth()
+            ) ||
+        requiredHeight >
+        static_cast<std::int64_t>(
+            texture->GetHeight()
+            ))
+    {
+        m_lastOpenFailed =
+            true;
+
+        return false;
+    }
+
+    m_savedData =
+        *data;
+
+    m_draftData =
+        *data;
+
+    m_documentPath =
+        path;
+
+    m_texture =
+        texture;
+
+    m_previewScale =
+        1.0f;
+
+    m_fitPreviewToWidth =
+        true;
+
+    m_isOpen =
+        true;
+
+    m_hasSavedDocument =
+        true;
+
+    m_lastOpenFailed =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
+    m_lastSaveSucceeded =
+        false;
+
+    m_lastSaveFailed =
+        false;
+
+    m_textEncodingError =
+        false;
+
+    SyncDocumentPathBuffer();
+
+    return true;
+}
 
 bool TilesetEditorPanel::OpenTexture(
     const std::wstring& texturePath,
     ResourceManager& resourceManager
 )
 {
+    m_lastOpenFailed =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
     if (texturePath.empty())
     {
+        m_lastOpenFailed =
+            true;
+
+        return false;
+    }
+
+    //
+    // 현재 열려 있는 동일한 unsaved slicer를
+    // 다시 요청한 경우 draft를 폐기하지 않고
+    // 기존 document를 그대로 사용한다.
+    //
+    if (m_isOpen &&
+        !m_hasSavedDocument &&
+        m_draftData.texturePath ==
+        texturePath)
+    {
+        return true;
+    }
+
+    if (m_isOpen &&
+        IsDirty())
+    {
+        m_openBlockedByDirty =
+            true;
+
         return false;
     }
 
@@ -28,89 +301,400 @@ bool TilesetEditorPanel::OpenTexture(
 
     if (!texture)
     {
+        m_lastOpenFailed =
+            true;
+
         return false;
     }
 
     if (texture->GetWidth() <= 0 ||
         texture->GetHeight() <= 0)
     {
+        m_lastOpenFailed =
+            true;
+
         return false;
     }
 
-    //
-    // Commit only after the texture has
-    // been fully validated.
-    //
+    TilesetData data{};
 
-    m_texturePath =
+    data.texturePath =
         texturePath;
+
+    data.tileWidth =
+        texture->GetWidth();
+
+    data.tileHeight =
+        texture->GetHeight();
+
+    data.columns = 1;
+    data.rows = 1;
+
+    data.margin = 0;
+    data.spacing = 0;
+
+    m_savedData =
+        data;
+
+    m_draftData =
+        data;
+
+    m_documentPath.clear();
+
+    m_documentPathBuffer.fill(
+        '\0'
+    );
 
     m_texture =
         texture;
 
-    //
-    // Start from a valid 1x1 tileset.
-    // The user can then enter the actual
-    // slicing dimensions.
-    //
+    m_previewScale =
+        1.0f;
 
-    m_tileWidth =
-        texture->GetWidth();
+    m_fitPreviewToWidth =
+        true;
 
-    m_tileHeight =
-        texture->GetHeight();
+    m_isOpen =
+        true;
 
-    m_margin = 0;
-    m_spacing = 0;
+    m_hasSavedDocument =
+        false;
 
-    m_previewScale = 1.0f;
+    m_lastOpenFailed =
+        false;
 
-    m_fitPreviewToWidth = true;
+    m_openBlockedByDirty =
+        false;
 
-    RecalculateGrid();
+    m_lastSaveSucceeded =
+        false;
+
+    m_lastSaveFailed =
+        false;
+
+    m_textEncodingError =
+        false;
 
     return true;
 }
 
-void TilesetEditorPanel::Close() noexcept
+void TilesetEditorPanel::Close()
+noexcept
 {
-    m_texturePath.clear();
+    m_savedData =
+        TilesetData{};
+
+    m_draftData =
+        TilesetData{};
+
+    m_documentPath.clear();
+
+    m_documentPathBuffer.fill(
+        '\0'
+    );
 
     m_texture =
         nullptr;
 
-    m_tileWidth = 0;
-    m_tileHeight = 0;
+    m_previewScale =
+        1.0f;
 
-    m_columns = 0;
-    m_rows = 0;
+    m_fitPreviewToWidth =
+        true;
 
-    m_margin = 0;
-    m_spacing = 0;
+    m_isOpen =
+        false;
 
-    m_previewScale = 1.0f;
+    m_hasSavedDocument =
+        false;
 
-    m_fitPreviewToWidth = true;
+    m_lastOpenFailed =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
+    m_lastSaveSucceeded =
+        false;
+
+    m_lastSaveFailed =
+        false;
+
+    m_textEncodingError =
+        false;
 }
 
 void TilesetEditorPanel::DrawContents()
 {
-    if (!m_texture)
+    if (!m_isOpen ||
+        !m_texture)
     {
         ImGui::TextDisabled(
-            "No texture is open."
+            "No Tileset document is open."
         );
 
         ImGui::TextDisabled(
-            "Open a Texture from the Assets tab."
+            "Open a Texture or Tileset "
+            "from the Assets tab."
         );
 
         return;
     }
 
+    //
+    // Document
+    //
+
+    ImGui::TextUnformatted(
+        "Tileset Document"
+    );
+
+    if (!m_hasSavedDocument)
+    {
+        ImGui::TextDisabled(
+            "New Tileset"
+        );
+
+        if (ImGui::InputText(
+            "Tileset Path",
+            m_documentPathBuffer.data(),
+            m_documentPathBuffer.size()
+        ))
+        {
+            const std::string utf8
+            {
+                m_documentPathBuffer.data()
+            };
+
+            if (utf8.empty())
+            {
+                m_documentPath.clear();
+
+                m_textEncodingError =
+                    false;
+            }
+            else
+            {
+                const std::wstring wide =
+                    Utf8ToWide(
+                        utf8
+                    );
+
+                if (!wide.empty())
+                {
+                    m_documentPath =
+                        wide;
+
+                    m_textEncodingError =
+                        false;
+                }
+                else
+                {
+                    m_textEncodingError =
+                        true;
+                }
+            }
+        }
+    }
+    else
+    {
+        const std::string documentPath =
+            ToUtf8(
+                m_documentPath
+            );
+
+        ImGui::TextWrapped(
+            "%s",
+            documentPath.empty()
+            ? "<invalid document path>"
+            : documentPath.c_str()
+        );
+    }
+
+    //
+    // Frame-local snapshots.
+    //
+    // 이후 Save/Revert가 state를 변경하더라도
+    // BeginDisabled/EndDisabled 조건은 동일 frame
+    // 안에서 변하지 않는다.
+    //
+
+    const bool dirty =
+        IsDirty();
+
+    const bool draftValid =
+        TilesetSerializer::Validate(
+            m_draftData
+        ) &&
+        ValidateDraftAgainstTexture();
+
+    const bool saveAvailable =
+        dirty &&
+        draftValid &&
+        !m_documentPath.empty() &&
+        !m_textEncodingError;
+
+    if (!m_hasSavedDocument)
+    {
+        ImGui::Text(
+            "Status: Unsaved"
+        );
+    }
+    else if (dirty)
+    {
+        ImGui::Text(
+            "Status: Modified"
+        );
+    }
+    else
+    {
+        ImGui::TextDisabled(
+            "Status: Saved"
+        );
+    }
+
+    if (m_textEncodingError)
+    {
+        ImGui::TextDisabled(
+            "Document path encoding is invalid."
+        );
+    }
+
+    if (!draftValid)
+    {
+        ImGui::TextDisabled(
+            "Current Tileset layout is invalid."
+        );
+    }
+
+    if (m_openBlockedByDirty)
+    {
+        ImGui::TextDisabled(
+            "Open blocked: save, revert, "
+            "or discard this document first."
+        );
+    }
+
+    if (m_lastOpenFailed)
+    {
+        ImGui::TextDisabled(
+            "The requested Tileset "
+            "could not be opened."
+        );
+    }
+
+    if (m_lastSaveSucceeded)
+    {
+        ImGui::TextDisabled(
+            "Save succeeded."
+        );
+    }
+
+    if (m_lastSaveFailed)
+    {
+        ImGui::TextDisabled(
+            "Save failed."
+        );
+    }
+
+    //
+    // Save
+    //
+
+    ImGui::BeginDisabled(
+        !saveAvailable
+    );
+
+    const bool saveRequested =
+        ImGui::Button(
+            "Save"
+        );
+
+    ImGui::EndDisabled();
+
+    if (saveRequested)
+    {
+        Save();
+    }
+
+    //
+    // Revert
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        !m_hasSavedDocument ||
+        !dirty
+    );
+
+    const bool revertRequested =
+        ImGui::Button(
+            "Revert"
+        );
+
+    ImGui::EndDisabled();
+
+    if (revertRequested)
+    {
+        Revert();
+    }
+
+    //
+    // Close
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        dirty
+    );
+
+    const bool closeRequested =
+        ImGui::Button(
+            "Close"
+        );
+
+    ImGui::EndDisabled();
+
+    if (closeRequested)
+    {
+        Close();
+        return;
+    }
+
+    //
+    // Dirty document explicit discard.
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        !dirty
+    );
+
+    const bool discardRequested =
+        ImGui::Button(
+            "Discard & Close"
+        );
+
+    ImGui::EndDisabled();
+
+    if (discardRequested)
+    {
+        Close();
+        return;
+    }
+
+    ImGui::Separator();
+
+    //
+    // Texture information
+    //
+
     const std::string texturePath =
         ToUtf8(
-            m_texturePath
+            m_draftData.texturePath
         );
 
     ImGui::TextUnformatted(
@@ -120,7 +704,7 @@ void TilesetEditorPanel::DrawContents()
     ImGui::TextWrapped(
         "%s",
         texturePath.empty()
-        ? "<invalid path>"
+        ? "<invalid texture path>"
         : texturePath.c_str()
     );
 
@@ -136,91 +720,102 @@ void TilesetEditorPanel::DrawContents()
     // Slice configuration
     //
 
-    bool layoutChanged = false;
+    bool layoutChanged =
+        false;
 
     if (ImGui::InputInt(
         "Tile Width",
-        &m_tileWidth
+        &m_draftData.tileWidth
     ))
     {
-        m_tileWidth =
+        m_draftData.tileWidth =
             std::max(
                 1,
-                m_tileWidth
+                m_draftData.tileWidth
             );
 
-        layoutChanged = true;
+        layoutChanged =
+            true;
     }
 
     if (ImGui::InputInt(
         "Tile Height",
-        &m_tileHeight
+        &m_draftData.tileHeight
     ))
     {
-        m_tileHeight =
+        m_draftData.tileHeight =
             std::max(
                 1,
-                m_tileHeight
+                m_draftData.tileHeight
             );
 
-        layoutChanged = true;
+        layoutChanged =
+            true;
     }
 
     if (ImGui::InputInt(
         "Margin",
-        &m_margin
+        &m_draftData.margin
     ))
     {
-        m_margin =
+        m_draftData.margin =
             std::max(
                 0,
-                m_margin
+                m_draftData.margin
             );
 
-        layoutChanged = true;
+        layoutChanged =
+            true;
     }
 
     if (ImGui::InputInt(
         "Spacing",
-        &m_spacing
+        &m_draftData.spacing
     ))
     {
-        m_spacing =
+        m_draftData.spacing =
             std::max(
                 0,
-                m_spacing
+                m_draftData.spacing
             );
 
-        layoutChanged = true;
+        layoutChanged =
+            true;
     }
 
     if (layoutChanged)
     {
         RecalculateGrid();
+
+        m_lastSaveSucceeded =
+            false;
+
+        m_lastSaveFailed =
+            false;
     }
 
     ImGui::Separator();
 
     ImGui::Text(
         "Columns: %d",
-        m_columns
+        m_draftData.columns
     );
 
     ImGui::SameLine();
 
     ImGui::Text(
         "Rows: %d",
-        m_rows
+        m_draftData.rows
     );
 
     ImGui::SameLine();
 
     const std::int64_t tileCount =
         static_cast<std::int64_t>(
-            m_columns
+            m_draftData.columns
             ) *
         static_cast<std::int64_t>(
-            m_rows
+            m_draftData.rows
             );
 
     ImGui::Text(
@@ -230,12 +825,12 @@ void TilesetEditorPanel::DrawContents()
             )
     );
 
-    if (m_columns <= 0 ||
-        m_rows <= 0)
+    if (m_draftData.columns <= 0 ||
+        m_draftData.rows <= 0)
     {
         ImGui::TextDisabled(
-            "The current slice does not fit "
-            "inside the texture."
+            "The current slice does not "
+            "fit inside the texture."
         );
     }
 
@@ -269,26 +864,151 @@ void TilesetEditorPanel::DrawContents()
     DrawPreview();
 }
 
-bool TilesetEditorPanel::IsOpen() const noexcept
+bool TilesetEditorPanel::IsOpen()
+const noexcept
 {
     return
-        m_texture != nullptr;
+        m_isOpen;
 }
 
-void TilesetEditorPanel::RecalculateGrid() noexcept
+bool TilesetEditorPanel::IsDirty()
+const noexcept
 {
-    m_columns = 0;
-    m_rows = 0;
+    if (!m_isOpen)
+    {
+        return false;
+    }
+
+    if (!m_hasSavedDocument)
+    {
+        return true;
+    }
+
+    return
+        !AreEqual(
+            m_savedData,
+            m_draftData
+        );
+}
+
+const std::wstring&
+TilesetEditorPanel::
+GetDocumentPath() const noexcept
+{
+    return
+        m_documentPath;
+}
+
+bool TilesetEditorPanel::Save()
+{
+    m_lastSaveSucceeded =
+        false;
+
+    m_lastSaveFailed =
+        false;
+
+    if (!m_isOpen ||
+        !m_texture ||
+        m_documentPath.empty() ||
+        m_textEncodingError)
+    {
+        m_lastSaveFailed =
+            true;
+
+        return false;
+    }
+
+    if (!TilesetSerializer::Validate(
+        m_draftData
+    ) ||
+        !ValidateDraftAgainstTexture())
+    {
+        m_lastSaveFailed =
+            true;
+
+        return false;
+    }
+
+    if (!TilesetSerializer::Save(
+        m_draftData,
+        m_documentPath
+    ))
+    {
+        m_lastSaveFailed =
+            true;
+
+        return false;
+    }
+
+    m_savedData =
+        m_draftData;
+
+    m_hasSavedDocument =
+        true;
+
+    m_lastSaveSucceeded =
+        true;
+
+    m_lastSaveFailed =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
+    SyncDocumentPathBuffer();
+
+    return true;
+}
+
+void TilesetEditorPanel::Revert()
+{
+    if (!m_isOpen ||
+        !m_hasSavedDocument)
+    {
+        return;
+    }
+
+    //
+    // 중요:
+    // RecalculateGrid()를 호출하지 않는다.
+    //
+    // Serialized Tileset은 texture 전체를
+    // 모두 사용하는 것이 아니라 일부 columns/rows만
+    // 명시적으로 사용하는 것도 유효하므로 savedData를
+    // 정확히 복원해야 한다.
+    //
+
+    m_draftData =
+        m_savedData;
+
+    m_lastSaveSucceeded =
+        false;
+
+    m_lastSaveFailed =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
+    m_textEncodingError =
+        false;
+}
+
+void TilesetEditorPanel::
+RecalculateGrid() noexcept
+{
+    m_draftData.columns = 0;
+    m_draftData.rows = 0;
 
     if (!m_texture)
     {
         return;
     }
 
-    if (m_tileWidth <= 0 ||
-        m_tileHeight <= 0 ||
-        m_margin < 0 ||
-        m_spacing < 0)
+    if (m_draftData.tileWidth <= 0 ||
+        m_draftData.tileHeight <= 0 ||
+        m_draftData.margin < 0 ||
+        m_draftData.spacing < 0)
     {
         return;
     }
@@ -305,42 +1025,27 @@ void TilesetEditorPanel::RecalculateGrid() noexcept
 
     const std::int64_t tileWidth =
         static_cast<std::int64_t>(
-            m_tileWidth
+            m_draftData.tileWidth
             );
 
     const std::int64_t tileHeight =
         static_cast<std::int64_t>(
-            m_tileHeight
+            m_draftData.tileHeight
             );
 
     const std::int64_t margin =
         static_cast<std::int64_t>(
-            m_margin
+            m_draftData.margin
             );
 
     const std::int64_t spacing =
         static_cast<std::int64_t>(
-            m_spacing
+            m_draftData.spacing
             );
 
-    //
-    // Match the current Tileset runtime
-    // layout contract exactly:
-    //
-    // pixelX =
-    //     margin +
-    //     column * (tileWidth + spacing)
-    //
-    // There is no required trailing margin.
-    //
-
     if (textureWidth <
-        margin + tileWidth)
-    {
-        return;
-    }
-
-    if (textureHeight <
+        margin + tileWidth ||
+        textureHeight <
         margin + tileHeight)
     {
         return;
@@ -396,12 +1101,12 @@ void TilesetEditorPanel::RecalculateGrid() noexcept
         return;
     }
 
-    m_columns =
+    m_draftData.columns =
         static_cast<int>(
             columns
             );
 
-    m_rows =
+    m_draftData.rows =
         static_cast<int>(
             rows
             );
@@ -483,8 +1188,8 @@ void TilesetEditorPanel::DrawPreview()
         displaySize
     );
 
-    if (m_columns <= 0 ||
-        m_rows <= 0)
+    if (m_draftData.columns <= 0 ||
+        m_draftData.rows <= 0)
     {
         return;
     }
@@ -532,27 +1237,28 @@ void TilesetEditorPanel::DrawPreview()
 
     const float strideX =
         static_cast<float>(
-            m_tileWidth +
-            m_spacing
+            m_draftData.tileWidth +
+            m_draftData.spacing
             );
 
     const float strideY =
         static_cast<float>(
-            m_tileHeight +
-            m_spacing
+            m_draftData.tileHeight +
+            m_draftData.spacing
             );
 
     for (int row = 0;
-        row < m_rows;
+        row < m_draftData.rows;
         ++row)
     {
         for (int column = 0;
-            column < m_columns;
+            column <
+            m_draftData.columns;
             ++column)
         {
             const float pixelX =
                 static_cast<float>(
-                    m_margin
+                    m_draftData.margin
                     ) +
                 static_cast<float>(
                     column
@@ -561,7 +1267,7 @@ void TilesetEditorPanel::DrawPreview()
 
             const float pixelY =
                 static_cast<float>(
-                    m_margin
+                    m_draftData.margin
                     ) +
                 static_cast<float>(
                     row
@@ -583,13 +1289,13 @@ void TilesetEditorPanel::DrawPreview()
             {
                 tileMin.x +
                     static_cast<float>(
-                        m_tileWidth
+                        m_draftData.tileWidth
                     ) *
                     scaleX,
 
                 tileMin.y +
                     static_cast<float>(
-                        m_tileHeight
+                        m_draftData.tileHeight
                     ) *
                     scaleY
             };
@@ -603,8 +1309,127 @@ void TilesetEditorPanel::DrawPreview()
     }
 }
 
-std::string
-TilesetEditorPanel::ToUtf8(
+bool TilesetEditorPanel::
+ValidateDraftAgainstTexture()
+const noexcept
+{
+    if (!m_texture ||
+        !TilesetSerializer::Validate(
+            m_draftData
+        ))
+    {
+        return false;
+    }
+
+    std::int64_t requiredWidth = 0;
+    std::int64_t requiredHeight = 0;
+
+    if (!CalculateRequiredExtent(
+        m_draftData.tileWidth,
+        m_draftData.columns,
+        m_draftData.margin,
+        m_draftData.spacing,
+        requiredWidth
+    ) ||
+        !CalculateRequiredExtent(
+            m_draftData.tileHeight,
+            m_draftData.rows,
+            m_draftData.margin,
+            m_draftData.spacing,
+            requiredHeight
+        ))
+    {
+        return false;
+    }
+
+    return
+        requiredWidth <=
+        static_cast<std::int64_t>(
+            m_texture->GetWidth()
+            ) &&
+        requiredHeight <=
+        static_cast<std::int64_t>(
+            m_texture->GetHeight()
+            );
+}
+
+void TilesetEditorPanel::
+SyncDocumentPathBuffer()
+{
+    m_documentPathBuffer.fill(
+        '\0'
+    );
+
+    if (m_documentPath.empty())
+    {
+        return;
+    }
+
+    const std::string utf8 =
+        ToUtf8(
+            m_documentPath
+        );
+
+    if (utf8.empty())
+    {
+        m_textEncodingError =
+            true;
+
+        return;
+    }
+
+    //
+    // Saved document에서는 path buffer가
+    // editing에 사용되지 않으므로 buffer보다 긴
+    // 정상 path라는 이유로 document 자체를 invalid
+    // 처리하지 않는다.
+    //
+    if (utf8.size() >=
+        m_documentPathBuffer.size())
+    {
+        m_textEncodingError =
+            false;
+
+        return;
+    }
+
+    std::copy(
+        utf8.begin(),
+        utf8.end(),
+        m_documentPathBuffer.begin()
+    );
+
+    m_documentPathBuffer[
+        utf8.size()
+    ] = '\0';
+
+    m_textEncodingError =
+        false;
+}
+
+bool TilesetEditorPanel::AreEqual(
+    const TilesetData& lhs,
+    const TilesetData& rhs
+) noexcept
+{
+    return
+        lhs.texturePath ==
+        rhs.texturePath &&
+        lhs.tileWidth ==
+        rhs.tileWidth &&
+        lhs.tileHeight ==
+        rhs.tileHeight &&
+        lhs.columns ==
+        rhs.columns &&
+        lhs.rows ==
+        rhs.rows &&
+        lhs.margin ==
+        rhs.margin &&
+        lhs.spacing ==
+        rhs.spacing;
+}
+
+std::string TilesetEditorPanel::ToUtf8(
     const std::wstring& value
 )
 {
@@ -660,6 +1485,69 @@ TilesetEditorPanel::ToUtf8(
             requiredSize,
             nullptr,
             nullptr
+        );
+
+    if (convertedSize !=
+        requiredSize)
+    {
+        return {};
+    }
+
+    return result;
+}
+
+std::wstring TilesetEditorPanel::Utf8ToWide(
+    const std::string& value
+)
+{
+    if (value.empty())
+    {
+        return {};
+    }
+
+    if (value.size() >
+        static_cast<std::size_t>(
+            std::numeric_limits<int>::max()
+            ))
+    {
+        return {};
+    }
+
+    const int sourceLength =
+        static_cast<int>(
+            value.size()
+            );
+
+    const int requiredSize =
+        ::MultiByteToWideChar(
+            CP_UTF8,
+            MB_ERR_INVALID_CHARS,
+            value.data(),
+            sourceLength,
+            nullptr,
+            0
+        );
+
+    if (requiredSize <= 0)
+    {
+        return {};
+    }
+
+    std::wstring result(
+        static_cast<std::size_t>(
+            requiredSize
+            ),
+        L'\0'
+    );
+
+    const int convertedSize =
+        ::MultiByteToWideChar(
+            CP_UTF8,
+            MB_ERR_INVALID_CHARS,
+            value.data(),
+            sourceLength,
+            result.data(),
+            requiredSize
         );
 
     if (convertedSize !=

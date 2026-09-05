@@ -2,265 +2,202 @@
 
 #include "Tileset.h"
 
-#include "Engine/Resource/ResourceManager.h"
-#include "Engine/Graphics/Texture.h"
 #include "Engine/Debug/DebugLog.h"
-
-#include <nlohmann/json.hpp>
+#include "Engine/Graphics/Texture.h"
+#include "Engine/Resource/ResourceManager.h"
+#include "Engine/Serialization/TilesetSerializer.h"
+#include "Engine/Tile/TilesetData.h"
 
 #include <cstdint>
-#include <filesystem>
-#include <fstream>
+#include <limits>
+#include <memory>
 
+namespace
+{
+    bool CalculateRequiredExtent(
+        int tileSize,
+        int count,
+        int margin,
+        int spacing,
+        std::int64_t& outExtent
+    ) noexcept
+    {
+        outExtent = 0;
+
+        if (tileSize <= 0 ||
+            count <= 0 ||
+            margin < 0 ||
+            spacing < 0)
+        {
+            return false;
+        }
+
+        const std::int64_t tile =
+            static_cast<std::int64_t>(
+                tileSize
+                );
+
+        const std::int64_t itemCount =
+            static_cast<std::int64_t>(
+                count
+                );
+
+        const std::int64_t outerMargin =
+            static_cast<std::int64_t>(
+                margin
+                );
+
+        const std::int64_t gap =
+            static_cast<std::int64_t>(
+                spacing
+                );
+
+        const std::int64_t stride =
+            tile +
+            gap;
+
+        const std::int64_t stepCount =
+            itemCount -
+            1;
+
+        constexpr std::int64_t maximum =
+            std::numeric_limits<
+            std::int64_t
+            >::max();
+
+        if (outerMargin >
+            maximum - tile)
+        {
+            return false;
+        }
+
+        const std::int64_t base =
+            outerMargin +
+            tile;
+
+        if (stepCount > 0)
+        {
+            if (stride <= 0)
+            {
+                return false;
+            }
+
+            if (stepCount >
+                (maximum - base) /
+                stride)
+            {
+                return false;
+            }
+        }
+
+        outExtent =
+            base +
+            stepCount *
+            stride;
+
+        return true;
+    }
+}
 
 std::unique_ptr<Tileset>
 TilesetLoader::Load(
     const std::wstring& path,
-    ResourceManager& resources)
+    ResourceManager& resources
+)
 {
-    std::ifstream file
-    {
-        std::filesystem::path(
+    auto data =
+        TilesetSerializer::Load(
             path
-        )
-    };
+        );
 
-    if (!file.is_open())
+    if (!data)
+    {
+        return nullptr;
+    }
+
+    Texture* texture =
+        resources.LoadTexture(
+            data->texturePath
+        );
+
+    if (!texture)
     {
         TILESET_DEBUG_LOG(
-            "Failed to open file."
+            "Failed to load Tileset texture."
         );
 
         return nullptr;
     }
 
-    try
-    {
-        nlohmann::json json;
+    std::int64_t requiredWidth = 0;
+    std::int64_t requiredHeight = 0;
 
-        file >> json;
-
-        if (!json.is_object())
-        {
-            TILESET_DEBUG_LOG(
-                "Root must be a JSON object."
-            );
-
-            return nullptr;
-        }
-
-        const std::string texturePath =
-            json.value(
-                "texture",
-                ""
-            );
-
-        const int tileWidth =
-            json.value(
-                "tileWidth",
-                0
-            );
-
-        const int tileHeight =
-            json.value(
-                "tileHeight",
-                0
-            );
-
-        const int columns =
-            json.value(
-                "columns",
-                0
-            );
-
-        const int rows =
-            json.value(
-                "rows",
-                0
-            );
-
-        const int margin =
-            json.value(
-                "margin",
-                0
-            );
-
-        const int spacing =
-            json.value(
-                "spacing",
-                0
-            );
-
-        if (texturePath.empty())
-        {
-            TILESET_DEBUG_LOG(
-                "Texture path is empty."
-            );
-
-            return nullptr;
-        }
-
-        if (tileWidth <= 0 ||
-            tileHeight <= 0)
-        {
-            TILESET_DEBUG_LOG(
-                "Invalid tile size."
-            );
-
-            return nullptr;
-        }
-
-        if (columns <= 0 ||
-            rows <= 0)
-        {
-            TILESET_DEBUG_LOG(
-                "Invalid grid size."
-            );
-
-            return nullptr;
-        }
-
-        if (margin < 0)
-        {
-            TILESET_DEBUG_LOG(
-                "Margin cannot be negative."
-            );
-
-            return nullptr;
-        }
-
-        if (spacing < 0)
-        {
-            TILESET_DEBUG_LOG(
-                "Spacing cannot be negative."
-            );
-
-            return nullptr;
-        }
-
-        const std::wstring
-            texturePathWide(
-                texturePath.begin(),
-                texturePath.end()
-            );
-
-        Texture* texture =
-            resources.LoadTexture(
-                texturePathWide
-            );
-
-        if (!texture)
-        {
-            TILESET_DEBUG_LOG(
-                "Failed to load texture."
-            );
-
-            return nullptr;
-        }
-
-        const std::int64_t
-            strideX =
-            static_cast<std::int64_t>(
-                tileWidth
-                )
-            +
-            static_cast<std::int64_t>(
-                spacing
-                );
-
-        const std::int64_t
-            strideY =
-            static_cast<std::int64_t>(
-                tileHeight
-                )
-            +
-            static_cast<std::int64_t>(
-                spacing
-                );
-
-        const std::int64_t
-            requiredWidth =
-            static_cast<std::int64_t>(
-                margin
-                )
-            +
-            static_cast<std::int64_t>(
-                columns - 1
-                )
-            *
-            strideX
-            +
-            static_cast<std::int64_t>(
-                tileWidth
-                );
-
-        const std::int64_t
-            requiredHeight =
-            static_cast<std::int64_t>(
-                margin
-                )
-            +
-            static_cast<std::int64_t>(
-                rows - 1
-                )
-            *
-            strideY
-            +
-            static_cast<std::int64_t>(
-                tileHeight
-                );
-
-        if (requiredWidth >
-            static_cast<std::int64_t>(
-                texture->GetWidth()
-                ) ||
-            requiredHeight >
-            static_cast<std::int64_t>(
-                texture->GetHeight()
-                ))
-        {
-            TILESET_DEBUG_LOG(
-                "Tileset layout exceeds "
-                "texture bounds."
-            );
-
-            return nullptr;
-        }
-
-        auto tileset =
-            std::make_unique<Tileset>();
-
-        tileset->SetTexture(
-            texture
-        );
-
-        tileset->SetTileSize(
-            tileWidth,
-            tileHeight
-        );
-
-        tileset->SetGridSize(
-            columns,
-            rows
-        );
-
-        tileset->SetMargin(
-            margin
-        );
-
-        tileset->SetSpacing(
-            spacing
-        );
-
-        return tileset;
-    }
-    catch (
-        const nlohmann::json::exception& e)
+    if (!CalculateRequiredExtent(
+        data->tileWidth,
+        data->columns,
+        data->margin,
+        data->spacing,
+        requiredWidth
+    ) ||
+        !CalculateRequiredExtent(
+            data->tileHeight,
+            data->rows,
+            data->margin,
+            data->spacing,
+            requiredHeight
+        ))
     {
         TILESET_DEBUG_LOG(
-            e.what()
+            "Tileset layout extent "
+            "calculation failed."
         );
 
         return nullptr;
     }
+
+    if (requiredWidth >
+        static_cast<std::int64_t>(
+            texture->GetWidth()
+            ) ||
+        requiredHeight >
+        static_cast<std::int64_t>(
+            texture->GetHeight()
+            ))
+    {
+        TILESET_DEBUG_LOG(
+            "Tileset layout exceeds "
+            "texture bounds."
+        );
+
+        return nullptr;
+    }
+
+    auto tileset =
+        std::make_unique<
+        Tileset
+        >();
+
+    tileset->SetTexture(
+        texture
+    );
+
+    tileset->SetTileSize(
+        data->tileWidth,
+        data->tileHeight
+    );
+
+    tileset->SetGridSize(
+        data->columns,
+        data->rows
+    );
+
+    tileset->SetMargin(
+        data->margin
+    );
+
+    tileset->SetSpacing(
+        data->spacing
+    );
+
+    return tileset;
 }

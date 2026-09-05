@@ -192,11 +192,13 @@
     <ClInclude Include="Engine\Serialization\ProjectConfigSerializer.h" />
     <ClInclude Include="Engine\Serialization\SceneData.h" />
     <ClInclude Include="Engine\Serialization\SceneSerializer.h" />
+    <ClInclude Include="Engine\Serialization\TilesetSerializer.h" />
     <ClInclude Include="Engine\Tile\TileMap.h" />
     <ClInclude Include="Engine\Tile\TileMapCollider.h" />
     <ClInclude Include="Engine\Tile\TileMapLoader.h" />
     <ClInclude Include="Engine\Tile\TileMapRenderer.h" />
     <ClInclude Include="Engine\Tile\Tileset.h" />
+    <ClInclude Include="Engine\Tile\TilesetData.h" />
     <ClInclude Include="Engine\Tile\TilesetLoader.h" />
     <ClInclude Include="Engine\Tile\TileTypes.h" />
     <ClInclude Include="Game\CharacterAnimation.h" />
@@ -246,6 +248,7 @@
     <ClCompile Include="Engine\Serialization\AnimationClipSerializer.cpp" />
     <ClCompile Include="Engine\Serialization\ProjectConfigSerializer.cpp" />
     <ClCompile Include="Engine\Serialization\SceneSerializer.cpp" />
+    <ClCompile Include="Engine\Serialization\TilesetSerializer.cpp" />
     <ClCompile Include="Engine\Tile\TileMap.cpp" />
     <ClCompile Include="Engine\Tile\TileMapCollider.cpp" />
     <ClCompile Include="Engine\Tile\TileMapLoader.cpp" />
