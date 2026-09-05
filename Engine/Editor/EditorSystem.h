@@ -7,6 +7,7 @@
 #include "Engine/Editor/AssetDatabase.h"
 #include "Engine/Editor/SceneHierarchyPanel.h"
 #include "Engine/Editor/InspectorPanel.h"
+#include "Engine/Editor/TilesetEditorPanel.h"
 
 #include "Engine/Scene/EntityHandle.h"
 
@@ -121,6 +122,9 @@ private:
     InspectorPanel
         m_inspectorPanel;
 
+    TilesetEditorPanel
+        m_tilesetEditorPanel;
+
     std::wstring
         m_selectedAssetPath;
 
@@ -130,6 +134,9 @@ private:
     Mode m_mode = Mode::Edit;
 
     bool m_selectAnimationTabRequested =
+        false;
+
+    bool m_selectTilesetTabRequested =
         false;
 
     bool m_initialized = false;

@@ -48,6 +48,8 @@ bool EditorSystem::Initialize(
 
     m_animationClipEditorPanel.Close();
 
+    m_tilesetEditorPanel.Close();
+
     m_selectedAssetPath.clear();
 
     m_selectedEntityHandle =
@@ -56,6 +58,9 @@ bool EditorSystem::Initialize(
     m_mode = Mode::Edit;
 
     m_selectAnimationTabRequested =
+        false;
+
+    m_selectTilesetTabRequested =
         false;
 
     m_initialized = true;
@@ -77,6 +82,8 @@ void EditorSystem::Shutdown()
 
     m_animationClipEditorPanel.Close();
 
+    m_tilesetEditorPanel.Close();
+
     m_assetBrowserPanel.Reset();
 
     m_projectSettingsPanel.reset();
@@ -86,6 +93,9 @@ void EditorSystem::Shutdown()
     m_mode = Mode::Edit;
 
     m_selectAnimationTabRequested =
+        false;
+
+    m_selectTilesetTabRequested =
         false;
 
     m_initialized = false;
@@ -342,17 +352,33 @@ DrawWorkspaceTabs(
                     m_selectedAssetPath
                 );
 
-            if (asset &&
-                asset->type ==
-                AssetType::AnimationClip)
+            if (asset)
             {
-                m_animationClipEditorPanel.
-                    Open(
-                        asset->path
-                    );
+                if (asset->type ==
+                    AssetType::AnimationClip)
+                {
+                    m_animationClipEditorPanel.
+                        Open(
+                            asset->path
+                        );
 
-                m_selectAnimationTabRequested =
-                    true;
+                    m_selectAnimationTabRequested =
+                        true;
+                }
+                else if (
+                    asset->type ==
+                    AssetType::Texture)
+                {
+                    if (m_tilesetEditorPanel.
+                        OpenTexture(
+                            asset->path,
+                            engine.GetResourceManager()
+                        ))
+                    {
+                        m_selectTilesetTabRequested =
+                            true;
+                    }
+                }
             }
         }
 
@@ -431,6 +457,30 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
+
+    ImGuiTabItemFlags tilesetTabFlags =
+        ImGuiTabItemFlags_None;
+
+    if (m_selectTilesetTabRequested)
+    {
+        tilesetTabFlags |=
+            ImGuiTabItemFlags_SetSelected;
+    }
+
+    if (ImGui::BeginTabItem(
+        "Tileset",
+        nullptr,
+        tilesetTabFlags
+    ))
+    {
+        m_tilesetEditorPanel.
+            DrawContents();
+
+        ImGui::EndTabItem();
+    }
+
+    m_selectTilesetTabRequested =
+        false;
 
     //
     // Hierarchy

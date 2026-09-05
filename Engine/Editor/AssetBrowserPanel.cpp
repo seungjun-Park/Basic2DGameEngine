@@ -58,7 +58,8 @@ bool AssetBrowserPanel::DrawContents(
 
     ImGui::TextDisabled(
         "Double-click an Animation Clip "
-        "to open it.");
+        "or Texture to open it."
+    );
 
     //
     // Search
@@ -164,8 +165,10 @@ bool AssetBrowserPanel::DrawContents(
                     asset.path;
             }
 
-            if (asset.type ==
-                AssetType::AnimationClip &&
+            if ((asset.type ==
+                AssetType::AnimationClip ||
+                asset.type ==
+                AssetType::Texture) &&
                 ImGui::IsItemHovered() &&
                 ImGui::IsMouseDoubleClicked(
                     ImGuiMouseButton_Left))
@@ -266,7 +269,20 @@ bool AssetBrowserPanel::DrawContents(
         AssetType::AnimationClip)
     {
         if (ImGui::Button(
-            "Open Animation Clip"))
+            "Open Animation Clip"
+        ))
+        {
+            openRequested =
+                true;
+        }
+    }
+    else if (
+        selectedAsset->type ==
+        AssetType::Texture)
+    {
+        if (ImGui::Button(
+            "Open Tileset Slicer"
+        ))
         {
             openRequested =
                 true;
@@ -276,7 +292,8 @@ bool AssetBrowserPanel::DrawContents(
     {
         ImGui::TextDisabled(
             "This asset type does not "
-            "have an editor yet.");
+            "have an editor yet."
+        );
     }
 
     return openRequested;

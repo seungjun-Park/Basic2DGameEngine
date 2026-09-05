@@ -163,6 +163,7 @@
     <ClInclude Include="Engine\Editor\EditorSystem.h" />
     <ClInclude Include="Engine\Editor\InspectorPanel.h" />
     <ClInclude Include="Engine\Editor\SceneHierarchyPanel.h" />
+    <ClInclude Include="Engine\Editor\TilesetEditorPanel.h" />
     <ClInclude Include="Engine\GUI\EngineGui.h" />
     <ClInclude Include="Engine\GUI\GuiSystem.h" />
     <ClInclude Include="Engine\GUI\ProjectSettingsPanel.h" />
@@ -225,6 +226,7 @@
     <ClCompile Include="Engine\Editor\EditorSystem.cpp" />
     <ClCompile Include="Engine\Editor\InspectorPanel.cpp" />
     <ClCompile Include="Engine\Editor\SceneHierarchyPanel.cpp" />
+    <ClCompile Include="Engine\Editor\TilesetEditorPanel.cpp" />
     <ClCompile Include="Engine\Event\EventBus.cpp" />
     <ClCompile Include="Engine\Graphics\Texture.cpp" />
     <ClCompile Include="Engine\GUI\EngineGui.cpp" />
