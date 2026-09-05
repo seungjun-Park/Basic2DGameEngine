@@ -163,6 +163,8 @@
     <ClInclude Include="Engine\Editor\EditorSystem.h" />
     <ClInclude Include="Engine\Editor\InspectorPanel.h" />
     <ClInclude Include="Engine\Editor\SceneHierarchyPanel.h" />
+    <ClInclude Include="Engine\Editor\TileMapEditorPanel.h" />
+    <ClInclude Include="Engine\Serialization\TileMapSerializer.h" />
     <ClInclude Include="Engine\Editor\TilePalettePanel.h" />
     <ClInclude Include="Engine\Editor\TilesetEditorPanel.h" />
     <ClInclude Include="Engine\GUI\EngineGui.h" />
@@ -196,6 +198,7 @@
     <ClInclude Include="Engine\Serialization\TilesetSerializer.h" />
     <ClInclude Include="Engine\Tile\TileMap.h" />
     <ClInclude Include="Engine\Tile\TileMapCollider.h" />
+    <ClInclude Include="Engine\Tile\TileMapData.h" />
     <ClInclude Include="Engine\Tile\TileMapLoader.h" />
     <ClInclude Include="Engine\Tile\TileMapRenderer.h" />
     <ClInclude Include="Engine\Tile\Tileset.h" />
@@ -229,6 +232,8 @@
     <ClCompile Include="Engine\Editor\EditorSystem.cpp" />
     <ClCompile Include="Engine\Editor\InspectorPanel.cpp" />
     <ClCompile Include="Engine\Editor\SceneHierarchyPanel.cpp" />
+    <ClCompile Include="Engine\Editor\TileMapEditorPanel.cpp" />
+    <ClCompile Include="Engine\Serialization\TileMapSerializer.cpp" />
     <ClCompile Include="Engine\Editor\TilePalettePanel.cpp" />
     <ClCompile Include="Engine\Editor\TilesetEditorPanel.cpp" />
     <ClCompile Include="Engine\Event\EventBus.cpp" />

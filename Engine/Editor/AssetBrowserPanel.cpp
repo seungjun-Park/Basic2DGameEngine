@@ -195,7 +195,9 @@ bool AssetBrowserPanel::DrawContents(
                 asset.type ==
                 AssetType::Texture ||
                 asset.type ==
-                AssetType::Tileset;
+                AssetType::Tileset ||
+                asset.type ==
+                AssetType::TileMap;
 
             if (editorSupported &&
                 ImGui::IsItemHovered() &&
@@ -339,6 +341,18 @@ bool AssetBrowserPanel::DrawContents(
     {
         if (ImGui::Button(
             "Open Tileset"
+        ))
+        {
+            openRequested =
+                true;
+        }
+    }
+    else if (
+        selectedAsset->type ==
+        AssetType::TileMap)
+    {
+        if (ImGui::Button(
+            "Open TileMap Editor"
         ))
         {
             openRequested =

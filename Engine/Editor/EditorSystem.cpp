@@ -49,10 +49,9 @@ bool EditorSystem::Initialize(
     m_assetBrowserPanel.Reset();
 
     m_animationClipEditorPanel.Close();
-
     m_tilesetEditorPanel.Close();
-
     m_tilePalettePanel.Close();
+    m_tileMapEditorPanel.Close();
 
     m_selectedAssetPath.clear();
 
@@ -66,6 +65,9 @@ bool EditorSystem::Initialize(
         false;
 
     m_selectTilesetTabRequested =
+        false;
+
+    m_selectTileMapEditorTabRequested =
         false;
 
     m_initialized =
@@ -87,10 +89,9 @@ void EditorSystem::Shutdown()
         EntityHandle{};
 
     m_animationClipEditorPanel.Close();
-
     m_tilesetEditorPanel.Close();
-
     m_tilePalettePanel.Close();
+    m_tileMapEditorPanel.Close();
 
     m_assetBrowserPanel.Reset();
 
@@ -105,6 +106,9 @@ void EditorSystem::Shutdown()
         false;
 
     m_selectTilesetTabRequested =
+        false;
+
+    m_selectTileMapEditorTabRequested =
         false;
 
     m_initialized =
@@ -413,6 +417,20 @@ DrawWorkspaceTabs(
                             true;
                     }
                 }
+                else if (
+                    asset->type ==
+                    AssetType::TileMap)
+                {
+                    if (m_tileMapEditorPanel.
+                        Open(
+                            asset->path,
+                            engine.GetResourceManager()
+                        ))
+                    {
+                        m_selectTileMapEditorTabRequested =
+                            true;
+                    }
+                }
             }
         }
 
@@ -538,6 +556,37 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
+
+    //
+    // TileMap Editor
+    //
+
+    ImGuiTabItemFlags
+        tileMapEditorTabFlags =
+        ImGuiTabItemFlags_None;
+
+    if (m_selectTileMapEditorTabRequested)
+    {
+        tileMapEditorTabFlags |=
+            ImGuiTabItemFlags_SetSelected;
+    }
+
+    if (ImGui::BeginTabItem(
+        "TileMap Editor",
+        nullptr,
+        tileMapEditorTabFlags
+    ))
+    {
+        m_tileMapEditorPanel.
+            DrawContents(
+                engine.GetResourceManager()
+            );
+
+        ImGui::EndTabItem();
+    }
+
+    m_selectTileMapEditorTabRequested =
+        false;
 
     //
     // Hierarchy

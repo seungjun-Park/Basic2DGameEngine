@@ -7,6 +7,7 @@
 #include "Engine/Editor/AssetDatabase.h"
 #include "Engine/Editor/InspectorPanel.h"
 #include "Engine/Editor/SceneHierarchyPanel.h"
+#include "Engine/Editor/TileMapEditorPanel.h"
 #include "Engine/Editor/TilePalettePanel.h"
 #include "Engine/Editor/TilesetEditorPanel.h"
 
@@ -130,6 +131,9 @@ private:
     TilePalettePanel
         m_tilePalettePanel;
 
+    TileMapEditorPanel
+        m_tileMapEditorPanel;
+
     std::wstring
         m_selectedAssetPath;
 
@@ -143,6 +147,9 @@ private:
         false;
 
     bool m_selectTilesetTabRequested =
+        false;
+
+    bool m_selectTileMapEditorTabRequested =
         false;
 
     bool m_initialized =

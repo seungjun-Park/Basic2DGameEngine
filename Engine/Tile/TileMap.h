@@ -1,35 +1,11 @@
 #pragma once
 
-#include "TileTypes.h"
+#include "Engine/Tile/TileMapData.h"
 
-#include "Engine/Renderer/RenderTypes.h"
-
-#include <string>
-#include <vector>
 #include <cstddef>
+#include <vector>
 
 class Tileset;
-
-enum class TileLayerType
-{
-    Render,
-    Collision
-};
-
-struct TileLayer
-{
-    std::string name;
-
-    TileLayerType type =
-        TileLayerType::Render;
-
-    RenderLayer renderLayer =
-        RenderLayer::World;
-
-    bool visible = true;
-
-    std::vector<TileId> tiles;
-};
 
 class TileMap
 {
