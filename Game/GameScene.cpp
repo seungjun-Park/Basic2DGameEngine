@@ -148,57 +148,6 @@ GameScene::~GameScene()
 
 void GameScene::Initialize()
 {
-    m_tileMap =
-        m_resources.LoadTileMap(
-            L"Engine/Assets/Maps/testmap.json"
-        );
-
-
-    if (!m_tileMap)
-    {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to load TileMap.\n"
-        );
-
-        return;
-    }
-
-    m_tileMapRenderer =
-        std::make_unique<
-        TileMapRenderer
-        >();
-
-    if (!m_tileMapRenderer->Build(
-        *m_tileMap))
-    {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to build TileMapRenderer.\n"
-        );
-
-        m_tileMapRenderer.reset();
-
-        return;
-    }
-
-    m_tileMapCollider =
-        std::make_unique<
-        TileMapCollider
-        >();
-
-    if (!m_tileMapCollider->Build(
-        *m_tileMap,
-        m_physics))
-    {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to build "
-            "TileMapCollider.\n"
-        );
-
-        m_tileMapCollider.reset();
-
-        return;
-    }
-
     if (!LoadSerializedEntities(
         L"Engine/Assets/Scenes/"
         L"test_scene.json"))
@@ -443,6 +392,9 @@ bool GameScene::SaveSerializedEntities(
 {
     SceneData sceneData;
 
+    sceneData.tileMapPath =
+        m_tileMapPath;
+
     sceneData.animationBindings =
         m_animationBindings;
 
@@ -686,6 +638,89 @@ bool GameScene::LoadEnemyAnimations(
     return true;
 }
 
+bool GameScene::LoadTileMap(
+    const SceneData& sceneData
+)
+{
+    if (sceneData.tileMapPath.empty())
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Scene does not "
+            "define a TileMap path.\n"
+        );
+
+        return false;
+    }
+
+    TileMap* tileMap =
+        m_resources.LoadTileMap(
+            sceneData.tileMapPath
+        );
+
+    if (!tileMap)
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to load "
+            "scene TileMap.\n"
+        );
+
+        return false;
+    }
+
+    auto renderer =
+        std::make_unique<
+        TileMapRenderer
+        >();
+
+    if (!renderer->Build(
+        *tileMap
+    ))
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to build "
+            "TileMapRenderer.\n"
+        );
+
+        return false;
+    }
+
+    auto collider =
+        std::make_unique<
+        TileMapCollider
+        >();
+
+    if (!collider->Build(
+        *tileMap,
+        m_physics
+    ))
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to build "
+            "TileMapCollider.\n"
+        );
+
+        return false;
+    }
+
+    m_tileMap =
+        tileMap;
+
+    m_tileMapPath =
+        sceneData.tileMapPath;
+
+    m_tileMapRenderer =
+        std::move(
+            renderer
+        );
+
+    m_tileMapCollider =
+        std::move(
+            collider
+        );
+
+    return true;
+}
+
 bool GameScene::LoadSerializedEntities(
     const std::wstring& path)
 {
@@ -696,6 +731,14 @@ bool GameScene::LoadSerializedEntities(
         EntityHandle{};
 
     m_animationBindings.clear();
+
+    m_tileMapCollider.reset();
+    m_tileMapRenderer.reset();
+
+    m_tileMap =
+        nullptr;
+
+    m_tileMapPath.clear();
 
     auto sceneData =
         SceneSerializer::Load(
@@ -711,6 +754,18 @@ bool GameScene::LoadSerializedEntities(
 
         return false;
     }
+
+    if (!LoadTileMap(
+        *sceneData
+    ))
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to load "
+            "scene TileMap.\n"
+        );
+
+        return false;
+    }  
 
     if (!LoadEnemyAnimations(
         *sceneData

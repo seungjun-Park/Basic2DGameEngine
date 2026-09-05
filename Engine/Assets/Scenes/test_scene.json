@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "tileMap": "",
+    "tileMap": "Engine/Assets/Maps/testmap.json",
     "animationBindings": [
         {
             "slot": "Enemy.Idle.Down",

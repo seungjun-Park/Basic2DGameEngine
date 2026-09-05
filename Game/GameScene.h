@@ -73,6 +73,10 @@ private:
         const SceneData& sceneData
     );
     
+    bool LoadTileMap(
+        const SceneData& sceneData
+    );
+
     bool LoadSerializedEntities(
         const std::wstring& path
     );
@@ -143,6 +147,9 @@ private:
 
     TileMap* m_tileMap =
         nullptr;
+
+    std::wstring
+        m_tileMapPath;
 
     std::unique_ptr<TileMapRenderer>
         m_tileMapRenderer;
