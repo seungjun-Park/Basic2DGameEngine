@@ -41,13 +41,28 @@ struct SerializedEntity
         sprite;
 };
 
+struct SerializedAnimationBinding
+{
+    std::string slot;
+
+    std::wstring clipPath;
+};
+
 struct SceneData
 {
     static constexpr std::uint32_t
-        CurrentVersion = 1;
+        LegacyVersion = 1;
+
+    static constexpr std::uint32_t
+        CurrentVersion = 2;
 
     std::uint32_t version =
         CurrentVersion;
+
+    std::wstring tileMapPath;
+
+    std::vector<SerializedAnimationBinding>
+        animationBindings;
 
     std::vector<SerializedEntity>
         entities;

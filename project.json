@@ -1,7 +1,7 @@
 {
     "debug": {
         "showCollider": true,
-        "showRuntimeStats": true
+        "showRuntimeStats": false
     },
     "fixedUpdate": {
         "hz": 60.0,
@@ -14,7 +14,7 @@
     },
     "rendering": {
         "targetFPS": 0,
-        "vsync": false
+        "vsync": true
     },
     "version": 1,
     "window": {

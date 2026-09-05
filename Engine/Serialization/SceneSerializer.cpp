@@ -10,6 +10,7 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <unordered_set>
 #include <string>
 
 namespace
@@ -251,6 +252,82 @@ bool SceneSerializer::Save(
     root["version"] =
         scene.version;
 
+    const std::string tileMapPath =
+        WideToUtf8(
+            scene.tileMapPath
+        );
+
+    if (!scene.tileMapPath.empty() &&
+        tileMapPath.empty())
+    {
+        ENGINE_DEBUG_LOG(
+            "Failed to encode TileMap path."
+        );
+
+        return false;
+    }
+
+    root["tileMap"] =
+        tileMapPath;
+
+    root["animationBindings"] =
+        nlohmann::json::array();
+
+    std::unordered_set<std::string>
+        animationSlots;
+
+    for (const SerializedAnimationBinding& binding :
+        scene.animationBindings)
+    {
+        if (binding.slot.empty() ||
+            binding.clipPath.empty())
+        {
+            ENGINE_DEBUG_LOG(
+                "Invalid animation binding."
+            );
+
+            return false;
+        }
+
+        if (!animationSlots.insert(
+            binding.slot
+        ).second)
+        {
+            ENGINE_DEBUG_LOG(
+                "Duplicate animation binding slot."
+            );
+
+            return false;
+        }
+
+        const std::string clipPath =
+            WideToUtf8(
+                binding.clipPath
+            );
+
+        if (clipPath.empty())
+        {
+            ENGINE_DEBUG_LOG(
+                "Failed to encode animation clip path."
+            );
+
+            return false;
+        }
+
+        root["animationBindings"].
+            push_back(
+                {
+                    {
+                        "slot",
+                        binding.slot
+                    },
+                    {
+                        "clip",
+                        clipPath
+                    }
+                });
+    }
+
     root["entities"] =
         nlohmann::json::array();
 
@@ -441,6 +518,8 @@ SceneSerializer::Load(
             );
 
         if (version !=
+            SceneData::LegacyVersion &&
+            version !=
             SceneData::CurrentVersion)
         {
             ENGINE_DEBUG_LOG(
@@ -472,7 +551,134 @@ SceneSerializer::Load(
             >();
 
         scene->version =
-            version;
+            SceneData::CurrentVersion;
+
+        if (version ==
+            SceneData::CurrentVersion)
+        {
+            const auto tileMapIt =
+                root.find(
+                    "tileMap"
+                );
+
+            if (tileMapIt ==
+                root.end() ||
+                !tileMapIt->is_string())
+            {
+                ENGINE_DEBUG_LOG(
+                    "TileMap path must be a string."
+                );
+
+                return nullptr;
+            }
+
+            const std::string tileMapPath =
+                tileMapIt->get<
+                std::string
+                >();
+
+            if (!tileMapPath.empty())
+            {
+                scene->tileMapPath =
+                    Utf8ToWide(
+                        tileMapPath
+                    );
+
+                if (scene->tileMapPath.empty())
+                {
+                    ENGINE_DEBUG_LOG(
+                        "Invalid TileMap path encoding."
+                    );
+
+                    return nullptr;
+                }
+            }
+
+            const auto bindingsIt =
+                root.find(
+                    "animationBindings"
+                );
+
+            if (bindingsIt ==
+                root.end() ||
+                !bindingsIt->is_array())
+            {
+                ENGINE_DEBUG_LOG(
+                    "Animation bindings must be an array."
+                );
+
+                return nullptr;
+            }
+
+            std::unordered_set<std::string>
+                animationSlots;
+
+            for (const auto& bindingJson :
+                *bindingsIt)
+            {
+                if (!bindingJson.is_object())
+                {
+                    return nullptr;
+                }
+
+                SerializedAnimationBinding
+                    binding;
+
+                binding.slot =
+                    bindingJson.value(
+                        "slot",
+                        ""
+                    );
+
+                const std::string clipPath =
+                    bindingJson.value(
+                        "clip",
+                        ""
+                    );
+
+                if (binding.slot.empty() ||
+                    clipPath.empty())
+                {
+                    ENGINE_DEBUG_LOG(
+                        "Invalid animation binding."
+                    );
+
+                    return nullptr;
+                }
+
+                if (!animationSlots.insert(
+                    binding.slot
+                ).second)
+                {
+                    ENGINE_DEBUG_LOG(
+                        "Duplicate animation binding slot."
+                    );
+
+                    return nullptr;
+                }
+
+                binding.clipPath =
+                    Utf8ToWide(
+                        clipPath
+                    );
+
+                if (binding.clipPath.empty())
+                {
+                    ENGINE_DEBUG_LOG(
+                        "Invalid animation clip path encoding."
+                    );
+
+                    return nullptr;
+                }
+
+                scene->animationBindings.
+                    emplace_back(
+                        std::move(
+                            binding
+                        )
+                    );
+            }
+        }
 
         for (const auto& entityJson :
             *entitiesIt)
