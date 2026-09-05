@@ -1,5 +1,40 @@
 {
-    "version": 1,
+    "version": 2,
+    "tileMap": "",
+    "animationBindings": [
+        {
+            "slot": "Enemy.Idle.Down",
+            "clip": "Engine/Assets/Animations/Qingxiao_idle_down.json"
+        },
+        {
+            "slot": "Enemy.Idle.Left",
+            "clip": "Engine/Assets/Animations/Qingxiao_idle_left.json"
+        },
+        {
+            "slot": "Enemy.Idle.Right",
+            "clip": "Engine/Assets/Animations/Qingxiao_idle_right.json"
+        },
+        {
+            "slot": "Enemy.Idle.Up",
+            "clip": "Engine/Assets/Animations/Qingxiao_idle_up.json"
+        },
+        {
+            "slot": "Enemy.Walk.Down",
+            "clip": "Engine/Assets/Animations/Qingxiao_walk_down.json"
+        },
+        {
+            "slot": "Enemy.Walk.Left",
+            "clip": "Engine/Assets/Animations/Qingxiao_walk_left.json"
+        },
+        {
+            "slot": "Enemy.Walk.Right",
+            "clip": "Engine/Assets/Animations/Qingxiao_walk_right.json"
+        },
+        {
+            "slot": "Enemy.Walk.Up",
+            "clip": "Engine/Assets/Animations/Qingxiao_walk_up.json"
+        }
+    ],
     "entities": [
 
         {

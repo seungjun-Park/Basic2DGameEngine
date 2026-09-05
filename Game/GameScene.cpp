@@ -49,6 +49,76 @@ namespace
     constexpr float
         EnemyDefeatSfxVolume =
         0.70f;
+    struct EnemyAnimationSlot
+    {
+        const char* name;
+
+        CharacterAnimationState state;
+
+        FacingDirection direction;
+    };
+
+    constexpr EnemyAnimationSlot
+        EnemyAnimationSlots[]
+    {
+        {
+            "Enemy.Idle.Down",
+            CharacterAnimationState::Idle,
+            FacingDirection::Down
+        },
+        {
+            "Enemy.Idle.Left",
+            CharacterAnimationState::Idle,
+            FacingDirection::Left
+        },
+        {
+            "Enemy.Idle.Right",
+            CharacterAnimationState::Idle,
+            FacingDirection::Right
+        },
+        {
+            "Enemy.Idle.Up",
+            CharacterAnimationState::Idle,
+            FacingDirection::Up
+        },
+        {
+            "Enemy.Walk.Down",
+            CharacterAnimationState::Walk,
+            FacingDirection::Down
+        },
+        {
+            "Enemy.Walk.Left",
+            CharacterAnimationState::Walk,
+            FacingDirection::Left
+        },
+        {
+            "Enemy.Walk.Right",
+            CharacterAnimationState::Walk,
+            FacingDirection::Right
+        },
+        {
+            "Enemy.Walk.Up",
+            CharacterAnimationState::Walk,
+            FacingDirection::Up
+        }
+    };
+
+    const EnemyAnimationSlot*
+        FindEnemyAnimationSlot(
+            const std::string& name
+        ) noexcept
+    {
+        for (const EnemyAnimationSlot& slot :
+            EnemyAnimationSlots)
+        {
+            if (name == slot.name)
+            {
+                return &slot;
+            }
+        }
+
+        return nullptr;
+    }
 }
 
 
@@ -126,11 +196,6 @@ void GameScene::Initialize()
 
         m_tileMapCollider.reset();
 
-        return;
-    }
-    
-    if (!LoadEnemyAnimations())
-    {
         return;
     }
 
@@ -378,6 +443,9 @@ bool GameScene::SaveSerializedEntities(
 {
     SceneData sceneData;
 
+    sceneData.animationBindings =
+        m_animationBindings;
+
     GameEntityFactory factory(
         *this,
         m_resources,
@@ -563,90 +631,44 @@ void GameScene::CollectDebugStats(
     }
 }
 
-bool GameScene::LoadEnemyAnimations()
+bool GameScene::LoadEnemyAnimations(
+    const SceneData& sceneData
+)
 {
-    struct AnimationAsset
-    {
-        CharacterAnimationState state;
-        FacingDirection direction;
-        const wchar_t* path;
-    };
+    m_enemyAnimations =
+        CharacterAnimationSet{};
 
-    constexpr AnimationAsset assets[]
+    for (const SerializedAnimationBinding& binding :
+        sceneData.animationBindings)
     {
-        {
-            CharacterAnimationState::Idle,
-            FacingDirection::Down,
-            L"Engine/Assets/Animations/"
-            L"Qingxiao_idle_down.json"
-        },
-        {
-            CharacterAnimationState::Idle,
-            FacingDirection::Left,
-            L"Engine/Assets/Animations/"
-            L"Qingxiao_idle_left.json"
-        },
-        {
-            CharacterAnimationState::Idle,
-            FacingDirection::Right,
-            L"Engine/Assets/Animations/"
-            L"Qingxiao_idle_right.json"
-        },
-        {
-            CharacterAnimationState::Idle,
-            FacingDirection::Up,
-            L"Engine/Assets/Animations/"
-            L"Qingxiao_idle_up.json"
-        },
+        const EnemyAnimationSlot* slot =
+            FindEnemyAnimationSlot(
+                binding.slot
+            );
 
+        if (!slot)
         {
-            CharacterAnimationState::Walk,
-            FacingDirection::Down,
-            L"Engine/Assets/Animations/"
-            L"Qingxiao_walk_down.json"
-        },
-        {
-            CharacterAnimationState::Walk,
-            FacingDirection::Left,
-            L"Engine/Assets/Animations/"
-            L"Qingxiao_walk_left.json"
-        },
-        {
-            CharacterAnimationState::Walk,
-            FacingDirection::Right,
-            L"Engine/Assets/Animations/"
-            L"Qingxiao_walk_right.json"
-        },
-        {
-            CharacterAnimationState::Walk,
-            FacingDirection::Up,
-            L"Engine/Assets/Animations/"
-            L"Qingxiao_walk_up.json"
+            continue;
         }
-    };
 
-    for (const AnimationAsset& asset :
-        assets)
-    {
         AnimationClip* clip =
-            m_resources.
-            LoadAnimationClip(
-                asset.path
+            m_resources.LoadAnimationClip(
+                binding.clipPath
             );
 
         if (!clip)
         {
             ENGINE_DEBUG_LOG(
                 "[GameScene] Failed to load "
-                "enemy animation.\n"
+                "enemy animation binding.\n"
             );
 
             return false;
         }
 
         m_enemyAnimations.SetClip(
-            asset.state,
-            asset.direction,
+            slot->state,
+            slot->direction,
             clip
         );
     }
@@ -655,7 +677,7 @@ bool GameScene::LoadEnemyAnimations()
     {
         ENGINE_DEBUG_LOG(
             "[GameScene] Enemy animation "
-            "set is incomplete.\n"
+            "bindings are incomplete.\n"
         );
 
         return false;
@@ -673,6 +695,8 @@ bool GameScene::LoadSerializedEntities(
     m_playerHandle =
         EntityHandle{};
 
+    m_animationBindings.clear();
+
     auto sceneData =
         SceneSerializer::Load(
             path
@@ -683,6 +707,18 @@ bool GameScene::LoadSerializedEntities(
         ENGINE_DEBUG_LOG(
             "[GameScene] Failed to load "
             "serialized scene.\n"
+        );
+
+        return false;
+    }
+
+    if (!LoadEnemyAnimations(
+        *sceneData
+    ))
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to load "
+            "scene animation bindings.\n"
         );
 
         return false;
@@ -807,6 +843,9 @@ bool GameScene::LoadSerializedEntities(
             return false;
         }
     }
+
+    m_animationBindings =
+        sceneData->animationBindings;
 
     return true;
 }

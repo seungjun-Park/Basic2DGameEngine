@@ -4,6 +4,7 @@
 #include "Engine/Scene/Scene.h"
 #include "CharacterAnimation.h"
 #include "Engine/Audio/AudioPlaybackHandle.h"
+#include "Engine/Serialization/SceneData.h"
 
 #include <memory>
 #include <string>
@@ -68,7 +69,9 @@ public:
     ) const override;
 
 private:
-    bool LoadEnemyAnimations();
+    bool LoadEnemyAnimations(
+        const SceneData& sceneData
+    );
     
     bool LoadSerializedEntities(
         const std::wstring& path
@@ -149,4 +152,7 @@ private:
 
     CharacterAnimationSet
         m_enemyAnimations;
+
+    std::vector<SerializedAnimationBinding>
+        m_animationBindings;
 };
