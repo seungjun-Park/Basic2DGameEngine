@@ -1,10 +1,13 @@
 #pragma once
 
 #include "Engine/GUI/ProjectSettingsPanel.h"
-#include "Engine/Editor/AnimationClipEditorPanel.h"
-#include "Engine/Editor/AssetDatabase.h"
-#include "Engine/Editor/AssetBrowserPanel.h"
 
+#include "Engine/Editor/AnimationClipEditorPanel.h"
+#include "Engine/Editor/AssetBrowserPanel.h"
+#include "Engine/Editor/AssetDatabase.h"
+#include "Engine/Editor/SceneHierarchyPanel.h"
+
+#include "Engine/Scene/EntityHandle.h"
 
 #include <cstdint>
 #include <memory>
@@ -40,15 +43,19 @@ public:
     bool Initialize(
         std::unique_ptr<ProjectSettingsPanel>
         projectSettingsPanel,
-        const std::wstring& assetRoot);
+        const std::wstring& assetRoot
+    );
 
     void Shutdown();
 
     void Draw(
-        Engine& engine);
+        Engine& engine
+    );
 
     void EnterPlayMode();
     void StopPlayMode();
+
+    void ClearEntitySelection() noexcept;
 
     [[nodiscard]]
     Mode GetMode() const noexcept;
@@ -73,6 +80,13 @@ public:
     bool HasSelectedAsset() const noexcept;
 
     [[nodiscard]]
+    EntityHandle
+        GetSelectedEntityHandle() const noexcept;
+
+    [[nodiscard]]
+    bool HasSelectedEntity() const noexcept;
+
+    [[nodiscard]]
     bool IsEditMode() const noexcept;
 
     [[nodiscard]]
@@ -85,7 +99,8 @@ private:
     void DrawToolbar();
 
     void DrawWorkspaceTabs(
-        Engine& engine);
+        Engine& engine
+    );
 
 private:
     std::unique_ptr<ProjectSettingsPanel>
@@ -98,9 +113,15 @@ private:
 
     AnimationClipEditorPanel
         m_animationClipEditorPanel;
-    
+
+    SceneHierarchyPanel
+        m_sceneHierarchyPanel;
+
     std::wstring
         m_selectedAssetPath;
+
+    EntityHandle
+        m_selectedEntityHandle{};
 
     Mode m_mode = Mode::Edit;
 

@@ -19,7 +19,8 @@ EditorSystem::~EditorSystem()
 bool EditorSystem::Initialize(
     std::unique_ptr<ProjectSettingsPanel>
     projectSettingsPanel,
-    const std::wstring& assetRoot)
+    const std::wstring& assetRoot
+)
 {
     if (m_initialized)
     {
@@ -32,7 +33,8 @@ bool EditorSystem::Initialize(
     }
 
     if (!m_assetDatabase.Initialize(
-        assetRoot))
+        assetRoot
+    ))
     {
         return false;
     }
@@ -48,10 +50,14 @@ bool EditorSystem::Initialize(
 
     m_selectedAssetPath.clear();
 
+    m_selectedEntityHandle =
+        EntityHandle{};
+
     m_mode = Mode::Edit;
 
     m_selectAnimationTabRequested =
         false;
+
     m_initialized = true;
 
     return true;
@@ -65,6 +71,9 @@ void EditorSystem::Shutdown()
     }
 
     m_selectedAssetPath.clear();
+
+    m_selectedEntityHandle =
+        EntityHandle{};
 
     m_animationClipEditorPanel.Close();
 
@@ -83,21 +92,49 @@ void EditorSystem::Shutdown()
 }
 
 void EditorSystem::Draw(
-    Engine& engine)
+    Engine& engine
+)
 {
     if (!m_initialized)
     {
         return;
     }
 
+    Scene* scene =
+        engine.GetScene();
+
+    //
+    // Persistent selection validity check.
+    //
+    // Hierarchy tab이 열려 있지 않아도
+    // logically dead Entity를 selection state로
+    // 유지하지 않는다.
+    //
+
+    if (!scene)
+    {
+        ClearEntitySelection();
+    }
+    else if (
+        m_selectedEntityHandle.IsValid() &&
+        !scene->IsEntityAlive(
+            m_selectedEntityHandle
+        ))
+    {
+        ClearEntitySelection();
+    }
+
     ImGui::SetNextWindowSize(
         ImVec2(
             720.0f,
-            620.0f),
-        ImGuiCond_FirstUseEver);
+            620.0f
+        ),
+        ImGuiCond_FirstUseEver
+    );
 
     if (!ImGui::Begin(
-        "Editor"))
+        "Editor"
+    ))
     {
         ImGui::End();
         return;
@@ -108,7 +145,8 @@ void EditorSystem::Draw(
     ImGui::Separator();
 
     DrawWorkspaceTabs(
-        engine);
+        engine
+    );
 
     ImGui::End();
 }
@@ -133,6 +171,13 @@ void EditorSystem::StopPlayMode()
     }
 
     m_mode = Mode::Edit;
+}
+
+void EditorSystem::
+ClearEntitySelection() noexcept
+{
+    m_selectedEntityHandle =
+        EntityHandle{};
 }
 
 EditorSystem::Mode
@@ -172,12 +217,18 @@ const noexcept
     return m_selectedAssetPath;
 }
 
+EntityHandle
+EditorSystem::
+GetSelectedEntityHandle() const noexcept
+{
+    return m_selectedEntityHandle;
+}
+
 bool EditorSystem::
-HasSelectedAsset()
-const noexcept
+HasSelectedEntity() const noexcept
 {
     return
-        !m_selectedAssetPath.empty();
+        m_selectedEntityHandle.IsValid();
 }
 
 bool EditorSystem::IsEditMode()
@@ -234,10 +285,12 @@ void EditorSystem::DrawToolbar()
 
 void EditorSystem::
 DrawWorkspaceTabs(
-    Engine& engine)
+    Engine& engine
+)
 {
     if (!ImGui::BeginTabBar(
-        "##EditorWorkspaceTabs"))
+        "##EditorWorkspaceTabs"
+    ))
     {
         return;
     }
@@ -247,7 +300,8 @@ DrawWorkspaceTabs(
     //
 
     if (ImGui::BeginTabItem(
-        "Project Settings"))
+        "Project Settings"
+    ))
     {
         if (m_projectSettingsPanel)
         {
@@ -263,20 +317,23 @@ DrawWorkspaceTabs(
     //
 
     if (ImGui::BeginTabItem(
-        "Assets"))
+        "Assets"
+    ))
     {
         const bool openRequested =
             m_assetBrowserPanel.
             DrawContents(
                 m_assetDatabase,
-                m_selectedAssetPath);
+                m_selectedAssetPath
+            );
 
         if (openRequested &&
             !m_selectedAssetPath.empty())
         {
             const AssetRecord* asset =
                 m_assetDatabase.FindAsset(
-                    m_selectedAssetPath);
+                    m_selectedAssetPath
+                );
 
             if (asset &&
                 asset->type ==
@@ -284,7 +341,8 @@ DrawWorkspaceTabs(
             {
                 m_animationClipEditorPanel.
                     Open(
-                        asset->path);
+                        asset->path
+                    );
 
                 m_selectAnimationTabRequested =
                     true;
@@ -298,8 +356,7 @@ DrawWorkspaceTabs(
     // Animation
     //
 
-    ImGuiTabItemFlags
-        animationTabFlags =
+    ImGuiTabItemFlags animationTabFlags =
         ImGuiTabItemFlags_None;
 
     if (m_selectAnimationTabRequested)
@@ -311,7 +368,8 @@ DrawWorkspaceTabs(
     if (ImGui::BeginTabItem(
         "Animation",
         nullptr,
-        animationTabFlags))
+        animationTabFlags
+    ))
     {
         m_animationClipEditorPanel.
             DrawContents(
@@ -330,11 +388,13 @@ DrawWorkspaceTabs(
     //
 
     if (ImGui::BeginTabItem(
-        "Audio"))
+        "Audio"
+    ))
     {
         EngineGui::
             DrawAudioSettingsContents(
-                engine.GetAudioSystem());
+                engine.GetAudioSystem()
+            );
 
         ImGui::EndTabItem();
     }
@@ -344,7 +404,8 @@ DrawWorkspaceTabs(
     //
 
     if (ImGui::BeginTabItem(
-        "TileMap"))
+        "TileMap"
+    ))
     {
         Scene* scene =
             engine.GetScene();
@@ -357,7 +418,33 @@ DrawWorkspaceTabs(
         else
         {
             ImGui::TextDisabled(
-                "No active scene.");
+                "No active scene."
+            );
+        }
+
+        ImGui::EndTabItem();
+    }
+
+    //
+    // Hierarchy
+    //
+
+    if (ImGui::BeginTabItem(
+        "Hierarchy"
+    ))
+    {
+        const SceneHierarchyPanel::
+            SelectionResult selectionResult =
+            m_sceneHierarchyPanel.
+            DrawContents(
+                engine.GetScene(),
+                m_selectedEntityHandle
+            );
+
+        if (selectionResult.changed)
+        {
+            m_selectedEntityHandle =
+                selectionResult.handle;
         }
 
         ImGui::EndTabItem();
