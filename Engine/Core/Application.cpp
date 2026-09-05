@@ -8,6 +8,7 @@
 #include "Engine/Platform/Windows/WinInput.h"
 #include "Engine/Debug/DebugStats.h"
 #include "Engine/Debug/CpuProfiler.h"
+#include "Engine/Editor/EditorSystem.h"
 #include "Engine/GUI/ProjectSettingsPanel.h"
 
 #include <algorithm>
@@ -88,11 +89,19 @@ int Application::Run(
     const ProjectConfig& projectConfig,
     const std::wstring& projectConfigPath)
 {
-    ProjectSettingsPanel
-        projectSettings(
+    EditorSystem editorSystem;
+
+    auto projectSettingsPanel =
+        std::make_unique<ProjectSettingsPanel>(
             projectConfig,
             projectConfigPath
         );
+
+    if (!editorSystem.Initialize(
+        std::move(projectSettingsPanel)))
+    {
+        return -1;
+    }
 
     while (true)
     {
@@ -200,12 +209,7 @@ int Application::Run(
 
         if (m_engine->IsGuiVisible())
         {
-            projectSettings.Draw();
-
-            ApplyLiveProjectSettings(
-                projectSettings.
-                GetDraftConfig()
-            );
+            editorSystem.Draw();
         }
 
         m_engine->Render(

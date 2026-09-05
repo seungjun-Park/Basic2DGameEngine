@@ -156,6 +156,7 @@
     <ClInclude Include="Engine\Debug\DebugLog.h" />
     <ClInclude Include="Engine\Debug\DebugRenderer.h" />
     <ClInclude Include="Engine\Debug\DebugStats.h" />
+    <ClInclude Include="Engine\Editor\EditorSystem.h" />
     <ClInclude Include="Engine\GUI\EngineGui.h" />
     <ClInclude Include="Engine\GUI\GuiSystem.h" />
     <ClInclude Include="Engine\GUI\ProjectSettingsPanel.h" />
@@ -211,6 +212,7 @@
     <ClCompile Include="Engine\Debug\CpuProfiler.cpp" />
     <ClCompile Include="Engine\Debug\DebugLog.cpp" />
     <ClCompile Include="Engine\Debug\DebugRenderer.cpp" />
+    <ClCompile Include="Engine\Editor\EditorSystem.cpp" />
     <ClCompile Include="Engine\Event\EventBus.cpp" />
     <ClCompile Include="Engine\Graphics\Texture.cpp" />
     <ClCompile Include="Engine\GUI\EngineGui.cpp" />
