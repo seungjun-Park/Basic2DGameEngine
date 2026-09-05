@@ -134,8 +134,7 @@ bool InspectorPanel::DrawContents(
             changed;
     }
 
-    return
-        changed;
+    return changed;
 }
 
 bool InspectorPanel::DrawTransform(
@@ -234,8 +233,7 @@ bool InspectorPanel::DrawTransform(
 
     ImGui::EndDisabled();
 
-    return
-        changed;
+    return changed;
 }
 
 bool InspectorPanel::DrawSprite(
@@ -431,8 +429,7 @@ bool InspectorPanel::DrawSprite(
             true;
     }
 
-    return
-        changed;
+    return changed;
 }
 
 bool InspectorPanel::DrawAssetAssignment(
@@ -473,10 +470,6 @@ bool InspectorPanel::DrawAssetAssignment(
         )
     );
 
-    //
-    // Texture assignment
-    //
-
     const bool canAssignTexture =
         editable &&
         selectedAsset->type ==
@@ -511,10 +504,6 @@ bool InspectorPanel::DrawAssetAssignment(
                 true;
         }
     }
-
-    //
-    // Animation assignment
-    //
 
     const bool canAssignAnimation =
         editable &&
@@ -558,23 +547,32 @@ bool InspectorPanel::DrawAssetAssignment(
                     true
                 ))
             {
-                //
-                // Play() applies the first AnimationFrame
-                // to Sprite immediately, so serialized
-                // Sprite state has changed.
-                //
+                entity.
+                    SetAssignedAnimationClipPath(
+                        selectedAsset->path
+                    );
+
                 changed =
                     true;
             }
         }
     }
 
-    ImGui::TextDisabled(
-        "SceneData V2 persists the resulting Sprite "
-        "state. Generic per-entity Animator bindings "
-        "are not serialized yet."
-    );
+    if (entity.
+        GetAssignedAnimationClipPath().
+        empty())
+    {
+        ImGui::TextDisabled(
+            "Assigned Animation: None"
+        );
+    }
+    else
+    {
+        ImGui::TextDisabled(
+            "Assigned AnimationClip "
+            "will be persisted with the Scene."
+        );
+    }
 
-    return
-        changed;
+    return changed;
 }

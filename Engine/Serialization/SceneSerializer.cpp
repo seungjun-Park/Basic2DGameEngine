@@ -279,18 +279,10 @@ namespace
     ) noexcept
     {
         return
-            std::isfinite(
-                uv.u0
-            ) &&
-            std::isfinite(
-                uv.v0
-            ) &&
-            std::isfinite(
-                uv.u1
-            ) &&
-            std::isfinite(
-                uv.v1
-            ) &&
+            std::isfinite(uv.u0) &&
+            std::isfinite(uv.v0) &&
+            std::isfinite(uv.u1) &&
+            std::isfinite(uv.v1) &&
             uv.u0 >= 0.0f &&
             uv.v0 >= 0.0f &&
             uv.u1 <= 1.0f &&
@@ -304,9 +296,7 @@ namespace
     ) noexcept
     {
         return
-            std::isfinite(
-                volume
-            ) &&
+            std::isfinite(volume) &&
             volume >= 0.0f &&
             volume <= 1.0f;
     }
@@ -341,8 +331,7 @@ namespace
             ).second)
             {
                 ENGINE_DEBUG_LOG(
-                    "Duplicate animation "
-                    "binding slot."
+                    "Duplicate animation binding slot."
                 );
 
                 return false;
@@ -356,8 +345,7 @@ namespace
             if (clipPath.empty())
             {
                 ENGINE_DEBUG_LOG(
-                    "Failed to encode animation "
-                    "clip path."
+                    "Failed to encode animation clip path."
                 );
 
                 return false;
@@ -428,8 +416,7 @@ namespace
             if (clipPath.empty())
             {
                 ENGINE_DEBUG_LOG(
-                    "Failed to encode audio "
-                    "clip path."
+                    "Failed to encode audio clip path."
                 );
 
                 return false;
@@ -494,8 +481,7 @@ namespace
                 ))
             {
                 ENGINE_DEBUG_LOG(
-                    "Transform contains "
-                    "non-finite values."
+                    "Transform contains non-finite values."
                 );
 
                 return false;
@@ -559,8 +545,7 @@ namespace
                 if (texturePath.empty())
                 {
                     ENGINE_DEBUG_LOG(
-                        "Failed to encode "
-                        "sprite texture path."
+                        "Failed to encode sprite texture path."
                     );
 
                     return false;
@@ -580,8 +565,7 @@ namespace
                     !blendMode)
                 {
                     ENGINE_DEBUG_LOG(
-                        "Invalid sprite "
-                        "render state."
+                        "Invalid sprite render state."
                     );
 
                     return false;
@@ -625,6 +609,27 @@ namespace
                 };
             }
 
+            if (!entity.animationClipPath.empty())
+            {
+                const std::string animationClipPath =
+                    WideToUtf8(
+                        entity.animationClipPath
+                    );
+
+                if (animationClipPath.empty())
+                {
+                    ENGINE_DEBUG_LOG(
+                        "Failed to encode entity "
+                        "AnimationClip path."
+                    );
+
+                    return false;
+                }
+
+                entityJson["animationClip"] =
+                    animationClipPath;
+            }
+
             root["entities"].
                 push_back(
                     std::move(
@@ -651,8 +656,7 @@ namespace
             !bindingsIt->is_array())
         {
             ENGINE_DEBUG_LOG(
-                "Animation bindings must "
-                "be an array."
+                "Animation bindings must be an array."
             );
 
             return false;
@@ -705,10 +709,6 @@ namespace
             if (binding.slot.empty() ||
                 clipPath.empty())
             {
-                ENGINE_DEBUG_LOG(
-                    "Invalid animation binding."
-                );
-
                 return false;
             }
 
@@ -716,11 +716,6 @@ namespace
                 binding.slot
             ).second)
             {
-                ENGINE_DEBUG_LOG(
-                    "Duplicate animation "
-                    "binding slot."
-                );
-
                 return false;
             }
 
@@ -731,11 +726,6 @@ namespace
 
             if (binding.clipPath.empty())
             {
-                ENGINE_DEBUG_LOG(
-                    "Invalid animation clip "
-                    "path encoding."
-                );
-
                 return false;
             }
 
@@ -765,8 +755,7 @@ namespace
             !bindingsIt->is_array())
         {
             ENGINE_DEBUG_LOG(
-                "Audio bindings must "
-                "be an array."
+                "Audio bindings must be an array."
             );
 
             return false;
@@ -811,8 +800,7 @@ namespace
                 return false;
             }
 
-            SerializedAudioBinding
-                binding;
+            SerializedAudioBinding binding;
 
             binding.slot =
                 slotIt->get<
@@ -833,10 +821,6 @@ namespace
                     binding.volume
                 ))
             {
-                ENGINE_DEBUG_LOG(
-                    "Invalid audio binding."
-                );
-
                 return false;
             }
 
@@ -844,10 +828,6 @@ namespace
                 binding.slot
             ).second)
             {
-                ENGINE_DEBUG_LOG(
-                    "Duplicate audio binding slot."
-                );
-
                 return false;
             }
 
@@ -858,11 +838,6 @@ namespace
 
             if (binding.clipPath.empty())
             {
-                ENGINE_DEBUG_LOG(
-                    "Invalid audio clip "
-                    "path encoding."
-                );
-
                 return false;
             }
 
@@ -879,7 +854,8 @@ namespace
 
     bool LoadEntities(
         const nlohmann::json& root,
-        SceneData& scene
+        SceneData& scene,
+        bool loadAnimationAssignments
     )
     {
         const auto entitiesIt =
@@ -927,10 +903,6 @@ namespace
 
             if (entity.type.empty())
             {
-                ENGINE_DEBUG_LOG(
-                    "Entity type is missing."
-                );
-
                 return false;
             }
 
@@ -942,8 +914,7 @@ namespace
             if (activeIt !=
                 entityJson.end())
             {
-                if (!activeIt->
-                    is_boolean())
+                if (!activeIt->is_boolean())
                 {
                     return false;
                 }
@@ -988,20 +959,14 @@ namespace
 
             entity.transform.position =
             {
-                (*positionIt)[0].
-                    get<float>(),
-
-                (*positionIt)[1].
-                    get<float>()
+                (*positionIt)[0].get<float>(),
+                (*positionIt)[1].get<float>()
             };
 
             entity.transform.scale =
             {
-                (*scaleIt)[0].
-                    get<float>(),
-
-                (*scaleIt)[1].
-                    get<float>()
+                (*scaleIt)[0].get<float>(),
+                (*scaleIt)[1].get<float>()
             };
 
             const auto rotationIt =
@@ -1012,15 +977,13 @@ namespace
             if (rotationIt !=
                 transformIt->end())
             {
-                if (!rotationIt->
-                    is_number())
+                if (!rotationIt->is_number())
                 {
                     return false;
                 }
 
                 entity.transform.rotation =
-                    rotationIt->
-                    get<float>();
+                    rotationIt->get<float>();
             }
 
             if (!std::isfinite(
@@ -1039,11 +1002,6 @@ namespace
                     entity.transform.rotation
                 ))
             {
-                ENGINE_DEBUG_LOG(
-                    "Transform contains "
-                    "a non-finite value."
-                );
-
                 return false;
             }
 
@@ -1055,8 +1013,7 @@ namespace
             if (spriteIt !=
                 entityJson.end())
             {
-                if (!spriteIt->
-                    is_object())
+                if (!spriteIt->is_object())
                 {
                     return false;
                 }
@@ -1070,8 +1027,7 @@ namespace
 
                 if (textureIt ==
                     spriteIt->end() ||
-                    !textureIt->
-                    is_string())
+                    !textureIt->is_string())
                 {
                     return false;
                 }
@@ -1104,15 +1060,13 @@ namespace
                 if (visibleIt !=
                     spriteIt->end())
                 {
-                    if (!visibleIt->
-                        is_boolean())
+                    if (!visibleIt->is_boolean())
                     {
                         return false;
                     }
 
                     sprite.visible =
-                        visibleIt->
-                        get<bool>();
+                        visibleIt->get<bool>();
                 }
 
                 const auto zIndexIt =
@@ -1123,15 +1077,13 @@ namespace
                 if (zIndexIt !=
                     spriteIt->end())
                 {
-                    if (!zIndexIt->
-                        is_number())
+                    if (!zIndexIt->is_number())
                     {
                         return false;
                     }
 
                     sprite.zIndex =
-                        zIndexIt->
-                        get<float>();
+                        zIndexIt->get<float>();
                 }
 
                 const auto useYSortIt =
@@ -1142,15 +1094,13 @@ namespace
                 if (useYSortIt !=
                     spriteIt->end())
                 {
-                    if (!useYSortIt->
-                        is_boolean())
+                    if (!useYSortIt->is_boolean())
                     {
                         return false;
                     }
 
                     sprite.useYSort =
-                        useYSortIt->
-                        get<bool>();
+                        useYSortIt->get<bool>();
                 }
 
                 const auto layerIt =
@@ -1168,8 +1118,7 @@ namespace
                     !layerIt->is_string() ||
                     blendModeIt ==
                     spriteIt->end() ||
-                    !blendModeIt->
-                    is_string())
+                    !blendModeIt->is_string())
                 {
                     return false;
                 }
@@ -1209,17 +1158,10 @@ namespace
 
                 sprite.uv =
                 {
-                    (*uvIt)[0].
-                        get<float>(),
-
-                    (*uvIt)[1].
-                        get<float>(),
-
-                    (*uvIt)[2].
-                        get<float>(),
-
-                    (*uvIt)[3].
-                        get<float>()
+                    (*uvIt)[0].get<float>(),
+                    (*uvIt)[1].get<float>(),
+                    (*uvIt)[2].get<float>(),
+                    (*uvIt)[3].get<float>()
                 };
 
                 if (!std::isfinite(
@@ -1238,12 +1180,49 @@ namespace
                     );
             }
 
-            scene.entities.
-                emplace_back(
-                    std::move(
-                        entity
-                    )
-                );
+            if (loadAnimationAssignments)
+            {
+                const auto animationIt =
+                    entityJson.find(
+                        "animationClip"
+                    );
+
+                if (animationIt !=
+                    entityJson.end())
+                {
+                    if (!animationIt->is_string())
+                    {
+                        return false;
+                    }
+
+                    const std::string
+                        animationPath =
+                        animationIt->get<
+                        std::string
+                        >();
+
+                    if (animationPath.empty())
+                    {
+                        return false;
+                    }
+
+                    entity.animationClipPath =
+                        Utf8ToWide(
+                            animationPath
+                        );
+
+                    if (entity.animationClipPath.empty())
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            scene.entities.emplace_back(
+                std::move(
+                    entity
+                )
+            );
         }
 
         return true;
@@ -1289,11 +1268,6 @@ bool SceneSerializer::Save(
         if (!scene.tileMapPath.empty() &&
             tileMapPath.empty())
         {
-            ENGINE_DEBUG_LOG(
-                "Failed to encode "
-                "TileMap path."
-            );
-
             return false;
         }
 
@@ -1334,8 +1308,7 @@ bool SceneSerializer::Save(
         if (!file.is_open())
         {
             ENGINE_DEBUG_LOG(
-                "Failed to open "
-                "scene output file."
+                "Failed to open scene output file."
             );
 
             return false;
@@ -1410,10 +1383,6 @@ SceneSerializer::Load(
             !versionIt->
             is_number_unsigned())
         {
-            ENGINE_DEBUG_LOG(
-                "Scene version is invalid."
-            );
-
             return nullptr;
         }
 
@@ -1422,12 +1391,17 @@ SceneSerializer::Load(
             std::uint32_t
             >();
 
-        if (version !=
-            SceneData::LegacyVersion &&
-            version !=
-            SceneData::PreviousVersion &&
-            version !=
-            SceneData::CurrentVersion)
+        const bool supported =
+            version ==
+            SceneData::LegacyVersion ||
+            version ==
+            SceneData::ResourceBindingVersion ||
+            version ==
+            SceneData::AudioBindingVersion ||
+            version ==
+            SceneData::CurrentVersion;
+
+        if (!supported)
         {
             ENGINE_DEBUG_LOG(
                 "Unsupported scene version."
@@ -1441,16 +1415,11 @@ SceneSerializer::Load(
             SceneData
             >();
 
-        //
-        // Normalize all loaded documents to the
-        // latest in-memory representation.
-        //
-
         scene->version =
             SceneData::CurrentVersion;
 
         if (version >=
-            SceneData::PreviousVersion)
+            SceneData::ResourceBindingVersion)
         {
             const auto tileMapIt =
                 root.find(
@@ -1461,11 +1430,6 @@ SceneSerializer::Load(
                 root.end() ||
                 !tileMapIt->is_string())
             {
-                ENGINE_DEBUG_LOG(
-                    "TileMap path must "
-                    "be a string."
-                );
-
                 return nullptr;
             }
 
@@ -1481,14 +1445,8 @@ SceneSerializer::Load(
                         tileMapPath
                     );
 
-                if (scene->
-                    tileMapPath.empty())
+                if (scene->tileMapPath.empty())
                 {
-                    ENGINE_DEBUG_LOG(
-                        "Invalid TileMap "
-                        "path encoding."
-                    );
-
                     return nullptr;
                 }
             }
@@ -1502,15 +1460,8 @@ SceneSerializer::Load(
             }
         }
 
-        //
-        // V1 / V2 have no audioBindings.
-        // Empty bindings mean gameplay audio is
-        // explicitly unconfigured, not a fallback
-        // to C++ hardcoded assets.
-        //
-
-        if (version ==
-            SceneData::CurrentVersion)
+        if (version >=
+            SceneData::AudioBindingVersion)
         {
             if (!LoadAudioBindings(
                 root,
@@ -1523,7 +1474,9 @@ SceneSerializer::Load(
 
         if (!LoadEntities(
             root,
-            *scene
+            *scene,
+            version >=
+            SceneData::CurrentVersion
         ))
         {
             return nullptr;

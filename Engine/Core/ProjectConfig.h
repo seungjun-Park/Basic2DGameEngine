@@ -15,8 +15,7 @@ struct ProjectConfig
 
     EngineConfig engine{};
 
-    std::wstring assetRoot =
-        L"Engine/Assets";
+    std::wstring assetRoot;
 
     std::wstring startScene;
 };

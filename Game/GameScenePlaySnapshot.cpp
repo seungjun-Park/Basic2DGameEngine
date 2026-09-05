@@ -5,13 +5,11 @@
 #include "Player.h"
 
 #include "Engine/Debug/DebugLog.h"
-
 #include "Engine/Graphics/Texture.h"
-
 #include "Engine/Resource/ResourceManager.h"
-#include "Engine/Renderer/Camera.h"
-
 #include "Engine/Scene/Entity.h"
+#include "Engine/Renderer/Camera.h"
+#include "Engine/Animation/AnimationClip.h"
 
 #include <cstddef>
 #include <utility>
@@ -48,11 +46,6 @@ namespace
         }
         else
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Unsupported entity "
-                "type in Play snapshot.\n"
-            );
-
             return false;
         }
 
@@ -67,11 +60,6 @@ namespace
 
         if (!texture)
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Entity has no "
-                "snapshot sprite texture.\n"
-            );
-
             return false;
         }
 
@@ -82,12 +70,6 @@ namespace
             sprite.texturePath
         ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Snapshot sprite "
-                "texture is not ResourceManager "
-                "owned.\n"
-            );
-
             return false;
         }
 
@@ -113,6 +95,10 @@ namespace
             std::move(
                 sprite
             );
+
+        outData.animationClipPath =
+            entity.
+            GetAssignedAnimationClipPath();
 
         return true;
     }
@@ -170,22 +156,12 @@ bool GameScene::CapturePlaySnapshot()
 {
     if (m_playSnapshot.has_value())
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] A Play snapshot "
-            "already exists.\n"
-        );
-
         return false;
     }
 
     if (!m_tileMap ||
         m_tileMapPath.empty())
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Cannot capture Play "
-            "snapshot without a TileMap.\n"
-        );
-
         return false;
     }
 
@@ -209,12 +185,8 @@ bool GameScene::CapturePlaySnapshot()
     for (const auto& entity :
         m_entities)
     {
-        if (!entity)
-        {
-            continue;
-        }
-
-        if (entity->IsDestroyed())
+        if (!entity ||
+            entity->IsDestroyed())
         {
             continue;
         }
@@ -228,11 +200,6 @@ bool GameScene::CapturePlaySnapshot()
             serializedEntity
         ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Failed to capture "
-                "Play snapshot entity.\n"
-            );
-
             return false;
         }
 
@@ -251,11 +218,6 @@ bool GameScene::CapturePlaySnapshot()
 
     if (playerCount != 1)
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Play snapshot must "
-            "contain exactly one Player.\n"
-        );
-
         return false;
     }
 
@@ -271,11 +233,6 @@ bool GameScene::RestorePlaySnapshot()
 {
     if (!m_playSnapshot)
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] No Play snapshot "
-            "exists to restore.\n"
-        );
-
         return false;
     }
 
@@ -283,11 +240,6 @@ bool GameScene::RestorePlaySnapshot()
         *m_playSnapshot
     ))
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to restore "
-            "Play snapshot.\n"
-        );
-
         return false;
     }
 
@@ -318,11 +270,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
         snapshot.tileMapPath !=
         m_tileMapPath)
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Play snapshot TileMap "
-            "identity mismatch.\n"
-        );
-
         return false;
     }
 
@@ -347,22 +294,11 @@ bool GameScene::RestoreEntitiesFromSnapshot(
             entity.type
         ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Play snapshot "
-                "contains an unsupported "
-                "entity type.\n"
-            );
-
             return false;
         }
 
         if (!entity.sprite)
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Play snapshot "
-                "entity has no Sprite data.\n"
-            );
-
             return false;
         }
 
@@ -371,12 +307,23 @@ bool GameScene::RestoreEntitiesFromSnapshot(
             texturePath
         ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Play snapshot "
-                "texture preflight failed.\n"
-            );
-
             return false;
+        }
+
+        if (!entity.animationClipPath.empty())
+        {
+            AnimationClip* clip =
+                m_resources.
+                LoadAnimationClip(
+                    entity.
+                    animationClipPath
+                );
+
+            if (!clip ||
+                !clip->IsValid())
+            {
+                return false;
+            }
         }
 
         if (entity.type ==
@@ -392,11 +339,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
     if (playerCount != 1 ||
         !playerData)
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Play snapshot must "
-            "contain exactly one Player.\n"
-        );
-
         return false;
     }
 
@@ -423,11 +365,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
     {
         ClearEntities();
 
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to restore "
-            "snapshot Player.\n"
-        );
-
         return false;
     }
 
@@ -442,11 +379,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
         m_player =
             nullptr;
 
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to restore "
-            "Player snapshot visual state.\n"
-        );
-
         return false;
     }
 
@@ -459,11 +391,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
 
         m_player =
             nullptr;
-
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Restored Player "
-            "has an invalid handle.\n"
-        );
 
         return false;
     }
@@ -496,11 +423,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
             m_playerHandle =
                 EntityHandle{};
 
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Failed to restore "
-                "snapshot entity.\n"
-            );
-
             return false;
         }
 
@@ -517,11 +439,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
 
             m_playerHandle =
                 EntityHandle{};
-
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Failed to restore "
-                "snapshot entity visual state.\n"
-            );
 
             return false;
         }

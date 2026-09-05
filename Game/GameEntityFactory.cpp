@@ -1,41 +1,51 @@
 #include "GameEntityFactory.h"
-#include "Engine/Debug/DebugLog.h"
 
-#include "Player.h"
-#include "Enemy.h"
 #include "CharacterAnimation.h"
+#include "Enemy.h"
+#include "Player.h"
 
-#include "Engine/Scene/Scene.h"
-#include "Engine/Scene/Entity.h"
-
-#include "Engine/Resource/ResourceManager.h"
+#include "Engine/Animation/AnimationClip.h"
+#include "Engine/Animation/Animator.h"
+#include "Engine/Debug/DebugLog.h"
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Physics/PhysicsSystem.h"
-
+#include "Engine/Resource/ResourceManager.h"
+#include "Engine/Scene/Entity.h"
+#include "Engine/Scene/Scene.h"
 #include "Engine/Serialization/SceneData.h"
-#include "Engine/Animation/AnimationClip.h"
 
+#include <memory>
 #include <utility>
-
 
 GameEntityFactory::GameEntityFactory(
     Scene& scene,
     ResourceManager& resources,
     PhysicsSystem& physics,
-    const CharacterAnimationSet& enemyAnimations)
+    const CharacterAnimationSet& enemyAnimations
+)
     :
-    m_scene(scene),
-    m_resources(resources),
-    m_physics(physics),
-    m_enemyAnimations(enemyAnimations)
+    m_scene(
+        scene
+    ),
+    m_resources(
+        resources
+    ),
+    m_physics(
+        physics
+    ),
+    m_enemyAnimations(
+        enemyAnimations
+    )
 {
 }
 
 Entity* GameEntityFactory::Create(
     const SerializedEntity& data,
-    EntityHandle playerTarget)
+    EntityHandle playerTarget
+)
 {
-    if (data.type == "Player")
+    if (data.type ==
+        "Player")
     {
         Player* player =
             m_scene.CreateEntity<Player>(
@@ -44,7 +54,8 @@ Entity* GameEntityFactory::Create(
 
         if (!ApplySerializedState(
             *player,
-            data))
+            data
+        ))
         {
             player->Destroy();
 
@@ -53,16 +64,28 @@ Entity* GameEntityFactory::Create(
 
         player->Initialize();
 
+        if (!ApplySerializedAnimation(
+            *player,
+            data
+        ))
+        {
+            player->Destroy();
+
+            return nullptr;
+        }
+
         return player;
     }
 
-    if (data.type == "Enemy")
+    if (data.type ==
+        "Enemy")
     {
         if (!playerTarget.IsValid())
         {
             ENGINE_DEBUG_LOG(
                 "[GameEntityFactory] "
-                "Enemy requires a valid Player target.\n"
+                "Enemy requires a valid "
+                "Player target.\n"
             );
 
             return nullptr;
@@ -76,7 +99,8 @@ Entity* GameEntityFactory::Create(
 
         if (!ApplySerializedState(
             *enemy,
-            data))
+            data
+        ))
         {
             enemy->Destroy();
 
@@ -84,14 +108,10 @@ Entity* GameEntityFactory::Create(
         }
 
         if (!enemy->SetTarget(
-            playerTarget))
+            playerTarget
+        ))
         {
             enemy->Destroy();
-
-            ENGINE_DEBUG_LOG(
-                "[GameEntityFactory] "
-                "Enemy Player target is invalid.\n"
-            );
 
             return nullptr;
         }
@@ -99,7 +119,24 @@ Entity* GameEntityFactory::Create(
         enemy->Initialize();
 
         if (!enemy->SetAnimations(
-            m_enemyAnimations))
+            m_enemyAnimations
+        ))
+        {
+            enemy->Destroy();
+
+            return nullptr;
+        }
+
+        //
+        // Explicit Editor assignment is applied
+        // after the gameplay animation state has
+        // initialized, so Edit Mode shows exactly
+        // what the Scene document authored.
+        //
+        if (!ApplySerializedAnimation(
+            *enemy,
+            data
+        ))
         {
             enemy->Destroy();
 
@@ -119,19 +156,25 @@ Entity* GameEntityFactory::Create(
 
 bool GameEntityFactory::Serialize(
     const Entity& entity,
-    SerializedEntity& outData) const
+    SerializedEntity& outData
+) const
 {
-    outData = {};
+    outData =
+        SerializedEntity{};
 
     const bool isPlayer =
         dynamic_cast<
         const Player*
-        >(&entity) != nullptr;
+        >(
+            &entity
+            ) != nullptr;
 
     const bool isEnemy =
         dynamic_cast<
         const Enemy*
-        >(&entity) != nullptr;
+        >(
+            &entity
+            ) != nullptr;
 
     if (isPlayer)
     {
@@ -160,8 +203,7 @@ bool GameEntityFactory::Serialize(
     outData.transform =
         entity.transform;
 
-    SerializedSprite
-        serializedSprite;
+    SerializedSprite serializedSprite;
 
     serializedSprite.visible =
         entity.sprite.visible;
@@ -181,50 +223,12 @@ bool GameEntityFactory::Serialize(
     Texture* texture =
         entity.sprite.texture;
 
-    UVRect uv =
-        entity.sprite.uv;
-
-    if (isEnemy)
-    {
-        AnimationClip* idleDown =
-            m_enemyAnimations.GetClip(
-                CharacterAnimationState::Idle,
-                FacingDirection::Down
-            );
-
-        if (!idleDown ||
-            !idleDown->IsValid())
-        {
-            ENGINE_DEBUG_LOG(
-                "[GameEntityFactory] "
-                "Enemy idle animation is invalid.\n"
-            );
-
-            return false;
-        }
-
-        const AnimationFrame* frame =
-            idleDown->GetFrame(
-                0
-            );
-
-        if (!frame)
-        {
-            return false;
-        }
-
-        texture =
-            idleDown->GetTexture();
-
-        uv =
-            frame->uv;
-    }
-
     if (!texture)
     {
         ENGINE_DEBUG_LOG(
             "[GameEntityFactory] "
-            "Runtime entity has no sprite texture.\n"
+            "Runtime entity has no sprite "
+            "texture.\n"
         );
 
         return false;
@@ -232,7 +236,8 @@ bool GameEntityFactory::Serialize(
 
     if (!m_resources.TryGetTexturePath(
         texture,
-        serializedSprite.texturePath))
+        serializedSprite.texturePath
+    ))
     {
         ENGINE_DEBUG_LOG(
             "[GameEntityFactory] "
@@ -244,18 +249,23 @@ bool GameEntityFactory::Serialize(
     }
 
     serializedSprite.uv =
-        uv;
+        entity.sprite.uv;
 
     outData.sprite =
         std::move(
             serializedSprite
         );
 
+    outData.animationClipPath =
+        entity.
+        GetAssignedAnimationClipPath();
+
     return true;
 }
 
 bool GameEntityFactory::IsSupportedType(
-    const std::string& type) const noexcept
+    const std::string& type
+) const noexcept
 {
     return
         type == "Player" ||
@@ -264,7 +274,8 @@ bool GameEntityFactory::IsSupportedType(
 
 bool GameEntityFactory::ApplySerializedState(
     Entity& entity,
-    const SerializedEntity& data)
+    const SerializedEntity& data
+)
 {
     entity.transform =
         data.transform;
@@ -316,6 +327,61 @@ bool GameEntityFactory::ApplySerializedState(
 
     entity.sprite.uv =
         serializedSprite.uv;
+
+    entity.ClearAssignedAnimationClipPath();
+
+    return true;
+}
+
+bool GameEntityFactory::
+ApplySerializedAnimation(
+    Entity& entity,
+    const SerializedEntity& data
+)
+{
+    entity.ClearAssignedAnimationClipPath();
+
+    if (data.animationClipPath.empty())
+    {
+        return true;
+    }
+
+    AnimationClip* clip =
+        m_resources.LoadAnimationClip(
+            data.animationClipPath
+        );
+
+    if (!clip ||
+        !clip->IsValid())
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameEntityFactory] "
+            "Failed to load assigned "
+            "AnimationClip.\n"
+        );
+
+        return false;
+    }
+
+    if (!entity.animator)
+    {
+        entity.animator =
+            std::make_unique<Animator>(
+                entity.sprite
+            );
+    }
+
+    if (!entity.animator->Play(
+        *clip,
+        true
+    ))
+    {
+        return false;
+    }
+
+    entity.SetAssignedAnimationClipPath(
+        data.animationClipPath
+    );
 
     return true;
 }

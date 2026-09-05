@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Engine/Components/Transform.h"
-#include "Engine/Components/Sprite.h"
-#include "Engine/Scene/EntityHandle.h"
 #include "Engine/Animation/Animator.h"
+#include "Engine/Components/Sprite.h"
+#include "Engine/Components/Transform.h"
+#include "Engine/Scene/EntityHandle.h"
 
 #include <memory>
+#include <string>
 
 class PhysicsBody;
 class RenderQueue;
@@ -15,7 +16,6 @@ class Entity
 {
 public:
     Entity() = default;
-
     virtual ~Entity();
 
     virtual void Initialize()
@@ -23,17 +23,20 @@ public:
     }
 
     virtual void FixedUpdate(
-        float fixedDeltaTime)
+        float fixedDeltaTime
+    )
     {
     }
 
     virtual void Update(
-        float deltaTime)
+        float deltaTime
+    )
     {
     }
 
     virtual void LateUpdate(
-        float deltaTime)
+        float deltaTime
+    )
     {
     }
 
@@ -45,25 +48,43 @@ public:
 
     void Destroy();
 
+    void SetAssignedAnimationClipPath(
+        const std::wstring& path
+    );
+
+    void ClearAssignedAnimationClipPath()
+        noexcept;
+
+    [[nodiscard]]
     bool IsDestroyed() const;
 
-    EntityHandle GetHandle() const noexcept
+    [[nodiscard]]
+    EntityHandle GetHandle()
+        const noexcept
     {
         return m_handle;
     }
 
+    [[nodiscard]]
+    const std::wstring&
+        GetAssignedAnimationClipPath()
+        const noexcept;
+
     virtual void OnCollisionEnter(
-        Entity& other)
+        Entity& other
+    )
     {
     }
 
     virtual void OnCollisionExit(
-        Entity& other)
+        Entity& other
+    )
     {
     }
 
 public:
     Transform transform;
+
     Sprite sprite;
 
     bool active = true;
@@ -81,11 +102,17 @@ private:
         EntityHandle handle
     ) noexcept
     {
-        m_handle = handle;
+        m_handle =
+            handle;
     }
 
 private:
-    EntityHandle m_handle{};
+    EntityHandle
+        m_handle{};
 
-    bool m_destroyed = false;
+    std::wstring
+        m_assignedAnimationClipPath;
+
+    bool m_destroyed =
+        false;
 };

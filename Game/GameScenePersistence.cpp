@@ -59,9 +59,7 @@ namespace
             ++index)
         {
             if (name ==
-                RequiredAnimationSlots[
-                    index
-                ])
+                RequiredAnimationSlots[index])
             {
                 return index;
             }
@@ -165,11 +163,6 @@ bool GameScene::LoadSceneDocument(
 
     if (sceneData->tileMapPath.empty())
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Scene document "
-            "does not define a TileMap.\n"
-        );
-
         return false;
     }
 
@@ -180,11 +173,6 @@ bool GameScene::LoadSceneDocument(
 
     if (!tileMap)
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Scene TileMap "
-            "preflight failed.\n"
-        );
-
         return false;
     }
 
@@ -195,11 +183,6 @@ bool GameScene::LoadSceneDocument(
             *tileMap
         ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] TileMapRenderer "
-                "preflight failed.\n"
-            );
-
             return false;
         }
 
@@ -210,18 +193,9 @@ bool GameScene::LoadSceneDocument(
             m_physics
         ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] TileMapCollider "
-                "preflight failed.\n"
-            );
-
             return false;
         }
     }
-
-    //
-    // Animation preflight
-    //
 
     std::array<
         bool,
@@ -247,11 +221,6 @@ bool GameScene::LoadSceneDocument(
             slotIndex
         ])
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Duplicate required "
-                "animation binding.\n"
-            );
-
             return false;
         }
 
@@ -263,11 +232,6 @@ bool GameScene::LoadSceneDocument(
         if (!clip ||
             !clip->IsValid())
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Scene animation "
-                "preflight failed.\n"
-            );
-
             return false;
         }
 
@@ -281,21 +245,9 @@ bool GameScene::LoadSceneDocument(
     {
         if (!bound)
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Scene animation "
-                "bindings are incomplete.\n"
-            );
-
             return false;
         }
     }
-
-    //
-    // Audio preflight
-    //
-    // Empty audioBindings is supported for old
-    // V1/V2 scenes and means "audio disabled".
-    //
 
     const SerializedAudioBinding*
         bgmBinding =
@@ -317,11 +269,6 @@ bool GameScene::LoadSceneDocument(
         if (!bgmBinding ||
             !enemyDefeatBinding)
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Scene gameplay audio "
-                "bindings are incomplete.\n"
-            );
-
             return false;
         }
 
@@ -332,11 +279,6 @@ bool GameScene::LoadSceneDocument(
                 enemyDefeatBinding->volume
             ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Scene gameplay audio "
-                "volume is invalid.\n"
-            );
-
             return false;
         }
 
@@ -344,11 +286,6 @@ bool GameScene::LoadSceneDocument(
             bgmBinding->clipPath
         ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Scene BGM "
-                "preflight failed.\n"
-            );
-
             return false;
         }
 
@@ -356,18 +293,9 @@ bool GameScene::LoadSceneDocument(
             enemyDefeatBinding->clipPath
         ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Scene enemy defeat "
-                "SFX preflight failed.\n"
-            );
-
             return false;
         }
     }
-
-    //
-    // Entity preflight
-    //
 
     std::size_t playerCount =
         0;
@@ -379,11 +307,6 @@ bool GameScene::LoadSceneDocument(
             entity.type
         ))
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Scene contains "
-                "an unsupported entity type.\n"
-            );
-
             return false;
         }
 
@@ -395,11 +318,6 @@ bool GameScene::LoadSceneDocument(
 
         if (!entity.sprite)
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Serialized entity "
-                "has no Sprite data.\n"
-            );
-
             return false;
         }
 
@@ -411,22 +329,38 @@ bool GameScene::LoadSceneDocument(
 
         if (!texture)
         {
-            ENGINE_DEBUG_LOG(
-                "[GameScene] Entity texture "
-                "preflight failed.\n"
-            );
-
             return false;
+        }
+
+        //
+        // V4 per-entity AnimationClip preflight.
+        //
+
+        if (!entity.animationClipPath.empty())
+        {
+            AnimationClip* clip =
+                m_resources.
+                LoadAnimationClip(
+                    entity.
+                    animationClipPath
+                );
+
+            if (!clip ||
+                !clip->IsValid())
+            {
+                ENGINE_DEBUG_LOG(
+                    "[GameScene] Entity "
+                    "AnimationClip preflight "
+                    "failed.\n"
+                );
+
+                return false;
+            }
         }
     }
 
     if (playerCount != 1)
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Scene must contain "
-            "exactly one Player.\n"
-        );
-
         return false;
     }
 
@@ -437,17 +371,8 @@ bool GameScene::LoadSceneDocument(
         return false;
     }
 
-    //
-    // The Scene has now supplied m_audioBindings.
-    //
-
     if (!InitializeGameplayAudio())
     {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to apply "
-            "loaded Scene audio bindings.\n"
-        );
-
         return false;
     }
 

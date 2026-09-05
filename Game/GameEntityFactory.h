@@ -4,14 +4,13 @@
 
 #include <string>
 
-class Scene;
+class CharacterAnimationSet;
 class Entity;
-class Player;
-class ResourceManager;
 class PhysicsSystem;
+class ResourceManager;
+class Scene;
 
 struct SerializedEntity;
-class CharacterAnimationSet;
 
 class GameEntityFactory
 {
@@ -39,6 +38,11 @@ public:
 
 private:
     bool ApplySerializedState(
+        Entity& entity,
+        const SerializedEntity& data
+    );
+
+    bool ApplySerializedAnimation(
         Entity& entity,
         const SerializedEntity& data
     );
