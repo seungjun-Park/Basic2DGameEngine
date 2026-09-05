@@ -1,6 +1,7 @@
 #include "AnimationClip.h"
 
 #include <cmath>
+#include <utility>
 
 namespace
 {
@@ -68,12 +69,73 @@ bool AnimationClip::AddFrame(
         frame
     );
 
+    ++m_revision;
+
     return true;
 }
 
 void AnimationClip::ClearFrames()
 {
+    if (m_frames.empty())
+    {
+        return;
+    }
+
     m_frames.clear();
+
+    ++m_revision;
+}
+
+bool AnimationClip::ReplaceContents(
+    Texture* texture,
+    bool looping,
+    std::vector<AnimationFrame> frames)
+{
+    if (!texture)
+    {
+        return false;
+    }
+
+    if (frames.empty())
+    {
+        return false;
+    }
+
+    for (const AnimationFrame& frame :
+        frames)
+    {
+        if (!IsValidUVRect(
+            frame.uv))
+        {
+            return false;
+        }
+
+        if (!IsValidDuration(
+            frame.duration))
+        {
+            return false;
+        }
+    }
+
+    //
+    // Validation is complete before any
+    // current runtime state is modified.
+    //
+
+    m_frames =
+        std::move(
+            frames
+        );
+
+    m_texture =
+        texture;
+
+    m_looping =
+        looping;
+
+    ++m_revision;
+
+    return true;
 }
 
 const AnimationFrame*

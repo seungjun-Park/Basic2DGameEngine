@@ -8,7 +8,17 @@ struct AnimationClipData;
 class AnimationClipSerializer
 {
 public:
-    static std::unique_ptr<AnimationClipData>
+    static bool Save(
+        const AnimationClipData& data,
+        const std::wstring& path);
+
+    static std::unique_ptr<
+        AnimationClipData>
         Load(
             const std::wstring& path);
+
+    [[nodiscard]]
+    static bool Validate(
+        const AnimationClipData& data)
+        noexcept;
 };

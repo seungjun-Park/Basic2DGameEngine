@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <limits>
 
 namespace
 {
@@ -126,6 +127,178 @@ namespace
         }
 
         return result;
+    }
+
+    std::string WideToUtf8(
+        const std::wstring& value)
+    {
+        if (value.empty())
+        {
+            return {};
+        }
+
+        if (value.size() >
+            static_cast<std::size_t>(
+                std::numeric_limits<int>::max()))
+        {
+            return {};
+        }
+
+        const int sourceLength =
+            static_cast<int>(
+                value.size()
+                );
+
+        const int requiredSize =
+            ::WideCharToMultiByte(
+                CP_UTF8,
+                WC_ERR_INVALID_CHARS,
+                value.data(),
+                sourceLength,
+                nullptr,
+                0,
+                nullptr,
+                nullptr
+            );
+
+        if (requiredSize <= 0)
+        {
+            return {};
+        }
+
+        std::string result(
+            static_cast<std::size_t>(
+                requiredSize),
+            '\0'
+        );
+
+        const int convertedSize =
+            ::WideCharToMultiByte(
+                CP_UTF8,
+                WC_ERR_INVALID_CHARS,
+                value.data(),
+                sourceLength,
+                result.data(),
+                requiredSize,
+                nullptr,
+                nullptr
+            );
+
+        if (convertedSize !=
+            requiredSize)
+        {
+            return {};
+        }
+
+        return result;
+    }
+}
+
+bool AnimationClipSerializer::Save(
+    const AnimationClipData& data,
+    const std::wstring& path)
+{
+    if (!Validate(
+        data))
+    {
+        ANIMATIONCLIP_DEBUG_LOG(
+            "Cannot save invalid "
+            "AnimationClipData.");
+
+        return false;
+    }
+
+    const std::string texturePath =
+        WideToUtf8(
+            data.texturePath
+        );
+
+    if (texturePath.empty())
+    {
+        ANIMATIONCLIP_DEBUG_LOG(
+            "Failed to convert "
+            "AnimationClip texture path "
+            "to UTF-8.");
+
+        return false;
+    }
+
+    try
+    {
+        nlohmann::json root;
+
+        root["texture"] =
+            texturePath;
+
+        root["looping"] =
+            data.looping;
+
+        root["frames"] =
+            nlohmann::json::array();
+
+        for (const
+            AnimationClipFrameData& frame :
+            data.frames)
+        {
+            nlohmann::json
+                frameJson;
+
+            frameJson["uv"] =
+            {
+                frame.uv.u0,
+                frame.uv.v0,
+                frame.uv.u1,
+                frame.uv.v1
+            };
+
+            frameJson["duration"] =
+                frame.duration;
+
+            root["frames"].
+                push_back(
+                    std::move(
+                        frameJson
+                    )
+                );
+        }
+
+        std::ofstream file
+        {
+            std::filesystem::path(
+                path
+            )
+        };
+
+        if (!file.is_open())
+        {
+            ANIMATIONCLIP_DEBUG_LOG(
+                "Failed to open "
+                "AnimationClip output.");
+
+            return false;
+        }
+
+        file <<
+            root.dump(4);
+
+        if (!file.good())
+        {
+            ANIMATIONCLIP_DEBUG_LOG(
+                "Failed to write "
+                "AnimationClip.");
+
+            return false;
+        }
+
+        return true;
+    }
+    catch (
+        const nlohmann::json::exception& e)
+    {
+        ANIMATIONCLIP_DEBUG_LOG(
+            e.what());
+
+        return false;
     }
 }
 
@@ -350,4 +523,38 @@ AnimationClipSerializer::Load(
 
         return nullptr;
     }
+}
+
+bool AnimationClipSerializer::Validate(
+    const AnimationClipData& data)
+    noexcept
+{
+    if (data.texturePath.empty())
+    {
+        return false;
+    }
+
+    if (data.frames.empty())
+    {
+        return false;
+    }
+
+    for (const
+        AnimationClipFrameData& frame :
+        data.frames)
+    {
+        if (!IsValidUVRect(
+            frame.uv))
+        {
+            return false;
+        }
+
+        if (!IsValidDuration(
+            frame.duration))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }

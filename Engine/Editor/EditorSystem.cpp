@@ -314,7 +314,10 @@ DrawWorkspaceTabs(
         animationTabFlags))
     {
         m_animationClipEditorPanel.
-            DrawContents();
+            DrawContents(
+                engine.
+                GetResourceManager()
+            );
 
         ImGui::EndTabItem();
     }
