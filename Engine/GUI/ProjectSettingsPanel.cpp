@@ -590,12 +590,15 @@ void ProjectSettingsPanel::Draw()
     }
 
     //
-    // Save / Revert
-    //
+// Save / Revert
+//
 
     ImGui::Separator();
 
-    if (!IsDirty())
+    const bool isDirty =
+        IsDirty();
+
+    if (!isDirty)
     {
         ImGui::BeginDisabled();
     }
@@ -614,7 +617,7 @@ void ProjectSettingsPanel::Draw()
         Revert();
     }
 
-    if (!IsDirty())
+    if (!isDirty)
     {
         ImGui::EndDisabled();
     }

@@ -153,8 +153,8 @@ bool AudioSystem::Initialize()
     }
 
 
-    m_initialized =
-        true;
+    m_suspended = false;
+    m_initialized = true;
 
 
     char message[256]{};
@@ -228,6 +228,8 @@ noexcept
     m_outputSampleRate =
         0;
 
+    m_suspended = 
+        false;
     m_initialized =
         false;
 }
@@ -940,6 +942,53 @@ bool AudioSystem::SetMusicVolume(
 
 
     return true;
+}
+
+bool AudioSystem::SetSuspended(
+    bool suspended
+) noexcept
+{
+    if (!IsInitialized())
+    {
+        return false;
+    }
+
+    if (m_suspended == suspended)
+    {
+        return true;
+    }
+
+    if (suspended)
+    {
+        m_xaudio2->StopEngine();
+
+        m_suspended = true;
+
+        return true;
+    }
+
+    const HRESULT hr =
+        m_xaudio2->StartEngine();
+
+    if (FAILED(hr))
+    {
+        AUDIO_DEBUG_LOG(
+            "IXAudio2::StartEngine",
+            hr
+        );
+
+        return false;
+    }
+
+    m_suspended = false;
+
+    return true;
+}
+
+bool AudioSystem::IsSuspended()
+const noexcept
+{
+    return m_suspended;
 }
 
 bool AudioSystem::IsPlaybackValid(

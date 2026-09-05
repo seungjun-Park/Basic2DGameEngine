@@ -34,6 +34,7 @@ public:
 
     void BeginGuiFrame();
     void BeginProfileFrame();
+    void UpdateFrameServices();
     void FixedUpdate(
         float fixedDeltaTime
     );

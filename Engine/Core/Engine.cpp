@@ -177,6 +177,36 @@ void Engine::BeginProfileFrame()
     m_cpuProfiler.BeginFrame();
 }
 
+void Engine::UpdateFrameServices()
+{
+    if (m_audioSystem)
+    {
+        m_audioSystem->Update();
+    }
+
+    if (WinInput::IsRawKeyPressed(
+        VK_F1))
+    {
+        m_showDebug =
+            !m_showDebug;
+    }
+
+    if (WinInput::IsRawKeyPressed(
+        VK_F3))
+    {
+        m_showGui =
+            !m_showGui;
+
+        if (!m_showGui)
+        {
+            WinInput::SetCaptureState(
+                false,
+                false);
+        }
+    }
+}
+
+
 void Engine::FixedUpdate(
     float fixedDeltaTime)
 {
@@ -244,27 +274,7 @@ void Engine::Update(
         CpuProfileZone::Update
     );
 
-    if (m_audioSystem)
-    {
-        m_audioSystem->
-            Update();
-    }
-
-    if (WinInput::IsRawKeyPressed(
-        VK_F1))
-    {
-        m_showDebug = !m_showDebug;
-    }
-
-    if (WinInput::IsRawKeyPressed(VK_F3))
-    {
-        m_showGui = !m_showGui;
-
-        if (!m_showGui)
-        {
-            WinInput::SetCaptureState(false, false);
-        }
-    }
+    UpdateFrameServices();
 
     if (!m_scene)
     {

@@ -108,8 +108,14 @@ public:
     bool SetMusicVolume(
         float volume
     );
+    bool SetSuspended(
+        bool suspended
+    ) noexcept;
 
 
+    [[nodiscard]]
+    bool IsSuspended()
+        const noexcept;
     bool IsPlaybackValid(
         AudioPlaybackHandle handle
     ) const noexcept;
@@ -248,4 +254,6 @@ private:
 
     bool
         m_initialized = false;
+
+    bool m_suspended = false;
 };

@@ -1,6 +1,8 @@
 #include "EditorSystem.h"
 
-#include "Engine/GUI/ProjectSettingsPanel.h"
+#include "Engine/Core/ProjectConfig.h"
+
+#include <imgui.h>
 
 #include <utility>
 
@@ -54,16 +56,49 @@ void EditorSystem::Draw()
         return;
     }
 
+    DrawModeControls();
+
     if (m_projectSettingsPanel)
     {
         m_projectSettingsPanel->Draw();
     }
 }
 
+void EditorSystem::EnterPlayMode()
+{
+    if (!m_initialized ||
+        m_mode == Mode::Play)
+    {
+        return;
+    }
+
+    m_mode = Mode::Play;
+}
+
+void EditorSystem::StopPlayMode()
+{
+    if (!m_initialized ||
+        m_mode == Mode::Edit)
+    {
+        return;
+    }
+
+    m_mode = Mode::Edit;
+}
+
 EditorSystem::Mode
 EditorSystem::GetMode() const noexcept
 {
     return m_mode;
+}
+
+const ProjectConfig&
+EditorSystem::
+GetProjectSettingsDraftConfig() const
+{
+    return
+        m_projectSettingsPanel->
+        GetDraftConfig();
 }
 
 bool EditorSystem::IsEditMode() const noexcept
@@ -79,4 +114,36 @@ bool EditorSystem::IsPlayMode() const noexcept
 bool EditorSystem::IsInitialized() const noexcept
 {
     return m_initialized;
+}
+
+void EditorSystem::DrawModeControls()
+{
+    if (!ImGui::Begin("Editor"))
+    {
+        ImGui::End();
+        return;
+    }
+
+    if (m_mode == Mode::Edit)
+    {
+        ImGui::TextUnformatted(
+            "Mode: Edit");
+
+        if (ImGui::Button("Play"))
+        {
+            EnterPlayMode();
+        }
+    }
+    else
+    {
+        ImGui::TextUnformatted(
+            "Mode: Play");
+
+        if (ImGui::Button("Stop"))
+        {
+            StopPlayMode();
+        }
+    }
+
+    ImGui::End();
 }

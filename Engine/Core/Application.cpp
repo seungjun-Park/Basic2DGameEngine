@@ -10,6 +10,7 @@
 #include "Engine/Debug/CpuProfiler.h"
 #include "Engine/Editor/EditorSystem.h"
 #include "Engine/GUI/ProjectSettingsPanel.h"
+#include "Engine/Audio/AudioSystem.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -103,6 +104,12 @@ int Application::Run(
         return -1;
     }
 
+    m_engine->
+        GetAudioSystem().
+        SetSuspended(
+            editorSystem.IsEditMode()
+        );
+
     while (true)
     {
         m_frameLimiter.BeginFrame();
@@ -149,68 +156,95 @@ int Application::Run(
         m_engine->
             BeginProfileFrame();
 
-        const float fixedDelta =
-            Time::FixedDeltaTime();
-
-        const float maxAccumulator =
-            fixedDelta *
-            static_cast<float>(
-                m_config.maxFixedSteps
-                );
-
-        m_fixedAccumulator +=
-            Time::DeltaTime();
-
-        m_fixedAccumulator =
-            std::min(
-                m_fixedAccumulator,
-                maxAccumulator
-            );
-
         std::uint32_t fixedSteps = 0;
 
-        while (
-            m_fixedAccumulator >=
-            fixedDelta
-            )
-        {
-            m_engine->FixedUpdate(
-                fixedDelta
-            );
-
-            m_fixedAccumulator -=
-                fixedDelta;
-
-            ++fixedSteps;
-        }
-
-        float interpolationAlpha =
-            0.0f;
-
-        if (fixedDelta > 0.0f)
-        {
-            interpolationAlpha =
-                m_fixedAccumulator /
-                fixedDelta;
-        }
-
         m_engine->
-            SetInterpolationAlpha(
-                interpolationAlpha
+            GetAudioSystem().
+            SetSuspended(
+                editorSystem.IsEditMode()
             );
 
-        m_engine->Update(
-            Time::DeltaTime()
-        );
+        if (editorSystem.IsPlayMode())
+        {
+            const float fixedDelta =
+                Time::FixedDeltaTime();
 
-        m_engine->LateUpdate(
-            Time::DeltaTime()
-        );
+            const float maxAccumulator =
+                fixedDelta *
+                static_cast<float>(
+                    m_config.maxFixedSteps
+                    );
+
+            m_fixedAccumulator +=
+                Time::DeltaTime();
+
+            m_fixedAccumulator =
+                std::min(
+                    m_fixedAccumulator,
+                    maxAccumulator
+                );
+
+            while (
+                m_fixedAccumulator >=
+                fixedDelta)
+            {
+                m_engine->FixedUpdate(
+                    fixedDelta
+                );
+
+                m_fixedAccumulator -=
+                    fixedDelta;
+
+                ++fixedSteps;
+            }
+
+            float interpolationAlpha =
+                0.0f;
+
+            if (fixedDelta > 0.0f)
+            {
+                interpolationAlpha =
+                    m_fixedAccumulator /
+                    fixedDelta;
+            }
+
+            m_engine->
+                SetInterpolationAlpha(
+                    interpolationAlpha
+                );
+
+            m_engine->Update(
+                Time::DeltaTime()
+            );
+
+            m_engine->LateUpdate(
+                Time::DeltaTime()
+            );
+        }
+        else
+        {
+            m_fixedAccumulator =
+                0.0f;
+
+            m_engine->
+                SetInterpolationAlpha(
+                    0.0f
+                );
+
+            m_engine->
+                UpdateFrameServices();
+        }
+
 
         if (m_engine->IsGuiVisible())
         {
             editorSystem.Draw();
         }
+
+        ApplyLiveProjectSettings(
+            editorSystem.
+            GetProjectSettingsDraftConfig()
+        );
 
         m_engine->Render(
             m_config.vsync
