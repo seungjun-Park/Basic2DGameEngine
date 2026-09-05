@@ -31,6 +31,38 @@ public:
         int spacing
     );
 
+    void ReplaceContents(
+        const Tileset& source
+    ) noexcept
+    {
+        if (this ==
+            &source)
+        {
+            return;
+        }
+
+        m_texture =
+            source.m_texture;
+
+        m_tileWidth =
+            source.m_tileWidth;
+
+        m_tileHeight =
+            source.m_tileHeight;
+
+        m_columns =
+            source.m_columns;
+
+        m_rows =
+            source.m_rows;
+
+        m_margin =
+            source.m_margin;
+
+        m_spacing =
+            source.m_spacing;
+    }
+
     Texture* GetTexture() const;
 
     int GetTileWidth() const;
@@ -51,7 +83,8 @@ public:
     ) const;
 
 private:
-    Texture* m_texture = nullptr;
+    Texture* m_texture =
+        nullptr;
 
     int m_tileWidth = 0;
     int m_tileHeight = 0;

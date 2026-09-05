@@ -8,6 +8,7 @@
 #include <limits>
 #include <string>
 
+class ITileMapRuntimeTarget;
 class ResourceManager;
 class Texture;
 
@@ -25,7 +26,8 @@ public:
         ResourceManager& resourceManager,
         TileId paletteTileId,
         const std::wstring& paletteTilesetPath,
-        bool allowEditing
+        bool allowEditing,
+        ITileMapRuntimeTarget* runtimeTarget
     );
 
     [[nodiscard]]
@@ -142,5 +144,11 @@ private:
         true;
 
     bool m_lastOpenFailed =
+        false;
+
+    bool m_lastRuntimeApplySucceeded =
+        false;
+
+    bool m_lastRuntimeApplyFailed =
         false;
 };

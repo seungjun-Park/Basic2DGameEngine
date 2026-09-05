@@ -196,6 +196,7 @@
     <ClInclude Include="Engine\Serialization\SceneData.h" />
     <ClInclude Include="Engine\Serialization\SceneSerializer.h" />
     <ClInclude Include="Engine\Serialization\TilesetSerializer.h" />
+    <ClInclude Include="Engine\Tile\ITileMapRuntimeTarget.h" />
     <ClInclude Include="Engine\Tile\TileMap.h" />
     <ClInclude Include="Engine\Tile\TileMapCollider.h" />
     <ClInclude Include="Engine\Tile\TileMapData.h" />
@@ -266,6 +267,7 @@
     <ClCompile Include="Game\Enemy.cpp" />
     <ClCompile Include="Game\GameEntityFactory.cpp" />
     <ClCompile Include="Game\GameScene.cpp" />
+    <ClCompile Include="Game\GameSceneTileMapRuntime.cpp" />
     <ClCompile Include="Game\Player.cpp" />
     <ClCompile Include="Game\Main.cpp" />
   </ItemGroup>

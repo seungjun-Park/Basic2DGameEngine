@@ -7,6 +7,8 @@
 
 #include "Engine/Scene/Scene.h"
 
+#include "Engine/Tile/ITileMapRuntimeTarget.h"
+
 #include <imgui.h>
 
 #include <utility>
@@ -343,10 +345,6 @@ DrawWorkspaceTabs(
         return;
     }
 
-    //
-    // Project Settings
-    //
-
     if (ImGui::BeginTabItem(
         "Project Settings"
     ))
@@ -359,10 +357,6 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
-
-    //
-    // Assets
-    //
 
     if (ImGui::BeginTabItem(
         "Assets"
@@ -434,12 +428,6 @@ DrawWorkspaceTabs(
                             engine.GetResourceManager()
                         ))
                     {
-                        //
-                        // Ensure that the palette uses
-                        // the exact Tileset referenced
-                        // by this TileMap document.
-                        //
-
                         m_tilePalettePanel.
                             OpenTileset(
                                 m_tileMapEditorPanel.
@@ -456,10 +444,6 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
-
-    //
-    // Animation
-    //
 
     ImGuiTabItemFlags
         animationTabFlags =
@@ -488,10 +472,6 @@ DrawWorkspaceTabs(
     m_selectAnimationTabRequested =
         false;
 
-    //
-    // Audio
-    //
-
     if (ImGui::BeginTabItem(
         "Audio"
     ))
@@ -503,10 +483,6 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
-
-    //
-    // Runtime TileMap
-    //
 
     if (ImGui::BeginTabItem(
         "TileMap"
@@ -529,10 +505,6 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
-
-    //
-    // Tileset
-    //
 
     ImGuiTabItemFlags
         tilesetTabFlags =
@@ -559,10 +531,6 @@ DrawWorkspaceTabs(
     m_selectTilesetTabRequested =
         false;
 
-    //
-    // Tile Palette
-    //
-
     if (ImGui::BeginTabItem(
         "Tile Palette"
     ))
@@ -576,10 +544,6 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
-
-    //
-    // TileMap Editor
-    //
 
     ImGuiTabItemFlags
         tileMapEditorTabFlags =
@@ -597,6 +561,17 @@ DrawWorkspaceTabs(
         tileMapEditorTabFlags
     ))
     {
+        Scene* scene =
+            engine.GetScene();
+
+        ITileMapRuntimeTarget*
+            runtimeTarget =
+            dynamic_cast<
+            ITileMapRuntimeTarget*
+            >(
+                scene
+                );
+
         m_tileMapEditorPanel.
             DrawContents(
                 engine.GetResourceManager(),
@@ -604,7 +579,8 @@ DrawWorkspaceTabs(
                 GetSelectedTileId(),
                 m_tilePalettePanel.
                 GetTilesetPath(),
-                IsEditMode()
+                IsEditMode(),
+                runtimeTarget
             );
 
         ImGui::EndTabItem();
@@ -612,10 +588,6 @@ DrawWorkspaceTabs(
 
     m_selectTileMapEditorTabRequested =
         false;
-
-    //
-    // Hierarchy
-    //
 
     if (ImGui::BeginTabItem(
         "Hierarchy"
@@ -637,10 +609,6 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
-
-    //
-    // Inspector
-    //
 
     if (ImGui::BeginTabItem(
         "Inspector"

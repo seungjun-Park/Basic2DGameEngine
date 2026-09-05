@@ -1,16 +1,21 @@
 #pragma once
 
+#include "CharacterAnimation.h"
+
+#include "Engine/Audio/AudioPlaybackHandle.h"
 #include "Engine/Event/EventBus.h"
 #include "Engine/Scene/Scene.h"
-#include "CharacterAnimation.h"
-#include "Engine/Audio/AudioPlaybackHandle.h"
 #include "Engine/Serialization/SceneData.h"
+#include "Engine/Tile/ITileMapRuntimeTarget.h"
 
 #include <memory>
 #include <string>
+#include <vector>
 
 struct CollisionEnterEvent;
 struct CollisionExitEvent;
+struct EnemyDefeatedEvent;
+struct TileMapData;
 
 class ResourceManager;
 class Player;
@@ -23,10 +28,10 @@ class TileMapCollider;
 class Enemy;
 class AudioSystem;
 class AudioClip;
-struct EnemyDefeatedEvent;
 
 class GameScene :
-    public Scene
+    public Scene,
+    public ITileMapRuntimeTarget
 {
 public:
     explicit GameScene(
@@ -64,16 +69,26 @@ public:
         const std::wstring& path
     );
 
+    [[nodiscard]]
+    bool IsUsingTileMap(
+        const std::wstring& path
+    ) const noexcept override;
+
+    bool ApplyTileMapData(
+        const std::wstring& path,
+        const TileMapData& data
+    ) override;
+
     void CollectDebugStats(
         DebugStats& stats
     ) const override;
 
 private:
-    bool LoadEnemyAnimations(
+    bool LoadTileMap(
         const SceneData& sceneData
     );
-    
-    bool LoadTileMap(
+
+    bool LoadEnemyAnimations(
         const SceneData& sceneData
     );
 
@@ -89,10 +104,12 @@ private:
         Enemy& enemy
     );
 
+private:
     void SubscribeCollisionEvents();
 
     void SubscribeGameplayAudioEvents();
 
+private:
     void HandleCollisionEnterEvent(
         const CollisionEnterEvent& event
     );
@@ -105,6 +122,7 @@ private:
         const EnemyDefeatedEvent& event
     );
 
+private:
     bool IsPlayerCollision(
         EntityHandle entityA,
         EntityHandle entityB
@@ -121,20 +139,20 @@ private:
     PhysicsSystem& m_physics;
 
     EventBus& m_events;
-    
-    AudioSystem&
-        m_audio;
 
-    AudioClip*
-        m_enemyDefeatSfx = nullptr;
+    AudioSystem& m_audio;
 
-    AudioClip*
-        m_bgmClip = nullptr;
+    AudioClip* m_enemyDefeatSfx =
+        nullptr;
+
+    AudioClip* m_bgmClip =
+        nullptr;
 
     AudioPlaybackHandle
         m_bgmHandle{};
 
-    EntityHandle m_playerHandle{};
+    EntityHandle
+        m_playerHandle{};
 
     EventSubscription
         m_collisionEnterSubscription;

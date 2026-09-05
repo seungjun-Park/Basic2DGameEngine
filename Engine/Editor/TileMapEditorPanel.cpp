@@ -4,6 +4,7 @@
 #include "Engine/Resource/ResourceManager.h"
 #include "Engine/Serialization/TileMapSerializer.h"
 #include "Engine/Serialization/TilesetSerializer.h"
+#include "Engine/Tile/ITileMapRuntimeTarget.h"
 
 #include <Windows.h>
 
@@ -169,11 +170,6 @@ bool TileMapEditorPanel::Open(
         return false;
     }
 
-    //
-    // Commit only after all loading and
-    // validation has succeeded.
-    //
-
     m_documentPath =
         path;
 
@@ -207,6 +203,12 @@ bool TileMapEditorPanel::Open(
     m_lastOpenFailed =
         false;
 
+    m_lastRuntimeApplySucceeded =
+        false;
+
+    m_lastRuntimeApplyFailed =
+        false;
+
     return true;
 }
 
@@ -238,13 +240,20 @@ noexcept
 
     m_lastOpenFailed =
         false;
+
+    m_lastRuntimeApplySucceeded =
+        false;
+
+    m_lastRuntimeApplyFailed =
+        false;
 }
 
 void TileMapEditorPanel::DrawContents(
     ResourceManager& resourceManager,
     TileId paletteTileId,
     const std::wstring& paletteTilesetPath,
-    bool allowEditing
+    bool allowEditing,
+    ITileMapRuntimeTarget* runtimeTarget
 )
 {
     if (!IsOpen())
@@ -264,6 +273,19 @@ void TileMapEditorPanel::DrawContents(
         return;
     }
 
+    const bool runtimeUsesDocument =
+        runtimeTarget &&
+        runtimeTarget->IsUsingTileMap(
+            m_documentPath
+        );
+
+    const bool runtimeApplyAvailable =
+        allowEditing &&
+        runtimeUsesDocument &&
+        TileMapSerializer::Validate(
+            m_data
+        );
+
     //
     // Toolbar
     //
@@ -272,6 +294,19 @@ void TileMapEditorPanel::DrawContents(
         ImGui::Button(
             "Reload"
         );
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        !runtimeApplyAvailable
+    );
+
+    const bool applyRuntimeRequested =
+        ImGui::Button(
+            "Apply Runtime"
+        );
+
+    ImGui::EndDisabled();
 
     ImGui::SameLine();
 
@@ -287,9 +322,35 @@ void TileMapEditorPanel::DrawContents(
         );
     }
 
+    if (applyRuntimeRequested &&
+        runtimeTarget)
+    {
+        m_lastRuntimeApplySucceeded =
+            false;
+
+        m_lastRuntimeApplyFailed =
+            false;
+
+        if (runtimeTarget->
+            ApplyTileMapData(
+                m_documentPath,
+                m_data
+            ))
+        {
+            m_lastRuntimeApplySucceeded =
+                true;
+        }
+        else
+        {
+            m_lastRuntimeApplyFailed =
+                true;
+        }
+    }
+
     if (closeRequested)
     {
         Close();
+
         return;
     }
 
@@ -304,14 +365,43 @@ void TileMapEditorPanel::DrawContents(
     if (!allowEditing)
     {
         ImGui::TextDisabled(
-            "Tile painting is disabled "
-            "while Play Mode is active."
+            "Tile painting and runtime apply "
+            "are disabled in Play Mode."
+        );
+    }
+
+    if (!runtimeTarget)
+    {
+        ImGui::TextDisabled(
+            "The active Scene does not support "
+            "runtime TileMap rebuild."
+        );
+    }
+    else if (!runtimeUsesDocument)
+    {
+        ImGui::TextDisabled(
+            "The active Scene is not using "
+            "this TileMap document."
+        );
+    }
+
+    if (m_lastRuntimeApplySucceeded)
+    {
+        ImGui::TextDisabled(
+            "Runtime TileMap rebuild succeeded."
+        );
+    }
+
+    if (m_lastRuntimeApplyFailed)
+    {
+        ImGui::TextDisabled(
+            "Runtime TileMap rebuild failed. "
+            "The previous runtime state was preserved."
         );
     }
 
     ImGui::TextDisabled(
-        "Stage 18 edits are in-memory only. "
-        "Save/Revert is added in Stage 20."
+        "Apply Runtime does not save JSON."
     );
 
     ImGui::Separator();
@@ -319,10 +409,6 @@ void TileMapEditorPanel::DrawContents(
     DrawDocumentInfo();
 
     ImGui::Separator();
-
-    //
-    // Main document workspace
-    //
 
     if (ImGui::BeginChild(
         "##TileMapLayerList",
@@ -506,11 +592,14 @@ void TileMapEditorPanel::DrawLayers()
     }
 
     for (std::size_t index = 0;
-        index < m_data.layers.size();
+        index <
+        m_data.layers.size();
         ++index)
     {
         const TileLayer& layer =
-            m_data.layers[index];
+            m_data.layers[
+                index
+            ];
 
         const bool selected =
             m_selectedLayerIndex ==
@@ -626,10 +715,6 @@ void TileMapEditorPanel::DrawCanvas(
             m_selectedLayerIndex
         ];
 
-    //
-    // Canvas controls
-    //
-
     ImGui::TextUnformatted(
         "Paint Canvas"
     );
@@ -685,9 +770,7 @@ void TileMapEditorPanel::DrawCanvas(
         {
             ImGui::TextDisabled(
                 "The Tile Palette uses a "
-                "different Tileset. Painting "
-                "is blocked until the matching "
-                "Tileset is loaded."
+                "different Tileset."
             );
         }
 
@@ -801,6 +884,7 @@ void TileMapEditorPanel::DrawCanvas(
         static_cast<float>(
             canvasWidthDouble
         ),
+
         static_cast<float>(
             canvasHeightDouble
         )
@@ -819,11 +903,6 @@ void TileMapEditorPanel::DrawCanvas(
         true,
         canvasFlags
     );
-
-    //
-    // One interaction item represents the entire
-    // map. No per-cell PushID/PopID is required.
-    //
 
     ImGui::InvisibleButton(
         "##TileMapPaintSurface",
@@ -853,14 +932,6 @@ void TileMapEditorPanel::DrawCanvas(
         ImGui::GetColorU32(
             ImGuiCol_HeaderHovered
         );
-
-    //
-    // Draw all cells.
-    //
-    // Stage 18 intentionally keeps this simple.
-    // A later editor optimization pass can cull
-    // off-screen cells for very large maps.
-    //
 
     if (drawList)
     {
@@ -954,18 +1025,16 @@ void TileMapEditorPanel::DrawCanvas(
                         );
                     }
                 }
-                else
+                else if (
+                    tileId ==
+                    SolidCollisionTile)
                 {
-                    if (tileId ==
-                        SolidCollisionTile)
-                    {
-                        drawList->
-                            AddRectFilled(
-                                cellMin,
-                                cellMax,
-                                collisionColor
-                            );
-                    }
+                    drawList->
+                        AddRectFilled(
+                            cellMin,
+                            cellMax,
+                            collisionColor
+                        );
                 }
 
                 if (m_showGrid)
@@ -979,10 +1048,6 @@ void TileMapEditorPanel::DrawCanvas(
             }
         }
     }
-
-    //
-    // Mouse ¡æ cell conversion
-    //
 
     const bool canvasHovered =
         ImGui::IsItemHovered();
@@ -1192,16 +1257,10 @@ void TileMapEditorPanel::PaintCell(
     if (layer.type ==
         TileLayerType::Collision)
     {
-        if (erase)
-        {
-            newValue =
-                EmptyCollisionTile;
-        }
-        else
-        {
-            newValue =
-                m_collisionBrush;
-        }
+        newValue =
+            erase
+            ? EmptyCollisionTile
+            : m_collisionBrush;
     }
     else
     {
@@ -1227,8 +1286,24 @@ void TileMapEditorPanel::PaintCell(
         }
     }
 
+    if (layer.tiles[index] ==
+        newValue)
+    {
+        return;
+    }
+
     layer.tiles[index] =
         newValue;
+
+    //
+    // Runtime is now stale relative to draft.
+    //
+
+    m_lastRuntimeApplySucceeded =
+        false;
+
+    m_lastRuntimeApplyFailed =
+        false;
 }
 
 bool TileMapEditorPanel::
@@ -1413,16 +1488,9 @@ CalculateTileUV(
         return result;
     }
 
-    if (m_tilesetData.columns <= 0 ||
-        m_tilesetData.rows <= 0)
-    {
-        return result;
-    }
-
     const std::uint64_t zeroBased =
         static_cast<std::uint64_t>(
-            tileId -
-            1
+            tileId - 1
             );
 
     const std::uint64_t column =
