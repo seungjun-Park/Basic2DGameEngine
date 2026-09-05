@@ -33,6 +33,18 @@
             "slot": "Enemy.Walk.Up"
         }
     ],
+    "audioBindings": [
+        {
+            "slot": "Gameplay.BGM",
+            "clip": "Engine/Assets/Audio/bgm.wav",
+            "volume": 0.35
+        },
+        {
+            "slot": "Gameplay.EnemyDefeat",
+            "clip": "Engine/Assets/Audio/enemy_defeat.wav",
+            "volume": 0.7
+        }
+    ],
     "entities": [
         {
             "active": true,

@@ -35,33 +35,21 @@
 
 #include <imgui.h>
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include <utility>
 
 namespace
 {
-    //
-    // Stage 23 removes these remaining
-    // gameplay asset hardcodings.
-    //
+    constexpr std::string_view
+        GameplayBgmSlot =
+        "Gameplay.BGM";
 
-    constexpr const wchar_t*
-        GameplayBgmPath =
-        L"Engine/Assets/Audio/bgm.wav";
-
-    constexpr const wchar_t*
-        EnemyDefeatSfxPath =
-        L"Engine/Assets/Audio/"
-        L"enemy_defeat.wav";
-
-    constexpr float
-        GameplayBgmVolume =
-        0.35f;
-
-    constexpr float
-        EnemyDefeatSfxVolume =
-        0.70f;
+    constexpr std::string_view
+        EnemyDefeatSfxSlot =
+        "Gameplay.EnemyDefeat";
 
     struct EnemyAnimationSlot
     {
@@ -135,6 +123,41 @@ namespace
 
         return nullptr;
     }
+
+    const SerializedAudioBinding*
+        FindAudioBinding(
+            const std::vector<
+            SerializedAudioBinding
+            >& bindings,
+            std::string_view slot
+        ) noexcept
+    {
+        for (const SerializedAudioBinding&
+            binding :
+            bindings)
+        {
+            if (binding.slot ==
+                slot)
+            {
+                return
+                    &binding;
+            }
+        }
+
+        return nullptr;
+    }
+
+    bool IsValidAudioVolume(
+        float volume
+    ) noexcept
+    {
+        return
+            std::isfinite(
+                volume
+            ) &&
+            volume >= 0.0f &&
+            volume <= 1.0f;
+    }
 }
 
 GameScene::GameScene(
@@ -207,6 +230,11 @@ void GameScene::Initialize()
 
     if (!InitializeGameplayAudio())
     {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to initialize "
+            "gameplay audio bindings.\n"
+        );
+
         return;
     }
 
@@ -466,6 +494,9 @@ bool GameScene::SaveSerializedEntities(
 
     sceneData.animationBindings =
         m_animationBindings;
+
+    sceneData.audioBindings =
+        m_audioBindings;
 
     GameEntityFactory factory(
         *this,
@@ -818,6 +849,8 @@ bool GameScene::LoadSerializedEntities(
 
     m_animationBindings.clear();
 
+    m_audioBindings.clear();
+
     m_tileMapCollider.reset();
 
     m_tileMapRenderer.reset();
@@ -1002,56 +1035,130 @@ bool GameScene::LoadSerializedEntities(
         sceneData->
         animationBindings;
 
+    m_audioBindings =
+        sceneData->
+        audioBindings;
+
     return true;
 }
 
 bool GameScene::InitializeGameplayAudio()
 {
+    const SerializedAudioBinding* bgmBinding =
+        FindAudioBinding(
+            m_audioBindings,
+            GameplayBgmSlot
+        );
+
+    const SerializedAudioBinding*
+        enemyDefeatBinding =
+        FindAudioBinding(
+            m_audioBindings,
+            EnemyDefeatSfxSlot
+        );
+
+    //
+    // V1/V2 compatibility:
+    //
+    // A Scene with no audioBindings is a valid
+    // "gameplay audio disabled" Scene.
+    //
+    // Never fall back to C++ asset paths.
+    //
+
+    if (!bgmBinding &&
+        !enemyDefeatBinding)
+    {
+        StopGameplayAudio();
+
+        return true;
+    }
+
+    //
+    // Partial gameplay configuration is considered
+    // invalid. If one semantic binding exists, both
+    // required bindings must exist.
+    //
+
+    if (!bgmBinding ||
+        !enemyDefeatBinding)
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Gameplay audio "
+            "bindings are incomplete.\n"
+        );
+
+        return false;
+    }
+
+    if (!IsValidAudioVolume(
+        bgmBinding->volume
+    ) ||
+        !IsValidAudioVolume(
+            enemyDefeatBinding->volume
+        ))
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Gameplay audio "
+            "volume is invalid.\n"
+        );
+
+        return false;
+    }
+
+    AudioClip* enemyDefeatSfx =
+        m_resources.LoadAudioClip(
+            enemyDefeatBinding->
+            clipPath
+        );
+
+    if (!enemyDefeatSfx)
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to load "
+            "enemy defeat audio binding.\n"
+        );
+
+        return false;
+    }
+
+    AudioClip* bgmClip =
+        m_resources.LoadAudioClip(
+            bgmBinding->
+            clipPath
+        );
+
+    if (!bgmClip)
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to load "
+            "gameplay BGM binding.\n"
+        );
+
+        return false;
+    }
+
+    //
+    // All asset validation succeeded.
+    // Only now replace current gameplay audio.
+    //
+
     StopGameplayAudio();
 
     m_enemyDefeatSfx =
-        nullptr;
+        enemyDefeatSfx;
+
+    m_enemyDefeatSfxVolume =
+        enemyDefeatBinding->
+        volume;
 
     m_bgmClip =
-        nullptr;
-
-    m_enemyDefeatSfx =
-        m_resources.LoadAudioClip(
-            EnemyDefeatSfxPath
-        );
-
-    if (!m_enemyDefeatSfx)
-    {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to load "
-            "enemy defeat SFX.\n"
-        );
-
-        return false;
-    }
-
-    m_bgmClip =
-        m_resources.LoadAudioClip(
-            GameplayBgmPath
-        );
-
-    if (!m_bgmClip)
-    {
-        ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to load "
-            "gameplay BGM.\n"
-        );
-
-        m_enemyDefeatSfx =
-            nullptr;
-
-        return false;
-    }
+        bgmClip;
 
     m_bgmHandle =
         m_audio.PlayMusic(
             *m_bgmClip,
-            GameplayBgmVolume
+            bgmBinding->volume
         );
 
     if (!m_bgmHandle.IsValid())
@@ -1066,6 +1173,9 @@ bool GameScene::InitializeGameplayAudio()
 
         m_bgmClip =
             nullptr;
+
+        m_enemyDefeatSfxVolume =
+            1.0f;
 
         return false;
     }
@@ -1091,6 +1201,9 @@ noexcept
 
     m_enemyDefeatSfx =
         nullptr;
+
+    m_enemyDefeatSfxVolume =
+        1.0f;
 }
 
 void GameScene::DefeatEnemy(
@@ -1241,7 +1354,7 @@ HandleEnemyDefeatedAudio(
 
     m_audio.PlayOneShot(
         *m_enemyDefeatSfx,
-        EnemyDefeatSfxVolume
+        m_enemyDefeatSfxVolume
     );
 }
 

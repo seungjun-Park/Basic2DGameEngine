@@ -183,6 +183,9 @@ private:
     AudioClip* m_bgmClip =
         nullptr;
 
+    float m_enemyDefeatSfxVolume =
+        1.0f;
+
     AudioPlaybackHandle
         m_bgmHandle{};
 
@@ -215,6 +218,9 @@ private:
 
     std::vector<SerializedAnimationBinding>
         m_animationBindings;
+
+    std::vector<SerializedAudioBinding>
+        m_audioBindings;
 
     std::optional<SceneData>
         m_playSnapshot;

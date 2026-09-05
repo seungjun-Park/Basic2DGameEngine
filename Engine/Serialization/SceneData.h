@@ -8,7 +8,6 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include <utility>
 
 struct SerializedSprite
 {
@@ -48,13 +47,25 @@ struct SerializedAnimationBinding
     std::wstring clipPath;
 };
 
+struct SerializedAudioBinding
+{
+    std::string slot;
+
+    std::wstring clipPath;
+
+    float volume = 1.0f;
+};
+
 struct SceneData
 {
     static constexpr std::uint32_t
         LegacyVersion = 1;
 
     static constexpr std::uint32_t
-        CurrentVersion = 2;
+        PreviousVersion = 2;
+
+    static constexpr std::uint32_t
+        CurrentVersion = 3;
 
     std::uint32_t version =
         CurrentVersion;
@@ -63,6 +74,9 @@ struct SceneData
 
     std::vector<SerializedAnimationBinding>
         animationBindings;
+
+    std::vector<SerializedAudioBinding>
+        audioBindings;
 
     std::vector<SerializedEntity>
         entities;

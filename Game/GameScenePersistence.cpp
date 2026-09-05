@@ -1,6 +1,7 @@
 #include "GameScene.h"
 
 #include "Engine/Animation/AnimationClip.h"
+#include "Engine/Audio/AudioClip.h"
 #include "Engine/Debug/DebugLog.h"
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Resource/ResourceManager.h"
@@ -10,6 +11,7 @@
 #include "Engine/Tile/TileMapRenderer.h"
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <string_view>
@@ -32,6 +34,14 @@ namespace
         "Enemy.Walk.Right",
         "Enemy.Walk.Up"
     };
+
+    constexpr std::string_view
+        GameplayBgmSlot =
+        "Gameplay.BGM";
+
+    constexpr std::string_view
+        EnemyDefeatSfxSlot =
+        "Gameplay.EnemyDefeat";
 
     constexpr std::size_t
         InvalidAnimationSlot =
@@ -69,6 +79,39 @@ namespace
             type == "Player" ||
             type == "Enemy";
     }
+
+    const SerializedAudioBinding*
+        FindAudioBinding(
+            const SceneData& sceneData,
+            std::string_view slot
+        ) noexcept
+    {
+        for (const SerializedAudioBinding&
+            binding :
+            sceneData.audioBindings)
+        {
+            if (binding.slot ==
+                slot)
+            {
+                return
+                    &binding;
+            }
+        }
+
+        return nullptr;
+    }
+
+    bool IsValidAudioVolume(
+        float volume
+    ) noexcept
+    {
+        return
+            std::isfinite(
+                volume
+            ) &&
+            volume >= 0.0f &&
+            volume <= 1.0f;
+    }
 }
 
 bool GameScene::SaveSceneDocument(
@@ -105,14 +148,6 @@ bool GameScene::LoadSceneDocument(
         return false;
     }
 
-    //
-    // Preflight parse.
-    //
-    // Do not allow an obviously malformed document
-    // to reach LoadSerializedEntities(), because that
-    // function owns the actual runtime replacement.
-    //
-
     auto sceneData =
         SceneSerializer::Load(
             path
@@ -138,10 +173,6 @@ bool GameScene::LoadSceneDocument(
         return false;
     }
 
-    //
-    // TileMap resource preflight.
-    //
-
     TileMap* tileMap =
         m_resources.LoadTileMap(
             sceneData->tileMapPath
@@ -157,17 +188,8 @@ bool GameScene::LoadSceneDocument(
         return false;
     }
 
-    //
-    // Renderer / collider construction preflight.
-    //
-    // Keep these objects in a nested scope so the
-    // temporary collider is destroyed before the
-    // real Scene replacement starts.
-    //
-
     {
-        TileMapRenderer
-            renderer;
+        TileMapRenderer renderer;
 
         if (!renderer.Build(
             *tileMap
@@ -181,8 +203,7 @@ bool GameScene::LoadSceneDocument(
             return false;
         }
 
-        TileMapCollider
-            collider;
+        TileMapCollider collider;
 
         if (!collider.Build(
             *tileMap,
@@ -199,7 +220,7 @@ bool GameScene::LoadSceneDocument(
     }
 
     //
-    // Animation binding preflight.
+    // Animation preflight
     //
 
     std::array<
@@ -215,11 +236,6 @@ bool GameScene::LoadSceneDocument(
             FindAnimationSlot(
                 binding.slot
             );
-
-        //
-        // Match GameScene::LoadEnemyAnimations():
-        // unknown extension slots are ignored.
-        //
 
         if (slotIndex ==
             InvalidAnimationSlot)
@@ -275,7 +291,82 @@ bool GameScene::LoadSceneDocument(
     }
 
     //
-    // Entity preflight.
+    // Audio preflight
+    //
+    // Empty audioBindings is supported for old
+    // V1/V2 scenes and means "audio disabled".
+    //
+
+    const SerializedAudioBinding*
+        bgmBinding =
+        FindAudioBinding(
+            *sceneData,
+            GameplayBgmSlot
+        );
+
+    const SerializedAudioBinding*
+        enemyDefeatBinding =
+        FindAudioBinding(
+            *sceneData,
+            EnemyDefeatSfxSlot
+        );
+
+    if (bgmBinding ||
+        enemyDefeatBinding)
+    {
+        if (!bgmBinding ||
+            !enemyDefeatBinding)
+        {
+            ENGINE_DEBUG_LOG(
+                "[GameScene] Scene gameplay audio "
+                "bindings are incomplete.\n"
+            );
+
+            return false;
+        }
+
+        if (!IsValidAudioVolume(
+            bgmBinding->volume
+        ) ||
+            !IsValidAudioVolume(
+                enemyDefeatBinding->volume
+            ))
+        {
+            ENGINE_DEBUG_LOG(
+                "[GameScene] Scene gameplay audio "
+                "volume is invalid.\n"
+            );
+
+            return false;
+        }
+
+        if (!m_resources.LoadAudioClip(
+            bgmBinding->clipPath
+        ))
+        {
+            ENGINE_DEBUG_LOG(
+                "[GameScene] Scene BGM "
+                "preflight failed.\n"
+            );
+
+            return false;
+        }
+
+        if (!m_resources.LoadAudioClip(
+            enemyDefeatBinding->clipPath
+        ))
+        {
+            ENGINE_DEBUG_LOG(
+                "[GameScene] Scene enemy defeat "
+                "SFX preflight failed.\n"
+            );
+
+            return false;
+        }
+    }
+
+    //
+    // Entity preflight
     //
 
     std::size_t playerCount =
@@ -339,15 +430,26 @@ bool GameScene::LoadSceneDocument(
         return false;
     }
 
+    if (!LoadSerializedEntities(
+        path
+    ))
+    {
+        return false;
+    }
+
     //
-    // All non-destructive validation succeeded.
-    //
-    // Existing runtime replacement remains owned by
-    // the already validated LoadSerializedEntities().
+    // The Scene has now supplied m_audioBindings.
     //
 
-    return
-        LoadSerializedEntities(
-            path
+    if (!InitializeGameplayAudio())
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to apply "
+            "loaded Scene audio bindings.\n"
         );
+
+        return false;
+    }
+
+    return true;
 }

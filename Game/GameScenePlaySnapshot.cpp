@@ -3,13 +3,13 @@
 #include "Enemy.h"
 #include "GameEntityFactory.h"
 #include "Player.h"
-#include "Engine/Renderer/Camera.h"
 
 #include "Engine/Debug/DebugLog.h"
 
 #include "Engine/Graphics/Texture.h"
 
 #include "Engine/Resource/ResourceManager.h"
+#include "Engine/Renderer/Camera.h"
 
 #include "Engine/Scene/Entity.h"
 
@@ -141,14 +141,6 @@ namespace
             return false;
         }
 
-        //
-        // GameEntityFactory::Create() configures
-        // gameplay animation state for Enemy.
-        //
-        // Re-apply the exact visual state captured
-        // before Play after that initialization.
-        //
-
         entity.sprite.texture =
             texture;
 
@@ -207,6 +199,9 @@ bool GameScene::CapturePlaySnapshot()
 
     snapshot.animationBindings =
         m_animationBindings;
+
+    snapshot.audioBindings =
+        m_audioBindings;
 
     std::size_t playerCount =
         0;
@@ -284,12 +279,6 @@ bool GameScene::RestorePlaySnapshot()
         return false;
     }
 
-    //
-    // Do not reset m_playSnapshot until restore
-    // has succeeded. A failed restoration may
-    // therefore be retried.
-    //
-
     if (!RestoreEntitiesFromSnapshot(
         *m_playSnapshot
     ))
@@ -324,17 +313,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
     const SceneData& snapshot
 )
 {
-    //
-    // TileMap authoring/runtime state is NOT
-    // reloaded from disk here.
-    //
-    // Editor TileMap modifications may have been
-    // applied to runtime without having been saved.
-    // Play Mode cannot modify TileMap data, so the
-    // existing runtime TileMap is already the
-    // correct pre-Play state.
-    //
-
     if (!m_tileMap ||
         snapshot.tileMapPath.empty() ||
         snapshot.tileMapPath !=
@@ -347,11 +325,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
 
         return false;
     }
-
-    //
-    // Preflight everything that can reasonably
-    // fail before destroying current Play entities.
-    //
 
     const SerializedEntity*
         playerData =
@@ -426,13 +399,6 @@ bool GameScene::RestoreEntitiesFromSnapshot(
 
         return false;
     }
-
-    //
-    // Replace simulation entities.
-    //
-    // This destroys Play-created physics state,
-    // velocities, AI state and destroyed entities.
-    //
 
     ClearEntities();
 
@@ -564,11 +530,8 @@ bool GameScene::RestoreEntitiesFromSnapshot(
     m_animationBindings =
         snapshot.animationBindings;
 
-    //
-    // LateUpdate will not run in Edit Mode.
-    // Restore camera immediately so the Edit
-    // viewport returns with the Player.
-    //
+    m_audioBindings =
+        snapshot.audioBindings;
 
     m_camera.SetPosition(
         m_player->

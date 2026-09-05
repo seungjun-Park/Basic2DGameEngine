@@ -33,6 +33,18 @@
             "slot": "Enemy.Walk.Up"
         }
     ],
+    "audioBindings": [
+        {
+            "clip": "Engine/Assets/Audio/bgm.wav",
+            "slot": "Gameplay.BGM",
+            "volume": 0.3499999940395355
+        },
+        {
+            "clip": "Engine/Assets/Audio/enemy_defeat.wav",
+            "slot": "Gameplay.EnemyDefeat",
+            "volume": 0.699999988079071
+        }
+    ],
     "entities": [
         {
             "active": true,
@@ -210,5 +222,5 @@
         }
     ],
     "tileMap": "Engine/Assets/Maps/testmap.json",
-    "version": 2
+    "version": 3
 }
