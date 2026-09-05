@@ -1,0 +1,226 @@
+{
+    "animationBindings": [
+        {
+            "clip": "Engine/Assets/Animations/Qingxiao_idle_down.json",
+            "slot": "Enemy.Idle.Down"
+        },
+        {
+            "clip": "Engine/Assets/Animations/Qingxiao_idle_left.json",
+            "slot": "Enemy.Idle.Left"
+        },
+        {
+            "clip": "Engine/Assets/Animations/Qingxiao_idle_right.json",
+            "slot": "Enemy.Idle.Right"
+        },
+        {
+            "clip": "Engine/Assets/Animations/Qingxiao_idle_up.json",
+            "slot": "Enemy.Idle.Up"
+        },
+        {
+            "clip": "Engine/Assets/Animations/Qingxiao_walk_down.json",
+            "slot": "Enemy.Walk.Down"
+        },
+        {
+            "clip": "Engine/Assets/Animations/Qingxiao_walk_left.json",
+            "slot": "Enemy.Walk.Left"
+        },
+        {
+            "clip": "Engine/Assets/Animations/Qingxiao_walk_right.json",
+            "slot": "Enemy.Walk.Right"
+        },
+        {
+            "clip": "Engine/Assets/Animations/Qingxiao_walk_up.json",
+            "slot": "Enemy.Walk.Up"
+        }
+    ],
+    "audioBindings": [
+        {
+            "clip": "Engine/Assets/Audio/bgm.wav",
+            "slot": "Gameplay.BGM",
+            "volume": 0.3499999940395355
+        },
+        {
+            "clip": "Engine/Assets/Audio/enemy_defeat.wav",
+            "slot": "Gameplay.EnemyDefeat",
+            "volume": 0.699999988079071
+        }
+    ],
+    "entities": [
+        {
+            "active": true,
+            "sprite": {
+                "blendMode": "Alpha",
+                "layer": "World",
+                "texture": "Engine/Assets/Textures/Aemeath.png",
+                "useYSort": true,
+                "uv": [
+                    0.0,
+                    0.0,
+                    1.0,
+                    1.0
+                ],
+                "visible": true,
+                "zIndex": 10.0
+            },
+            "transform": {
+                "position": [
+                    700.0,
+                    128.0
+                ],
+                "rotation": 0.0,
+                "scale": [
+                    96.0,
+                    96.0
+                ]
+            },
+            "type": "Player"
+        },
+        {
+            "active": true,
+            "sprite": {
+                "blendMode": "Alpha",
+                "layer": "World",
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "useYSort": true,
+                "uv": [
+                    0.3333333432674408,
+                    0.0,
+                    0.6666666865348816,
+                    0.25
+                ],
+                "visible": true,
+                "zIndex": 5.0
+            },
+            "transform": {
+                "position": [
+                    300.0,
+                    200.0
+                ],
+                "rotation": 0.0,
+                "scale": [
+                    80.0,
+                    80.0
+                ]
+            },
+            "type": "Enemy"
+        },
+        {
+            "active": true,
+            "sprite": {
+                "blendMode": "Alpha",
+                "layer": "World",
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "useYSort": true,
+                "uv": [
+                    0.3333333432674408,
+                    0.0,
+                    0.6666666865348816,
+                    0.25
+                ],
+                "visible": true,
+                "zIndex": 5.0
+            },
+            "transform": {
+                "position": [
+                    450.0,
+                    200.0
+                ],
+                "rotation": 0.0,
+                "scale": [
+                    80.0,
+                    80.0
+                ]
+            },
+            "type": "Enemy"
+        },
+        {
+            "active": true,
+            "sprite": {
+                "blendMode": "Alpha",
+                "layer": "World",
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "useYSort": true,
+                "uv": [
+                    0.3333333432674408,
+                    0.0,
+                    0.6666666865348816,
+                    0.25
+                ],
+                "visible": true,
+                "zIndex": 5.0
+            },
+            "transform": {
+                "position": [
+                    600.0,
+                    200.0
+                ],
+                "rotation": 0.0,
+                "scale": [
+                    80.0,
+                    80.0
+                ]
+            },
+            "type": "Enemy"
+        },
+        {
+            "active": true,
+            "sprite": {
+                "blendMode": "Alpha",
+                "layer": "World",
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "useYSort": true,
+                "uv": [
+                    0.3333333432674408,
+                    0.0,
+                    0.6666666865348816,
+                    0.25
+                ],
+                "visible": true,
+                "zIndex": 5.0
+            },
+            "transform": {
+                "position": [
+                    750.0,
+                    200.0
+                ],
+                "rotation": 0.0,
+                "scale": [
+                    80.0,
+                    80.0
+                ]
+            },
+            "type": "Enemy"
+        },
+        {
+            "active": true,
+            "sprite": {
+                "blendMode": "Alpha",
+                "layer": "World",
+                "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
+                "useYSort": true,
+                "uv": [
+                    0.3333333432674408,
+                    0.0,
+                    0.6666666865348816,
+                    0.25
+                ],
+                "visible": true,
+                "zIndex": 5.0
+            },
+            "transform": {
+                "position": [
+                    900.0,
+                    200.0
+                ],
+                "rotation": 0.0,
+                "scale": [
+                    80.0,
+                    80.0
+                ]
+            },
+            "type": "Enemy"
+        }
+    ],
+    "tileMap": "Engine/Assets/Maps/testmap.json",
+    "version": 3
+}

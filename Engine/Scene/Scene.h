@@ -49,7 +49,7 @@ public:
         DebugRenderer& debugRenderer
     );
 
-    virtual void DrawGui()
+    virtual void DrawGuiContents()
     {
     }
 
@@ -91,10 +91,14 @@ public:
 
     virtual void SyncPhysicsTransforms();
 
-    std::size_t GetEntityCount() const
+    std::size_t GetEntityCount() const 
     {
         return m_entities.size();
     }
+
+    const Entity* GetEntityAt(
+        std::size_t index
+    ) const noexcept;
 
     Entity* ResolveEntity(
         EntityHandle handle

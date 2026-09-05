@@ -1,35 +1,12 @@
 #pragma once
 
-#include "TileTypes.h"
+#include "Engine/Tile/TileMapData.h"
 
-#include "Engine/Renderer/RenderTypes.h"
-
-#include <string>
-#include <vector>
 #include <cstddef>
+#include <utility>
+#include <vector>
 
 class Tileset;
-
-enum class TileLayerType
-{
-    Render,
-    Collision
-};
-
-struct TileLayer
-{
-    std::string name;
-
-    TileLayerType type =
-        TileLayerType::Render;
-
-    RenderLayer renderLayer =
-        RenderLayer::World;
-
-    bool visible = true;
-
-    std::vector<TileId> tiles;
-};
 
 class TileMap
 {
@@ -60,6 +37,48 @@ public:
     void AddLayer(
         TileLayer layer
     );
+
+    void ReplaceContents(
+        TileMap&& source
+    ) noexcept
+    {
+        if (this ==
+            &source)
+        {
+            return;
+        }
+
+        m_width =
+            source.m_width;
+
+        m_height =
+            source.m_height;
+
+        m_tileWidth =
+            source.m_tileWidth;
+
+        m_tileHeight =
+            source.m_tileHeight;
+
+        m_tileset =
+            source.m_tileset;
+
+        m_layers =
+            std::move(
+                source.m_layers
+            );
+
+        source.m_width = 0;
+        source.m_height = 0;
+
+        source.m_tileWidth = 0;
+        source.m_tileHeight = 0;
+
+        source.m_tileset =
+            nullptr;
+
+        source.m_layers.clear();
+    }
 
     int GetWidth() const;
     int GetHeight() const;
@@ -98,7 +117,8 @@ private:
     int m_tileWidth = 0;
     int m_tileHeight = 0;
 
-    Tileset* m_tileset = nullptr;
+    Tileset* m_tileset =
+        nullptr;
 
     std::vector<TileLayer>
         m_layers;

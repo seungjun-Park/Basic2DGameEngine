@@ -43,6 +43,34 @@ void Animator::Update(
         return;
     }
 
+    const std::uint64_t
+        currentRevision =
+        m_clip->GetRevision();
+
+    if (m_clipRevision !=
+        currentRevision)
+    {
+        m_clipRevision =
+            currentRevision;
+
+        if (m_frameIndex >=
+            frameCount)
+        {
+            if (m_clip->IsLooping())
+            {
+                m_frameIndex %=
+                    frameCount;
+            }
+            else
+            {
+                m_frameIndex =
+                    frameCount - 1;
+            }
+        }
+
+        ApplyCurrentFrame();
+    }
+
     m_frameElapsed +=
         deltaTime;
 
@@ -111,7 +139,6 @@ bool Animator::Play(
     }
 
     if (m_clip == &clip &&
-        m_playing &&
         !restart)
     {
         return true;
@@ -119,6 +146,9 @@ bool Animator::Play(
 
     m_clip =
         &clip;
+
+    m_clipRevision =
+        clip.GetRevision();
 
     m_frameIndex =
         0;

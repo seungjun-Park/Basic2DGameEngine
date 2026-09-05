@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 class AnimationClip;
 struct Sprite;
@@ -42,12 +43,15 @@ private:
     void ApplyCurrentFrame();
 
 private:
-
     Sprite* m_sprite = nullptr;
 
     const AnimationClip* m_clip = nullptr;
 
     std::size_t m_frameIndex = 0;
+
     float m_frameElapsed = 0.0f;
+
+    std::uint64_t m_clipRevision = 0;
+
     bool m_playing = false;
 };

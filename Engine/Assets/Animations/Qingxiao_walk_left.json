@@ -1,18 +1,33 @@
 {
-    "texture": "Engine/Assets/Textures/Qingxiao_walk.png",
-    "looping": true,
     "frames": [
         {
-            "uv": [0.0, 0.25, 0.33333334, 0.5],
-            "duration": 0.12
+            "duration": 0.11999999731779099,
+            "uv": [
+                0.0,
+                0.25,
+                0.3333333432674408,
+                0.5
+            ]
         },
         {
-            "uv": [0.33333334, 0.25, 0.6666667, 0.5],
-            "duration": 0.12
+            "duration": 0.11999999731779099,
+            "uv": [
+                0.3333333432674408,
+                0.25,
+                0.6666666865348816,
+                0.5
+            ]
         },
         {
-            "uv": [0.6666667, 0.25, 1.0, 0.5],
-            "duration": 0.12
+            "duration": 0.11999999731779099,
+            "uv": [
+                0.6666666865348816,
+                0.25,
+                1.0,
+                0.5
+            ]
         }
-    ]
+    ],
+    "looping": true,
+    "texture": "Engine/Assets/Textures/Qingxiao_walk.png"
 }

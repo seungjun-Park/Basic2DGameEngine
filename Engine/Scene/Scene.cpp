@@ -197,6 +197,18 @@ void Scene::SyncPhysicsTransforms()
     }
 }
 
+const Entity* Scene::GetEntityAt(
+    std::size_t index
+) const noexcept
+{
+    if (index >= m_entities.size())
+    {
+        return nullptr;
+    }
+
+    return m_entities[index].get();
+}
+
 Entity* Scene::ResolveEntity(
     EntityHandle handle)
 {

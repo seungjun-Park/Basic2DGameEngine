@@ -16,7 +16,6 @@
 #include "Engine/Event/EventBus.h"
 #include "Engine/Audio/AudioSystem.h"
 #include "Engine/GUI/GuiSystem.h"
-#include "Engine/GUI/EngineGui.h"
 
 #include <algorithm>
 
@@ -177,6 +176,36 @@ void Engine::BeginProfileFrame()
     m_cpuProfiler.BeginFrame();
 }
 
+void Engine::UpdateFrameServices()
+{
+    if (m_audioSystem)
+    {
+        m_audioSystem->Update();
+    }
+
+    if (WinInput::IsRawKeyPressed(
+        VK_F1))
+    {
+        m_showDebug =
+            !m_showDebug;
+    }
+
+    if (WinInput::IsRawKeyPressed(
+        VK_F3))
+    {
+        m_showGui =
+            !m_showGui;
+
+        if (!m_showGui)
+        {
+            WinInput::SetCaptureState(
+                false,
+                false);
+        }
+    }
+}
+
+
 void Engine::FixedUpdate(
     float fixedDeltaTime)
 {
@@ -244,27 +273,7 @@ void Engine::Update(
         CpuProfileZone::Update
     );
 
-    if (m_audioSystem)
-    {
-        m_audioSystem->
-            Update();
-    }
-
-    if (WinInput::IsRawKeyPressed(
-        VK_F1))
-    {
-        m_showDebug = !m_showDebug;
-    }
-
-    if (WinInput::IsRawKeyPressed(VK_F3))
-    {
-        m_showGui = !m_showGui;
-
-        if (!m_showGui)
-        {
-            WinInput::SetCaptureState(false, false);
-        }
-    }
+    UpdateFrameServices();
 
     if (!m_scene)
     {
@@ -451,20 +460,6 @@ void Engine::Render(
         if (m_guiSystem &&
             m_guiSystem->IsInitialized())
         {
-            if (m_showGui)
-            {
-                if (m_audioSystem)
-                {
-                    EngineGui::DrawAudioSettings(
-                        *m_audioSystem);
-                }
-
-                if (m_scene)
-                {
-                    m_scene->DrawGui();
-                }
-            }
-
             m_guiSystem->Render();
         }
     }
@@ -767,6 +762,13 @@ void Engine::SetInterpolationAlpha(
         );
 }
 
+void Engine::SetDebugVisible(
+    bool visible)
+{
+    m_showDebug =
+        visible;
+}
+
 ResourceManager&
 Engine::GetResourceManager()
 {
@@ -776,6 +778,18 @@ Engine::GetResourceManager()
 float Engine::GetInterpolationAlpha() const
 {
     return m_interpolationAlpha;
+}
+
+Scene* Engine::GetScene()
+noexcept
+{
+    return m_scene.get();
+}
+
+const Scene* Engine::GetScene()
+const noexcept
+{
+    return m_scene.get();
 }
 
 Camera& Engine::GetCamera()
@@ -806,4 +820,9 @@ DebugStats&
 Engine::GetDebugStats()
 {
     return m_debugStats;
+}
+
+bool Engine::IsGuiVisible() const
+{
+    return m_showGui;
 }

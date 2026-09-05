@@ -11,17 +11,13 @@
 
 namespace EngineGui
 {
-    void DrawAudioSettings(
+    void DrawAudioSettingsContents(
         AudioSystem& audioSystem)
     {
-        ImGui::Begin("Audio Settings");
-
         if (!audioSystem.IsInitialized())
         {
             ImGui::TextDisabled(
                 "AudioSystem is not initialized.");
-
-            ImGui::End();
 
             return;
         }
@@ -107,16 +103,20 @@ namespace EngineGui
             audioSystem.GetPersistentVoiceCount(),
             AudioSystem::MaxPersistentVoices);
 
-        ImGui::End();
+        ImGui::Separator();
+
+        ImGui::Text(
+            "Playback State: %s",
+            audioSystem.IsSuspended()
+            ? "Suspended (Edit Mode)"
+            : "Running");
     }
 
-    void DrawTileMapSettings(
+    void DrawTileMapSettingsContents(
         const TileMap& tileMap,
         TileMapRenderer& renderer,
         const TileMapCollider* collider)
     {
-        ImGui::Begin("TileMap Settings");
-
         ImGui::Text(
             "Map Size: %d x %d",
             tileMap.GetWidth(),
@@ -132,7 +132,8 @@ namespace EngineGui
             tileMap.GetLayerCount());
 
         ImGui::TextDisabled(
-            "Map and tile dimensions are read-only at runtime.");
+            "Map and tile dimensions "
+            "are read-only at runtime.");
 
         ImGui::SeparatorText(
             "Layers");
@@ -257,7 +258,5 @@ namespace EngineGui
             ImGui::TextDisabled(
                 "TileMap collider unavailable.");
         }
-
-        ImGui::End();
     }
 }

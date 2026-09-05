@@ -1,15 +1,27 @@
 #pragma once
 
-#include "Engine/Event/EventBus.h"
-#include "Engine/Scene/Scene.h"
 #include "CharacterAnimation.h"
+
 #include "Engine/Audio/AudioPlaybackHandle.h"
+#include "Engine/Event/EventBus.h"
+
+#include "Engine/Scene/IPlayModeSnapshotTarget.h"
+#include "Engine/Scene/ISceneDocumentTarget.h"
+#include "Engine/Scene/Scene.h"
+
+#include "Engine/Serialization/SceneData.h"
+
+#include "Engine/Tile/ITileMapRuntimeTarget.h"
 
 #include <memory>
+#include <optional>
 #include <string>
+#include <vector>
 
 struct CollisionEnterEvent;
 struct CollisionExitEvent;
+struct EnemyDefeatedEvent;
+struct TileMapData;
 
 class ResourceManager;
 class Player;
@@ -22,18 +34,21 @@ class TileMapCollider;
 class Enemy;
 class AudioSystem;
 class AudioClip;
-struct EnemyDefeatedEvent;
 
 class GameScene :
-    public Scene
+    public Scene,
+    public ITileMapRuntimeTarget,
+    public ISceneDocumentTarget,
+    public IPlayModeSnapshotTarget
 {
 public:
-    explicit GameScene(
+    GameScene(
         ResourceManager& resources,
         Camera& camera,
         PhysicsSystem& physics,
         EventBus& events,
-        AudioSystem& audio
+        AudioSystem& audio,
+        const std::wstring& startScenePath
     );
 
     ~GameScene() override;
@@ -57,21 +72,60 @@ public:
         DebugRenderer& debugRenderer
     ) override;
 
-    void DrawGui() override;
+    void DrawGuiContents() override;
 
     bool SaveSerializedEntities(
         const std::wstring& path
     );
+
+    bool SaveSceneDocument(
+        const std::wstring& path
+    ) override;
+
+    bool LoadSceneDocument(
+        const std::wstring& path
+    ) override;
+
+    bool CapturePlaySnapshot() override;
+
+    bool RestorePlaySnapshot() override;
+
+    void DiscardPlaySnapshot()
+        noexcept override;
+
+    [[nodiscard]]
+    bool HasPlaySnapshot()
+        const noexcept override;
+
+    [[nodiscard]]
+    bool IsUsingTileMap(
+        const std::wstring& path
+    ) const noexcept override;
+
+    bool ApplyTileMapData(
+        const std::wstring& path,
+        const TileMapData& data
+    ) override;
 
     void CollectDebugStats(
         DebugStats& stats
     ) const override;
 
 private:
-    bool LoadEnemyAnimations();
-    
+    bool LoadTileMap(
+        const SceneData& sceneData
+    );
+
+    bool LoadEnemyAnimations(
+        const SceneData& sceneData
+    );
+
     bool LoadSerializedEntities(
         const std::wstring& path
+    );
+
+    bool RestoreEntitiesFromSnapshot(
+        const SceneData& snapshot
     );
 
     bool InitializeGameplayAudio();
@@ -82,10 +136,12 @@ private:
         Enemy& enemy
     );
 
+private:
     void SubscribeCollisionEvents();
 
     void SubscribeGameplayAudioEvents();
 
+private:
     void HandleCollisionEnterEvent(
         const CollisionEnterEvent& event
     );
@@ -98,6 +154,7 @@ private:
         const EnemyDefeatedEvent& event
     );
 
+private:
     bool IsPlayerCollision(
         EntityHandle entityA,
         EntityHandle entityB
@@ -114,20 +171,26 @@ private:
     PhysicsSystem& m_physics;
 
     EventBus& m_events;
-    
-    AudioSystem&
-        m_audio;
 
-    AudioClip*
-        m_enemyDefeatSfx = nullptr;
+    AudioSystem& m_audio;
 
-    AudioClip*
-        m_bgmClip = nullptr;
+    std::wstring
+        m_startScenePath;
+
+    AudioClip* m_enemyDefeatSfx =
+        nullptr;
+
+    AudioClip* m_bgmClip =
+        nullptr;
+
+    float m_enemyDefeatSfxVolume =
+        1.0f;
 
     AudioPlaybackHandle
         m_bgmHandle{};
 
-    EntityHandle m_playerHandle{};
+    EntityHandle
+        m_playerHandle{};
 
     EventSubscription
         m_collisionEnterSubscription;
@@ -141,6 +204,9 @@ private:
     TileMap* m_tileMap =
         nullptr;
 
+    std::wstring
+        m_tileMapPath;
+
     std::unique_ptr<TileMapRenderer>
         m_tileMapRenderer;
 
@@ -149,4 +215,13 @@ private:
 
     CharacterAnimationSet
         m_enemyAnimations;
+
+    std::vector<SerializedAnimationBinding>
+        m_animationBindings;
+
+    std::vector<SerializedAudioBinding>
+        m_audioBindings;
+
+    std::optional<SceneData>
+        m_playSnapshot;
 };

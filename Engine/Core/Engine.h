@@ -34,6 +34,7 @@ public:
 
     void BeginGuiFrame();
     void BeginProfileFrame();
+    void UpdateFrameServices();
     void FixedUpdate(
         float fixedDeltaTime
     );
@@ -59,8 +60,15 @@ public:
     void SetInterpolationAlpha(
         float alpha
     );
+    void SetDebugVisible(
+        bool visible
+    );
 
     float GetInterpolationAlpha() const;
+    Scene* GetScene() noexcept;
+    const Scene*
+        GetScene() const noexcept;
+
     ResourceManager& GetResourceManager();
     Camera& GetCamera();
     PhysicsSystem&
@@ -70,6 +78,8 @@ public:
     AudioSystem&
         GetAudioSystem();
     DebugStats& GetDebugStats();
+
+    bool IsGuiVisible() const;
 
 private:
     std::unique_ptr<Scene>

@@ -1,13 +1,13 @@
 #include "Entity.h"
 
-#include "Engine/Animation/Animator.h"
 #include "Engine/Physics/PhysicsBody.h"
 #include "Engine/Renderer/RenderQueue.h"
 
 Entity::~Entity() = default;
 
 void Entity::SubmitRender(
-    RenderQueue& renderQueue)
+    RenderQueue& renderQueue
+)
 {
     if (!active)
     {
@@ -19,7 +19,6 @@ void Entity::SubmitRender(
         transform
     );
 }
-
 
 void Entity::SyncPhysicsTransform()
 {
@@ -40,10 +39,36 @@ void Entity::SyncPhysicsTransform()
 
 void Entity::Destroy()
 {
-    m_destroyed = true;
+    m_destroyed =
+        true;
 }
 
-bool Entity::IsDestroyed() const
+void Entity::SetAssignedAnimationClipPath(
+    const std::wstring& path
+)
 {
-    return m_destroyed;
+    m_assignedAnimationClipPath =
+        path;
+}
+
+void Entity::
+ClearAssignedAnimationClipPath()
+noexcept
+{
+    m_assignedAnimationClipPath.clear();
+}
+
+bool Entity::IsDestroyed()
+const
+{
+    return
+        m_destroyed;
+}
+
+const std::wstring&
+Entity::GetAssignedAnimationClipPath()
+const noexcept
+{
+    return
+        m_assignedAnimationClipPath;
 }
