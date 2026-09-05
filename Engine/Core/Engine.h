@@ -59,6 +59,9 @@ public:
     void SetInterpolationAlpha(
         float alpha
     );
+    void SetDebugVisible(
+        bool visible
+    );
 
     float GetInterpolationAlpha() const;
     ResourceManager& GetResourceManager();
@@ -70,6 +73,8 @@ public:
     AudioSystem&
         GetAudioSystem();
     DebugStats& GetDebugStats();
+
+    bool IsGuiVisible() const;
 
 private:
     std::unique_ptr<Scene>

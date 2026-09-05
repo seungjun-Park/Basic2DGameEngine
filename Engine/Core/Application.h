@@ -4,12 +4,14 @@
 
 #include <memory>
 #include <cstdint>
+#include <string>
 
 #include "EngineConfig.h"
 #include "FrameLimiter.h"
 
 class WinWindow;
 class Engine;
+struct ProjectConfig;
 
 class Application
 {
@@ -33,7 +35,10 @@ public:
         const EngineConfig& config
     );
 
-    int Run();
+    int Run(
+        const ProjectConfig& projectConfig,
+        const std::wstring& projectConfigPath
+    );
 
     void SetTargetFPS(
         std::uint32_t fps
@@ -63,6 +68,10 @@ private:
     void ReportProfilerSpikeIfNeeded();
 
     void UpdateWindowTitle();
+
+    void ApplyLiveProjectSettings(
+        const ProjectConfig& config
+    );
 
 private:
     std::unique_ptr<WinWindow>

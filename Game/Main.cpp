@@ -1,11 +1,24 @@
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Engine.h"
+#include "Engine/Core/ProjectConfig.h"
+
+#include "Engine/Serialization/ProjectConfigSerializer.h"
+
+#include "Engine/Resource/ResourceManager.h"
+#include "Engine/Event/EventBus.h"
+#include "Engine/Physics/CollisionEvents.h"
+#include "Engine/Audio/AudioSystem.h"
+
 #include "Game/GameScene.h"
 
-#include <Windows.h>
-
 #include <memory>
-#include <utility>
+
+namespace
+{
+    constexpr wchar_t
+        ProjectConfigPath[] =
+        L"project.json";
+}
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -13,33 +26,37 @@ int WINAPI WinMain(
     LPSTR,
     int)
 {
-    EngineConfig config;
+    auto projectConfig =
+        ProjectConfigSerializer::Load(
+            ProjectConfigPath
+        );
 
-    config.windowWidth = 1280;
-    config.windowHeight = 960;
+    if (!projectConfig)
+    {
+        MessageBoxW(
+            nullptr,
+            L"Failed to load project.json.",
+            L"Basic2DGameEngine",
+            MB_OK |
+            MB_ICONERROR
+        );
 
-    config.vsync = false;
+        return -1;
+    }
 
-    config.targetFPS = 0;
-
-    config.fixedUpdateHz = 60.0f;
-
-    config.maxFixedSteps = 5;
-
-    config.maxDeltaTime = 0.1f;
-
-    config.pauseWhenUnfocused = true;
 
     Application application;
 
     if (!application.Initialize(
         hInstance,
-        config))
+        projectConfig->engine))
     {
         MessageBoxW(
             nullptr,
             L"Application initialization failed.",
-            L"Dobi2D",
+            projectConfig->
+            engine.
+            windowTitle.c_str(),
             MB_OK |
             MB_ICONERROR
         );
@@ -63,5 +80,8 @@ int WINAPI WinMain(
         std::move(gameScene)
     );
 
-    return application.Run();
+    return application.Run(
+        *projectConfig,
+        ProjectConfigPath
+    );
 }

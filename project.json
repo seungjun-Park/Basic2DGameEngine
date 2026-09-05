@@ -1,0 +1,32 @@
+{
+    "version": 1,
+
+    "window": {
+        "title": "Basic2DGameEngine",
+        "width": 1280,
+        "height": 960,
+        "mode": "Windowed",
+        "pauseWhenUnfocused": true
+    },
+
+    "rendering": {
+        "vsync": false,
+        "targetFPS": 0
+    },
+
+    "fixedUpdate": {
+        "hz": 60.0,
+        "maxSteps": 5,
+        "maxDeltaTime": 0.1
+    },
+
+    "debug": {
+        "showCollider": true,
+        "showRuntimeStats": true
+    },
+
+    "project": {
+        "assetRoot": "Engine/Assets",
+        "startScene": "Engine/Assets/Scenes/test_scene.json"
+    }
+}

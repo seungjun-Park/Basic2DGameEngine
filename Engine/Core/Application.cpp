@@ -2,11 +2,13 @@
 
 #include "Engine.h"
 #include "Time.h"
+#include "ProjectConfig.h"
 
 #include "Engine/Platform/Windows/WinWindow.h"
 #include "Engine/Platform/Windows/WinInput.h"
 #include "Engine/Debug/DebugStats.h"
 #include "Engine/Debug/CpuProfiler.h"
+#include "Engine/GUI/ProjectSettingsPanel.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -54,7 +56,7 @@ bool Application::Initialize(
         hInstance,
         m_config.windowWidth,
         m_config.windowHeight,
-        L"Demo"))
+        m_config.windowTitle.c_str()))
     {
         return false;
     }
@@ -75,11 +77,23 @@ bool Application::Initialize(
         return false;
     }
 
+    m_engine->SetDebugVisible(
+        m_config.showDebugCollider
+    );
+
     return true;
 }
 
-int Application::Run()
+int Application::Run(
+    const ProjectConfig& projectConfig,
+    const std::wstring& projectConfigPath)
 {
+    ProjectSettingsPanel
+        projectSettings(
+            projectConfig,
+            projectConfigPath
+        );
+
     while (true)
     {
         m_frameLimiter.BeginFrame();
@@ -183,6 +197,16 @@ int Application::Run()
         m_engine->LateUpdate(
             Time::DeltaTime()
         );
+
+        if (m_engine->IsGuiVisible())
+        {
+            projectSettings.Draw();
+
+            ApplyLiveProjectSettings(
+                projectSettings.
+                GetDraftConfig()
+            );
+        }
 
         m_engine->Render(
             m_config.vsync
@@ -675,7 +699,7 @@ void Application::UpdateWindowTitle()
         swprintf_s(
             title,
 
-            L"Demo [Profiler:F2] | "
+            L"%ls [Profiler:F2] | "
             L"FPS %.1f | "
             L"Frame %.2f ms | "
 
@@ -696,6 +720,7 @@ void Application::UpdateWindowTitle()
             L"Peak %ls %.2f / "
             L"%ls %.2f",
 
+            m_config.windowTitle.c_str(),
             stats.fps,
             stats.frameTimeMs,
 
@@ -735,7 +760,7 @@ void Application::UpdateWindowTitle()
     swprintf_s(
         title,
 
-        L"Demo | "
+        L"%ls | "
         L"FPS %.1f | "
         L"Frame %.2f ms | "
         L"Fixed %.0f Hz (%u) | "
@@ -754,6 +779,7 @@ void Application::UpdateWindowTitle()
         L"VSync %s | "
         L"Target %s",
 
+        m_config.windowTitle.c_str(),
         stats.fps,
         stats.frameTimeMs,
 
@@ -807,4 +833,65 @@ void Application::UpdateWindowTitle()
         m_window->GetHandle(),
         title
     );
+}
+
+void Application::
+ApplyLiveProjectSettings(
+    const ProjectConfig& config)
+{
+    const EngineConfig& desired =
+        config.engine;
+
+    const bool titleChanged =
+        m_config.windowTitle !=
+        desired.windowTitle;
+
+    const bool statsChanged =
+        m_config.showRuntimeStats !=
+        desired.showRuntimeStats;
+
+    //
+    // Live runtime settings
+    //
+
+    m_config.windowTitle =
+        desired.windowTitle;
+
+    m_config.vsync =
+        desired.vsync;
+
+    m_config.targetFPS =
+        desired.targetFPS;
+
+    m_config.pauseWhenUnfocused =
+        desired.pauseWhenUnfocused;
+
+    m_config.showRuntimeStats =
+        desired.showRuntimeStats;
+
+    //
+    // Window title refresh
+    //
+
+    if (!m_config.showRuntimeStats)
+    {
+        if (titleChanged ||
+            statsChanged)
+        {
+            SetWindowTextW(
+                m_window->GetHandle(),
+                m_config.
+                windowTitle.c_str()
+            );
+        }
+    }
+    else if (
+        titleChanged ||
+        statsChanged)
+    {
+        // Force the runtime title to
+        // refresh on this frame.
+        m_titleUpdateTimer =
+            0.25f;
+    }
 }

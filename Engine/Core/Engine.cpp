@@ -767,6 +767,13 @@ void Engine::SetInterpolationAlpha(
         );
 }
 
+void Engine::SetDebugVisible(
+    bool visible)
+{
+    m_showDebug =
+        visible;
+}
+
 ResourceManager&
 Engine::GetResourceManager()
 {
@@ -806,4 +813,9 @@ DebugStats&
 Engine::GetDebugStats()
 {
     return m_debugStats;
+}
+
+bool Engine::IsGuiVisible() const
+{
+    return m_showGui;
 }

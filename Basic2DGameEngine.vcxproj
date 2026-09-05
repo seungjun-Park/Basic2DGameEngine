@@ -150,6 +150,7 @@
     <ClInclude Include="Engine\Core\Engine.h" />
     <ClInclude Include="Engine\Core\EngineConfig.h" />
     <ClInclude Include="Engine\Core\FrameLimiter.h" />
+    <ClInclude Include="Engine\Core\ProjectConfig.h" />
     <ClInclude Include="Engine\Core\Time.h" />
     <ClInclude Include="Engine\Debug\CpuProfiler.h" />
     <ClInclude Include="Engine\Debug\DebugLog.h" />
@@ -157,6 +158,7 @@
     <ClInclude Include="Engine\Debug\DebugStats.h" />
     <ClInclude Include="Engine\GUI\EngineGui.h" />
     <ClInclude Include="Engine\GUI\GuiSystem.h" />
+    <ClInclude Include="Engine\GUI\ProjectSettingsPanel.h" />
     <ClInclude Include="Engine\Physics\CollisionEvents.h" />
     <ClInclude Include="Engine\Event\EventBus.h" />
     <ClInclude Include="Engine\Graphics\Texture.h" />
@@ -178,6 +180,7 @@
     <ClInclude Include="Engine\Scene\Entity.h" />
     <ClInclude Include="Engine\Scene\EntityHandle.h" />
     <ClInclude Include="Engine\Scene\Scene.h" />
+    <ClInclude Include="Engine\Serialization\ProjectConfigSerializer.h" />
     <ClInclude Include="Engine\Serialization\SceneData.h" />
     <ClInclude Include="Engine\Serialization\SceneSerializer.h" />
     <ClInclude Include="Engine\Tile\TileMap.h" />
@@ -212,6 +215,7 @@
     <ClCompile Include="Engine\Graphics\Texture.cpp" />
     <ClCompile Include="Engine\GUI\EngineGui.cpp" />
     <ClCompile Include="Engine\GUI\GuiSystem.cpp" />
+    <ClCompile Include="Engine\GUI\ProjectSettingsPanel.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsBody.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="Engine\Platform\Windows\WinInput.cpp" />
@@ -219,10 +223,11 @@
     <ClCompile Include="Engine\Renderer\Camera.cpp" />
     <ClCompile Include="Engine\Renderer\DX11Renderer.cpp" />
     <ClCompile Include="Engine\Renderer\RenderQueue.cpp" />
-    <ClCompile Include="Engine\Renderer\SprtieRenderer.cpp" />
+    <ClCompile Include="Engine\Renderer\SpriteRenderer.cpp" />
     <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Engine\Scene\Entity.cpp" />
     <ClCompile Include="Engine\Scene\Scene.cpp" />
+    <ClCompile Include="Engine\Serialization\ProjectConfigSerializer.cpp" />
     <ClCompile Include="Engine\Serialization\SceneSerializer.cpp" />
     <ClCompile Include="Engine\Tile\TileMap.cpp" />
     <ClCompile Include="Engine\Tile\TileMapCollider.cpp" />
