@@ -1,38 +1,51 @@
 #include "GameScene.h"
 
-#include "Player.h"
 #include "Enemy.h"
+#include "GameEntityFactory.h"
+#include "GameplayEvents.h"
+#include "Player.h"
 
-#include "Engine/Resource/ResourceManager.h"
-#include "Engine/Renderer/Camera.h"
-#include "Engine/Physics/PhysicsBody.h"
-#include "Engine/Physics/PhysicsUnits.h"
-#include "Engine/Debug/DebugStats.h"
-#include "Engine/Tile/TileMapRenderer.h"
-#include "Engine/Tile/TileMapCollider.h"
-#include "Engine/Tile/TileMap.h"
-#include "Engine/Debug/DebugRenderer.h"
 #include "Engine/Animation/AnimationClip.h"
 
-#include "GameEntityFactory.h"
-#include "Engine/Serialization/SceneData.h"
-#include "Engine/Serialization/SceneSerializer.h"
-#include "Engine/Event/EventBus.h"
-#include "Engine/Physics/CollisionEvents.h"
-#include "GameplayEvents.h"
 #include "Engine/Audio/AudioClip.h"
 #include "Engine/Audio/AudioSystem.h"
-#include "Engine/GUI/EngineGui.h"
+
 #include "Engine/Debug/DebugLog.h"
+#include "Engine/Debug/DebugRenderer.h"
+#include "Engine/Debug/DebugStats.h"
+
+#include "Engine/Event/EventBus.h"
+
+#include "Engine/GUI/EngineGui.h"
+
+#include "Engine/Physics/CollisionEvents.h"
+#include "Engine/Physics/PhysicsBody.h"
+#include "Engine/Physics/PhysicsUnits.h"
+
+#include "Engine/Renderer/Camera.h"
+
+#include "Engine/Resource/ResourceManager.h"
+
+#include "Engine/Serialization/SceneData.h"
+#include "Engine/Serialization/SceneSerializer.h"
+
+#include "Engine/Tile/TileMap.h"
+#include "Engine/Tile/TileMapCollider.h"
+#include "Engine/Tile/TileMapRenderer.h"
 
 #include <imgui.h>
 
-#include <optional>
+#include <cstddef>
+#include <cstdint>
 #include <utility>
-
 
 namespace
 {
+    //
+    // Stage 23 removes these remaining
+    // gameplay asset hardcodings.
+    //
+
     constexpr const wchar_t*
         GameplayBgmPath =
         L"Engine/Assets/Audio/bgm.wav";
@@ -49,6 +62,7 @@ namespace
     constexpr float
         EnemyDefeatSfxVolume =
         0.70f;
+
     struct EnemyAnimationSlot
     {
         const char* name;
@@ -111,9 +125,11 @@ namespace
         for (const EnemyAnimationSlot& slot :
             EnemyAnimationSlots)
         {
-            if (name == slot.name)
+            if (name ==
+                slot.name)
             {
-                return &slot;
+                return
+                    &slot;
             }
         }
 
@@ -121,37 +137,71 @@ namespace
     }
 }
 
-
 GameScene::GameScene(
     ResourceManager& resources,
     Camera& camera,
     PhysicsSystem& physics,
     EventBus& events,
-    AudioSystem& audio)
+    AudioSystem& audio,
+    const std::wstring& startScenePath
+)
     :
-    m_resources(resources),
-    m_camera(camera),
-    m_physics(physics),
-    m_events(events),
-    m_audio(audio)
+    m_resources(
+        resources
+    ),
+    m_camera(
+        camera
+    ),
+    m_physics(
+        physics
+    ),
+    m_events(
+        events
+    ),
+    m_audio(
+        audio
+    ),
+    m_startScenePath(
+        startScenePath
+    )
 {
 }
 
 GameScene::~GameScene()
 {
-    m_collisionEnterSubscription.Reset();
-    m_collisionExitSubscription.Reset();
-    m_enemyDefeatedAudioSubscription.Reset();
+    m_collisionEnterSubscription.
+        Reset();
+
+    m_collisionExitSubscription.
+        Reset();
+
+    m_enemyDefeatedAudioSubscription.
+        Reset();
 
     StopGameplayAudio();
 }
 
 void GameScene::Initialize()
 {
-    if (!LoadSerializedEntities(
-        L"Engine/Assets/Scenes/"
-        L"test_scene.json"))
+    if (m_startScenePath.empty())
     {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Project startScene "
+            "path is empty.\n"
+        );
+
+        return;
+    }
+
+    if (!LoadSerializedEntities(
+        m_startScenePath
+    ))
+    {
+        ENGINE_DEBUG_LOG(
+            "[GameScene] Failed to load "
+            "project startScene.\n"
+        );
+
         return;
     }
 
@@ -160,83 +210,98 @@ void GameScene::Initialize()
         return;
     }
 
-
     SubscribeCollisionEvents();
 
     SubscribeGameplayAudioEvents();
 }
 
 void GameScene::Update(
-    float deltaTime)
+    float deltaTime
+)
 {
     Scene::Update(
         deltaTime
     );
 
-    if (m_player &&
-        m_player->IsAttacking())
+    if (!m_player ||
+        !m_player->IsAttacking())
     {
-        for (auto& entity : m_entities)
+        return;
+    }
+
+    for (auto& entity :
+        m_entities)
+    {
+        if (!entity)
         {
-            if (!entity)
-            {
-                continue;
-            }
-
-            if (entity->IsDestroyed())
-            {
-                continue;
-            }
-
-            if (entity.get() ==
-                m_player)
-            {
-                continue;
-            }
-
-            Enemy* enemy =
-                dynamic_cast<Enemy*>(
-                    entity.get()
-                    );
-
-            if (!enemy)
-                continue;
-
-            float dx =
-                enemy->transform.position.x -
-                m_player->transform.position.x;
-
-            float dy =
-                enemy->transform.position.y -
-                m_player->transform.position.y;
-
-            float distanceSquared =
-                dx * dx +
-                dy * dy;
-
-            float range =
-                m_player->GetAttackRange();
-
-            if (distanceSquared <=
-                range * range)
-            {
-                DefeatEnemy(
-                    *enemy
-                );
-            }
+            continue;
         }
 
-        m_player =
-            dynamic_cast<Player*>(
-                ResolveEntity(
-                    m_playerHandle
-                )
+        if (entity->IsDestroyed())
+        {
+            continue;
+        }
+
+        if (entity.get() ==
+            m_player)
+        {
+            continue;
+        }
+
+        Enemy* enemy =
+            dynamic_cast<Enemy*>(
+                entity.get()
                 );
+
+        if (!enemy)
+        {
+            continue;
+        }
+
+        const float dx =
+            enemy->
+            transform.
+            position.x -
+            m_player->
+            transform.
+            position.x;
+
+        const float dy =
+            enemy->
+            transform.
+            position.y -
+            m_player->
+            transform.
+            position.y;
+
+        const float distanceSquared =
+            dx * dx +
+            dy * dy;
+
+        const float range =
+            m_player->
+            GetAttackRange();
+
+        if (distanceSquared <=
+            range * range)
+        {
+            DefeatEnemy(
+                *enemy
+            );
+        }
     }
+
+    m_player =
+        dynamic_cast<Player*>(
+            ResolveEntity(
+                m_playerHandle
+            )
+            );
 }
 
 void GameScene::LateUpdate(
-    float deltaTime)
+    float deltaTime
+)
 {
     m_player =
         dynamic_cast<Player*>(
@@ -248,8 +313,12 @@ void GameScene::LateUpdate(
     if (m_player)
     {
         m_camera.SetPosition(
-            m_player->transform.position.x,
-            m_player->transform.position.y
+            m_player->
+            transform.
+            position.x,
+            m_player->
+            transform.
+            position.y
         );
     }
 
@@ -266,14 +335,16 @@ void GameScene::LateUpdate(
 }
 
 void GameScene::SubmitRender(
-    RenderQueue& renderQueue)
+    RenderQueue& renderQueue
+)
 {
     if (m_tileMapRenderer)
     {
-        m_tileMapRenderer->Submit(
-            m_camera,
-            renderQueue
-        );
+        m_tileMapRenderer->
+            Submit(
+                m_camera,
+                renderQueue
+            );
     }
 
     Scene::SubmitRender(
@@ -283,31 +354,30 @@ void GameScene::SubmitRender(
 
 void GameScene::DebugRender(
     SpriteRenderer& renderer,
-    DebugRenderer& debugRenderer)
+    DebugRenderer& debugRenderer
+)
 {
     Scene::DebugRender(
         renderer,
         debugRenderer
     );
 
-    if (!m_tileMap)
-    {
-        return;
-    }
-
-    if (!m_tileMapCollider)
+    if (!m_tileMap ||
+        !m_tileMapCollider)
     {
         return;
     }
 
     const float tileWidth =
         static_cast<float>(
-            m_tileMap->GetTileWidth()
+            m_tileMap->
+            GetTileWidth()
             );
 
     const float tileHeight =
         static_cast<float>(
-            m_tileMap->GetTileHeight()
+            m_tileMap->
+            GetTileHeight()
             );
 
     const auto& collisionRects =
@@ -320,38 +390,34 @@ void GameScene::DebugRender(
         const float width =
             static_cast<float>(
                 rect.width
-                )
-            *
+                ) *
             tileWidth;
 
         const float height =
             static_cast<float>(
                 rect.height
-                )
-            *
+                ) *
             tileHeight;
 
         const float left =
             static_cast<float>(
                 rect.x
-                )
-            *
+                ) *
             tileWidth;
 
         const float top =
             static_cast<float>(
                 rect.y
-                )
-            *
+                ) *
             tileHeight;
 
         const DirectX::XMFLOAT2 center
         {
             left +
-            width * 0.5f,
+                width * 0.5f,
 
             top +
-            height * 0.5f
+                height * 0.5f
         };
 
         const DirectX::XMFLOAT2 size
@@ -375,7 +441,8 @@ void GameScene::DrawGuiContents()
         !m_tileMapRenderer)
     {
         ImGui::TextDisabled(
-            "TileMap is unavailable.");
+            "TileMap is unavailable."
+        );
 
         return;
     }
@@ -384,11 +451,13 @@ void GameScene::DrawGuiContents()
         DrawTileMapSettingsContents(
             *m_tileMap,
             *m_tileMapRenderer,
-            m_tileMapCollider.get());
+            m_tileMapCollider.get()
+        );
 }
 
 bool GameScene::SaveSerializedEntities(
-    const std::wstring& path)
+    const std::wstring& path
+)
 {
     SceneData sceneData;
 
@@ -426,7 +495,8 @@ bool GameScene::SaveSerializedEntities(
 
         if (!factory.Serialize(
             *entity,
-            serializedEntity))
+            serializedEntity
+        ))
         {
             ENGINE_DEBUG_LOG(
                 "[GameScene] Failed to serialize "
@@ -461,7 +531,8 @@ bool GameScene::SaveSerializedEntities(
 
     if (!SceneSerializer::Save(
         sceneData,
-        path))
+        path
+    ))
     {
         ENGINE_DEBUG_LOG(
             "[GameScene] Failed to save "
@@ -475,7 +546,8 @@ bool GameScene::SaveSerializedEntities(
 }
 
 void GameScene::CollectDebugStats(
-    DebugStats& stats) const
+    DebugStats& stats
+) const
 {
     if (!m_tileMapRenderer)
     {
@@ -489,22 +561,26 @@ void GameScene::CollectDebugStats(
 
     stats.tileRenderItems =
         static_cast<std::uint32_t>(
-            tileStats.totalRenderItems
+            tileStats.
+            totalRenderItems
             );
 
     stats.visibleTiles =
         static_cast<std::uint32_t>(
-            tileStats.visibleRenderItems
+            tileStats.
+            visibleRenderItems
             );
 
     stats.culledTiles =
         static_cast<std::uint32_t>(
-            tileStats.culledRenderItems
+            tileStats.
+            culledRenderItems
             );
 
     stats.tileRenderLayers =
         static_cast<std::uint32_t>(
-            tileStats.renderLayerCount
+            tileStats.
+            renderLayerCount
             );
 
     stats.tileMapWidth =
@@ -548,39 +624,44 @@ void GameScene::CollectDebugStats(
 
     stats.tileCandidateCells =
         static_cast<std::uint32_t>(
-            tileStats.visibleCandidateCells
+            tileStats.
+            visibleCandidateCells
             );
 
     stats.tileGridCells =
         static_cast<std::uint32_t>(
-            tileStats.totalGridCells
+            tileStats.
+            totalGridCells
             );
 
-    if (m_tileMapCollider)
+    if (!m_tileMapCollider)
     {
-        stats.tileCollisionTiles =
-            static_cast<std::uint32_t>(
-                m_tileMapCollider->
-                GetSolidTileCount()
-                );
-
-        stats.tileCollisionShapes =
-            static_cast<std::uint32_t>(
-                m_tileMapCollider->
-                GetShapeCount()
-                );
-
-        stats.tileCollisionLayers =
-            static_cast<std::uint32_t>(
-                m_tileMapCollider->
-                GetCollisionLayerCount()
-                );
-        stats.tileCollisionMergedArea =
-            static_cast<std::uint32_t>(
-                m_tileMapCollider->
-                GetMergedTileArea()
-                );
+        return;
     }
+
+    stats.tileCollisionTiles =
+        static_cast<std::uint32_t>(
+            m_tileMapCollider->
+            GetSolidTileCount()
+            );
+
+    stats.tileCollisionShapes =
+        static_cast<std::uint32_t>(
+            m_tileMapCollider->
+            GetShapeCount()
+            );
+
+    stats.tileCollisionLayers =
+        static_cast<std::uint32_t>(
+            m_tileMapCollider->
+            GetCollisionLayerCount()
+            );
+
+    stats.tileCollisionMergedArea =
+        static_cast<std::uint32_t>(
+            m_tileMapCollider->
+            GetMergedTileArea()
+            );
 }
 
 bool GameScene::LoadEnemyAnimations(
@@ -590,7 +671,8 @@ bool GameScene::LoadEnemyAnimations(
     m_enemyAnimations =
         CharacterAnimationSet{};
 
-    for (const SerializedAnimationBinding& binding :
+    for (const SerializedAnimationBinding&
+        binding :
         sceneData.animationBindings)
     {
         const EnemyAnimationSlot* slot =
@@ -604,7 +686,8 @@ bool GameScene::LoadEnemyAnimations(
         }
 
         AnimationClip* clip =
-            m_resources.LoadAnimationClip(
+            m_resources.
+            LoadAnimationClip(
                 binding.clipPath
             );
 
@@ -722,17 +805,21 @@ bool GameScene::LoadTileMap(
 }
 
 bool GameScene::LoadSerializedEntities(
-    const std::wstring& path)
+    const std::wstring& path
+)
 {
     ClearEntities();
 
-    m_player = nullptr;
+    m_player =
+        nullptr;
+
     m_playerHandle =
         EntityHandle{};
 
     m_animationBindings.clear();
 
     m_tileMapCollider.reset();
+
     m_tileMapRenderer.reset();
 
     m_tileMap =
@@ -765,7 +852,7 @@ bool GameScene::LoadSerializedEntities(
         );
 
         return false;
-    }  
+    }
 
     if (!LoadEnemyAnimations(
         *sceneData
@@ -783,7 +870,8 @@ bool GameScene::LoadSerializedEntities(
         playerData =
         nullptr;
 
-    std::size_t playerCount = 0;
+    std::size_t playerCount =
+        0;
 
     GameEntityFactory factory(
         *this,
@@ -796,7 +884,8 @@ bool GameScene::LoadSerializedEntities(
         sceneData->entities)
     {
         if (!factory.IsSupportedType(
-            entity.type))
+            entity.type
+        ))
         {
             ENGINE_DEBUG_LOG(
                 "[GameScene] Scene contains "
@@ -806,7 +895,8 @@ bool GameScene::LoadSerializedEntities(
             return false;
         }
 
-        if (entity.type == "Player")
+        if (entity.type ==
+            "Player")
         {
             ++playerCount;
 
@@ -842,21 +932,24 @@ bool GameScene::LoadSerializedEntities(
         ClearEntities();
 
         ENGINE_DEBUG_LOG(
-            "[GameScene] Failed to create Player.\n"
+            "[GameScene] Failed to "
+            "create Player.\n"
         );
 
         return false;
     }
 
-    const EntityHandle
-        playerHandle =
-        m_player->GetHandle();
+    const EntityHandle playerHandle =
+        m_player->
+        GetHandle();
 
     if (!playerHandle.IsValid())
     {
         ClearEntities();
 
-        m_player = nullptr;
+        m_player =
+            nullptr;
+
         m_playerHandle =
             EntityHandle{};
 
@@ -874,7 +967,8 @@ bool GameScene::LoadSerializedEntities(
     for (const SerializedEntity& entity :
         sceneData->entities)
     {
-        if (&entity == playerData)
+        if (&entity ==
+            playerData)
         {
             continue;
         }
@@ -888,7 +982,12 @@ bool GameScene::LoadSerializedEntities(
         if (!created)
         {
             ClearEntities();
-            m_player = nullptr;
+
+            m_player =
+                nullptr;
+
+            m_playerHandle =
+                EntityHandle{};
 
             ENGINE_DEBUG_LOG(
                 "[GameScene] Failed to create "
@@ -900,7 +999,8 @@ bool GameScene::LoadSerializedEntities(
     }
 
     m_animationBindings =
-        sceneData->animationBindings;
+        sceneData->
+        animationBindings;
 
     return true;
 }
@@ -914,7 +1014,6 @@ bool GameScene::InitializeGameplayAudio()
 
     m_bgmClip =
         nullptr;
-
 
     m_enemyDefeatSfx =
         m_resources.LoadAudioClip(
@@ -930,7 +1029,6 @@ bool GameScene::InitializeGameplayAudio()
 
         return false;
     }
-
 
     m_bgmClip =
         m_resources.LoadAudioClip(
@@ -950,13 +1048,11 @@ bool GameScene::InitializeGameplayAudio()
         return false;
     }
 
-
     m_bgmHandle =
         m_audio.PlayMusic(
             *m_bgmClip,
             GameplayBgmVolume
         );
-
 
     if (!m_bgmHandle.IsValid())
     {
@@ -974,12 +1070,32 @@ bool GameScene::InitializeGameplayAudio()
         return false;
     }
 
-
     return true;
 }
 
+void GameScene::StopGameplayAudio()
+noexcept
+{
+    if (m_bgmHandle.IsValid())
+    {
+        m_audio.Stop(
+            m_bgmHandle
+        );
+
+        m_bgmHandle =
+            AudioPlaybackHandle{};
+    }
+
+    m_bgmClip =
+        nullptr;
+
+    m_enemyDefeatSfx =
+        nullptr;
+}
+
 void GameScene::DefeatEnemy(
-    Enemy& enemy)
+    Enemy& enemy
+)
 {
     if (enemy.IsDestroyed())
     {
@@ -993,10 +1109,14 @@ void GameScene::DefeatEnemy(
         m_playerHandle;
 
     const float defeatWorldX =
-        enemy.transform.position.x;
+        enemy.
+        transform.
+        position.x;
 
     const float defeatWorldY =
-        enemy.transform.position.y;
+        enemy.
+        transform.
+        position.y;
 
     enemy.Destroy();
 
@@ -1022,27 +1142,6 @@ void GameScene::DefeatEnemy(
     );
 }
 
-void GameScene::StopGameplayAudio()
-noexcept
-{
-    if (m_bgmHandle.IsValid())
-    {
-        m_audio.Stop(
-            m_bgmHandle
-        );
-
-        m_bgmHandle =
-            AudioPlaybackHandle{};
-    }
-
-
-    m_bgmClip =
-        nullptr;
-
-    m_enemyDefeatSfx =
-        nullptr;
-}
-
 void GameScene::SubscribeCollisionEvents()
 {
     m_collisionEnterSubscription =
@@ -1050,7 +1149,8 @@ void GameScene::SubscribeCollisionEvents()
         CollisionEnterEvent
         >(
             [this](
-                const CollisionEnterEvent& event)
+                const CollisionEnterEvent& event
+                )
             {
                 HandleCollisionEnterEvent(
                     event
@@ -1063,7 +1163,8 @@ void GameScene::SubscribeCollisionEvents()
         CollisionExitEvent
         >(
             [this](
-                const CollisionExitEvent& event)
+                const CollisionExitEvent& event
+                )
             {
                 HandleCollisionExitEvent(
                     event
@@ -1071,7 +1172,6 @@ void GameScene::SubscribeCollisionEvents()
             }
         );
 }
-
 
 void GameScene::
 SubscribeGameplayAudioEvents()
@@ -1081,7 +1181,8 @@ SubscribeGameplayAudioEvents()
         EnemyDefeatedEvent
         >(
             [this](
-                const EnemyDefeatedEvent& event)
+                const EnemyDefeatedEvent& event
+                )
             {
                 HandleEnemyDefeatedAudio(
                     event
@@ -1090,12 +1191,15 @@ SubscribeGameplayAudioEvents()
         );
 }
 
-void GameScene::HandleCollisionEnterEvent(
-    const CollisionEnterEvent& event)
+void GameScene::
+HandleCollisionEnterEvent(
+    const CollisionEnterEvent& event
+)
 {
     if (!IsPlayerCollision(
         event.entityA,
-        event.entityB))
+        event.entityB
+    ))
     {
         return;
     }
@@ -1105,12 +1209,15 @@ void GameScene::HandleCollisionEnterEvent(
     );
 }
 
-void GameScene::HandleCollisionExitEvent(
-    const CollisionExitEvent& event)
+void GameScene::
+HandleCollisionExitEvent(
+    const CollisionExitEvent& event
+)
 {
     if (!IsPlayerCollision(
         event.entityA,
-        event.entityB))
+        event.entityB
+    ))
     {
         return;
     }
@@ -1122,16 +1229,15 @@ void GameScene::HandleCollisionExitEvent(
 
 void GameScene::
 HandleEnemyDefeatedAudio(
-    const EnemyDefeatedEvent& event)
+    const EnemyDefeatedEvent& event
+)
 {
     (void)event;
-
 
     if (!m_enemyDefeatSfx)
     {
         return;
     }
-
 
     m_audio.PlayOneShot(
         *m_enemyDefeatSfx,
@@ -1141,7 +1247,8 @@ HandleEnemyDefeatedAudio(
 
 bool GameScene::IsPlayerCollision(
     EntityHandle entityA,
-    EntityHandle entityB) const noexcept
+    EntityHandle entityB
+) const noexcept
 {
     if (!m_playerHandle.IsValid())
     {
@@ -1149,6 +1256,8 @@ bool GameScene::IsPlayerCollision(
     }
 
     return
-        entityA == m_playerHandle ||
-        entityB == m_playerHandle;
+        entityA ==
+        m_playerHandle ||
+        entityB ==
+        m_playerHandle;
 }

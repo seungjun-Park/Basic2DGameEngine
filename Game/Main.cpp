@@ -15,6 +15,13 @@
 
 namespace
 {
+    //
+    // This is intentionally the bootstrap
+    // project descriptor location.
+    //
+    // Actual project configuration is NOT
+    // hardcoded here.
+    //
     constexpr wchar_t
         ProjectConfigPath[] =
         L"project.json";
@@ -24,7 +31,8 @@ int WINAPI WinMain(
     HINSTANCE hInstance,
     HINSTANCE,
     LPSTR,
-    int)
+    int
+)
 {
     auto projectConfig =
         ProjectConfigSerializer::Load(
@@ -44,12 +52,28 @@ int WINAPI WinMain(
         return -1;
     }
 
+    if (projectConfig->
+        startScene.empty())
+    {
+        MessageBoxW(
+            nullptr,
+            L"Project startScene is empty.",
+            projectConfig->
+            engine.
+            windowTitle.c_str(),
+            MB_OK |
+            MB_ICONERROR
+        );
+
+        return -1;
+    }
 
     Application application;
 
     if (!application.Initialize(
         hInstance,
-        projectConfig->engine))
+        projectConfig->engine
+    ))
     {
         MessageBoxW(
             nullptr,
@@ -73,15 +97,19 @@ int WINAPI WinMain(
             engine.GetCamera(),
             engine.GetPhysicsSystem(),
             engine.GetEventBus(),
-            engine.GetAudioSystem()
+            engine.GetAudioSystem(),
+            projectConfig->startScene
         );
 
     engine.SetScene(
-        std::move(gameScene)
+        std::move(
+            gameScene
+        )
     );
 
-    return application.Run(
-        *projectConfig,
-        ProjectConfigPath
-    );
+    return
+        application.Run(
+            *projectConfig,
+            ProjectConfigPath
+        );
 }

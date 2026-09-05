@@ -42,12 +42,13 @@ class GameScene :
     public IPlayModeSnapshotTarget
 {
 public:
-    explicit GameScene(
+    GameScene(
         ResourceManager& resources,
         Camera& camera,
         PhysicsSystem& physics,
         EventBus& events,
-        AudioSystem& audio
+        AudioSystem& audio,
+        const std::wstring& startScenePath
     );
 
     ~GameScene() override;
@@ -172,6 +173,9 @@ private:
     EventBus& m_events;
 
     AudioSystem& m_audio;
+
+    std::wstring
+        m_startScenePath;
 
     AudioClip* m_enemyDefeatSfx =
         nullptr;
