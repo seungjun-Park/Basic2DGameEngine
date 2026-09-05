@@ -225,6 +225,13 @@ GetSelectedEntityHandle() const noexcept
 }
 
 bool EditorSystem::
+HasSelectedAsset() const noexcept
+{
+    return
+        !m_selectedAssetPath.empty();
+}
+
+bool EditorSystem::
 HasSelectedEntity() const noexcept
 {
     return
@@ -445,6 +452,49 @@ DrawWorkspaceTabs(
         {
             m_selectedEntityHandle =
                 selectionResult.handle;
+        }
+
+        ImGui::EndTabItem();
+    }
+
+    //
+    // Inspector
+    //
+
+    if (ImGui::BeginTabItem(
+        "Inspector"
+    ))
+    {
+        Scene* scene =
+            engine.GetScene();
+
+        Entity* entity =
+            nullptr;
+
+        if (scene &&
+            m_selectedEntityHandle.IsValid())
+        {
+            entity =
+                scene->ResolveEntity(
+                    m_selectedEntityHandle
+                );
+        }
+
+        if (entity)
+        {
+            m_inspectorPanel.DrawContents(
+                *entity,
+                m_assetDatabase,
+                m_selectedAssetPath,
+                engine.GetResourceManager(),
+                IsEditMode()
+            );
+        }
+        else
+        {
+            ImGui::TextDisabled(
+                "No entity selected."
+            );
         }
 
         ImGui::EndTabItem();

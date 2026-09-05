@@ -161,6 +161,7 @@
     <ClInclude Include="Engine\Editor\AssetBrowserPanel.h" />
     <ClInclude Include="Engine\Editor\AssetDatabase.h" />
     <ClInclude Include="Engine\Editor\EditorSystem.h" />
+    <ClInclude Include="Engine\Editor\InspectorPanel.h" />
     <ClInclude Include="Engine\Editor\SceneHierarchyPanel.h" />
     <ClInclude Include="Engine\GUI\EngineGui.h" />
     <ClInclude Include="Engine\GUI\GuiSystem.h" />
@@ -222,6 +223,7 @@
     <ClCompile Include="Engine\Editor\AssetBrowserPanel.cpp" />
     <ClCompile Include="Engine\Editor\AssetDatabase.cpp" />
     <ClCompile Include="Engine\Editor\EditorSystem.cpp" />
+    <ClCompile Include="Engine\Editor\InspectorPanel.cpp" />
     <ClCompile Include="Engine\Editor\SceneHierarchyPanel.cpp" />
     <ClCompile Include="Engine\Event\EventBus.cpp" />
     <ClCompile Include="Engine\Graphics\Texture.cpp" />

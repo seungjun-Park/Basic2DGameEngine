@@ -6,6 +6,7 @@
 #include "Engine/Editor/AssetBrowserPanel.h"
 #include "Engine/Editor/AssetDatabase.h"
 #include "Engine/Editor/SceneHierarchyPanel.h"
+#include "Engine/Editor/InspectorPanel.h"
 
 #include "Engine/Scene/EntityHandle.h"
 
@@ -116,6 +117,9 @@ private:
 
     SceneHierarchyPanel
         m_sceneHierarchyPanel;
+
+    InspectorPanel
+        m_inspectorPanel;
 
     std::wstring
         m_selectedAssetPath;
