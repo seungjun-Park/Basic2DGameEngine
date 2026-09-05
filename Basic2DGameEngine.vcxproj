@@ -164,6 +164,7 @@
     <ClInclude Include="Engine\Editor\InspectorPanel.h" />
     <ClInclude Include="Engine\Editor\SceneHierarchyPanel.h" />
     <ClInclude Include="Engine\Editor\TileMapEditorPanel.h" />
+    <ClInclude Include="Engine\Scene\ISceneDocumentTarget.h" />
     <ClInclude Include="Engine\Serialization\TileMapSerializer.h" />
     <ClInclude Include="Engine\Editor\TilePalettePanel.h" />
     <ClInclude Include="Engine\Editor\TilesetEditorPanel.h" />
@@ -267,6 +268,7 @@
     <ClCompile Include="Game\Enemy.cpp" />
     <ClCompile Include="Game\GameEntityFactory.cpp" />
     <ClCompile Include="Game\GameScene.cpp" />
+    <ClCompile Include="Game\GameScenePersistence.cpp" />
     <ClCompile Include="Game\GameSceneTileMapRuntime.cpp" />
     <ClCompile Include="Game\Player.cpp" />
     <ClCompile Include="Game\Main.cpp" />

@@ -1,6 +1,7 @@
 #include "InspectorPanel.h"
 
 #include "Engine/Animation/AnimationClip.h"
+#include "Engine/Animation/Animator.h"
 #include "Engine/Editor/AssetDatabase.h"
 #include "Engine/Physics/PhysicsBody.h"
 #include "Engine/Resource/ResourceManager.h"
@@ -46,7 +47,7 @@ namespace
     }
 }
 
-void InspectorPanel::DrawContents(
+bool InspectorPanel::DrawContents(
     Entity& entity,
     const AssetDatabase& assetDatabase,
     const std::wstring& selectedAssetPath,
@@ -54,6 +55,9 @@ void InspectorPanel::DrawContents(
     bool editable
 )
 {
+    bool changed =
+        false;
+
     ImGui::Text(
         "Handle: %llu",
         static_cast<unsigned long long>(
@@ -72,12 +76,19 @@ void InspectorPanel::DrawContents(
         !editable
     );
 
-    ImGui::Checkbox(
-        "Active",
-        &entity.active
-    );
+    const bool activeChanged =
+        ImGui::Checkbox(
+            "Active",
+            &entity.active
+        );
 
     ImGui::EndDisabled();
+
+    if (activeChanged)
+    {
+        changed =
+            true;
+    }
 
     ImGui::Separator();
 
@@ -86,10 +97,12 @@ void InspectorPanel::DrawContents(
         ImGuiTreeNodeFlags_DefaultOpen
     ))
     {
-        DrawTransform(
-            entity,
-            editable
-        );
+        changed =
+            DrawTransform(
+                entity,
+                editable
+            ) ||
+            changed;
     }
 
     if (ImGui::CollapsingHeader(
@@ -97,10 +110,12 @@ void InspectorPanel::DrawContents(
         ImGuiTreeNodeFlags_DefaultOpen
     ))
     {
-        DrawSprite(
-            entity,
-            editable
-        );
+        changed =
+            DrawSprite(
+                entity,
+                editable
+            ) ||
+            changed;
     }
 
     if (ImGui::CollapsingHeader(
@@ -108,21 +123,29 @@ void InspectorPanel::DrawContents(
         ImGuiTreeNodeFlags_DefaultOpen
     ))
     {
-        DrawAssetAssignment(
-            entity,
-            assetDatabase,
-            selectedAssetPath,
-            resourceManager,
-            editable
-        );
+        changed =
+            DrawAssetAssignment(
+                entity,
+                assetDatabase,
+                selectedAssetPath,
+                resourceManager,
+                editable
+            ) ||
+            changed;
     }
+
+    return
+        changed;
 }
 
-void InspectorPanel::DrawTransform(
+bool InspectorPanel::DrawTransform(
     Entity& entity,
     bool editable
 )
 {
+    bool changed =
+        false;
+
     ImGui::BeginDisabled(
         !editable
     );
@@ -157,6 +180,9 @@ void InspectorPanel::DrawTransform(
                     position[1]
                 );
         }
+
+        changed =
+            true;
     }
 
     float scale[2]
@@ -176,6 +202,9 @@ void InspectorPanel::DrawTransform(
 
         entity.transform.scale.y =
             scale[1];
+
+        changed =
+            true;
     }
 
     float rotation =
@@ -198,24 +227,37 @@ void InspectorPanel::DrawTransform(
                     rotation
                 );
         }
+
+        changed =
+            true;
     }
 
     ImGui::EndDisabled();
+
+    return
+        changed;
 }
 
-void InspectorPanel::DrawSprite(
+bool InspectorPanel::DrawSprite(
     Entity& entity,
     bool editable
 )
 {
+    bool changed =
+        false;
+
     ImGui::BeginDisabled(
         !editable
     );
 
-    ImGui::Checkbox(
+    if (ImGui::Checkbox(
         "Visible",
         &entity.sprite.visible
-    );
+    ))
+    {
+        changed =
+            true;
+    }
 
     constexpr RenderLayer layers[]
     {
@@ -237,7 +279,8 @@ void InspectorPanel::DrawSprite(
         "Debug"
     };
 
-    int currentLayer = 0;
+    int currentLayer =
+        0;
 
     for (int index = 0;
         index < 6;
@@ -246,7 +289,9 @@ void InspectorPanel::DrawSprite(
         if (entity.sprite.layer ==
             layers[index])
         {
-            currentLayer = index;
+            currentLayer =
+                index;
+
             break;
         }
     }
@@ -259,19 +304,32 @@ void InspectorPanel::DrawSprite(
     ))
     {
         entity.sprite.layer =
-            layers[currentLayer];
+            layers[
+                currentLayer
+            ];
+
+        changed =
+            true;
     }
 
-    ImGui::DragFloat(
+    if (ImGui::DragFloat(
         "Z Index",
         &entity.sprite.zIndex,
         0.1f
-    );
+    ))
+    {
+        changed =
+            true;
+    }
 
-    ImGui::Checkbox(
+    if (ImGui::Checkbox(
         "Use Y Sort",
         &entity.sprite.useYSort
-    );
+    ))
+    {
+        changed =
+            true;
+    }
 
     constexpr BlendMode blendModes[]
     {
@@ -279,19 +337,18 @@ void InspectorPanel::DrawSprite(
         BlendMode::Alpha
     };
 
-    constexpr const char* blendModeNames[]
+    constexpr const char*
+        blendModeNames[]
     {
         "Opaque",
         "Alpha"
     };
 
-    int currentBlendMode = 0;
-
-    if (entity.sprite.blendMode ==
-        BlendMode::Alpha)
-    {
-        currentBlendMode = 1;
-    }
+    int currentBlendMode =
+        entity.sprite.blendMode ==
+        BlendMode::Alpha
+        ? 1
+        : 0;
 
     if (ImGui::Combo(
         "Blend Mode",
@@ -301,7 +358,12 @@ void InspectorPanel::DrawSprite(
     ))
     {
         entity.sprite.blendMode =
-            blendModes[currentBlendMode];
+            blendModes[
+                currentBlendMode
+            ];
+
+        changed =
+            true;
     }
 
     float uvMin[2]
@@ -321,6 +383,9 @@ void InspectorPanel::DrawSprite(
 
         entity.sprite.uv.v0 =
             uvMin[1];
+
+        changed =
+            true;
     }
 
     float uvMax[2]
@@ -340,11 +405,19 @@ void InspectorPanel::DrawSprite(
 
         entity.sprite.uv.v1 =
             uvMax[1];
+
+        changed =
+            true;
     }
 
-    if (ImGui::Button(
-        "Reset UV"
-    ))
+    const bool resetUvRequested =
+        ImGui::Button(
+            "Reset UV"
+        );
+
+    ImGui::EndDisabled();
+
+    if (resetUvRequested)
     {
         entity.sprite.uv =
         {
@@ -353,12 +426,16 @@ void InspectorPanel::DrawSprite(
             1.0f,
             1.0f
         };
+
+        changed =
+            true;
     }
 
-    ImGui::EndDisabled();
+    return
+        changed;
 }
 
-void InspectorPanel::DrawAssetAssignment(
+bool InspectorPanel::DrawAssetAssignment(
     Entity& entity,
     const AssetDatabase& assetDatabase,
     const std::wstring& selectedAssetPath,
@@ -366,6 +443,9 @@ void InspectorPanel::DrawAssetAssignment(
     bool editable
 )
 {
+    bool changed =
+        false;
+
     const AssetRecord* selectedAsset =
         nullptr;
 
@@ -383,7 +463,7 @@ void InspectorPanel::DrawAssetAssignment(
             "No asset selected."
         );
 
-        return;
+        return false;
     }
 
     ImGui::Text(
@@ -392,6 +472,10 @@ void InspectorPanel::DrawAssetAssignment(
             selectedAsset->type
         )
     );
+
+    //
+    // Texture assignment
+    //
 
     const bool canAssignTexture =
         editable &&
@@ -416,12 +500,21 @@ void InspectorPanel::DrawAssetAssignment(
                 selectedAsset->path
             );
 
-        if (texture)
+        if (texture &&
+            entity.sprite.texture !=
+            texture)
         {
             entity.sprite.texture =
                 texture;
+
+            changed =
+                true;
         }
     }
+
+    //
+    // Animation assignment
+    //
 
     const bool canAssignAnimation =
         editable &&
@@ -459,10 +552,29 @@ void InspectorPanel::DrawAssetAssignment(
                     );
             }
 
-            entity.animator->Play(
-                *clip,
-                true
-            );
+            if (entity.animator->
+                Play(
+                    *clip,
+                    true
+                ))
+            {
+                //
+                // Play() applies the first AnimationFrame
+                // to Sprite immediately, so serialized
+                // Sprite state has changed.
+                //
+                changed =
+                    true;
+            }
         }
     }
+
+    ImGui::TextDisabled(
+        "SceneData V2 persists the resulting Sprite "
+        "state. Generic per-entity Animator bindings "
+        "are not serialized yet."
+    );
+
+    return
+        changed;
 }

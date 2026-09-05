@@ -10,7 +10,7 @@
     },
     "project": {
         "assetRoot": "Engine/Assets",
-        "startScene": "Engine/Assets/Scenes/test_scene.js"
+        "startScene": "Engine/Assets/Scenes/test_scene.json"
     },
     "rendering": {
         "targetFPS": 0,

@@ -5,6 +5,7 @@
 
 #include "Engine/GUI/EngineGui.h"
 
+#include "Engine/Scene/ISceneDocumentTarget.h"
 #include "Engine/Scene/Scene.h"
 
 #include "Engine/Tile/ITileMapRuntimeTarget.h"
@@ -48,6 +49,18 @@ bool EditorSystem::Initialize(
             projectSettingsPanel
         );
 
+    //
+    // At Initialize time draft == startup config,
+    // so this is the correct initial Scene document
+    // identity even if the Project Settings draft is
+    // changed later.
+    //
+
+    m_activeSceneDocumentPath =
+        m_projectSettingsPanel->
+        GetDraftConfig().
+        startScene;
+
     m_assetBrowserPanel.Reset();
 
     m_animationClipEditorPanel.Close();
@@ -65,6 +78,21 @@ bool EditorSystem::Initialize(
 
     m_mode =
         Mode::Edit;
+
+    m_sceneDirty =
+        false;
+
+    m_lastSceneSaveSucceeded =
+        false;
+
+    m_lastSceneSaveFailed =
+        false;
+
+    m_lastSceneLoadSucceeded =
+        false;
+
+    m_lastSceneLoadFailed =
+        false;
 
     m_selectAnimationTabRequested =
         false;
@@ -90,6 +118,8 @@ void EditorSystem::Shutdown()
 
     m_selectedAssetPath.clear();
 
+    m_activeSceneDocumentPath.clear();
+
     m_selectedEntityHandle =
         EntityHandle{};
 
@@ -109,6 +139,21 @@ void EditorSystem::Shutdown()
 
     m_mode =
         Mode::Edit;
+
+    m_sceneDirty =
+        false;
+
+    m_lastSceneSaveSucceeded =
+        false;
+
+    m_lastSceneSaveFailed =
+        false;
+
+    m_lastSceneLoadSucceeded =
+        false;
+
+    m_lastSceneLoadFailed =
+        false;
 
     m_selectAnimationTabRequested =
         false;
@@ -166,6 +211,12 @@ void EditorSystem::Draw(
     }
 
     DrawToolbar();
+
+    ImGui::Separator();
+
+    DrawSceneDocumentControls(
+        engine
+    );
 
     ImGui::Separator();
 
@@ -334,6 +385,292 @@ void EditorSystem::DrawToolbar()
 }
 
 void EditorSystem::
+DrawSceneDocumentControls(
+    Engine& engine
+)
+{
+    Scene* scene =
+        engine.GetScene();
+
+    ISceneDocumentTarget*
+        sceneDocumentTarget =
+        dynamic_cast<
+        ISceneDocumentTarget*
+        >(
+            scene
+            );
+
+    const AssetRecord*
+        selectedAsset =
+        nullptr;
+
+    if (!m_selectedAssetPath.empty())
+    {
+        selectedAsset =
+            m_assetDatabase.FindAsset(
+                m_selectedAssetPath
+            );
+    }
+
+    const bool selectedSceneAvailable =
+        selectedAsset &&
+        selectedAsset->type ==
+        AssetType::Scene;
+
+    const bool editMode =
+        IsEditMode();
+
+    const bool saveAvailable =
+        editMode &&
+        sceneDocumentTarget &&
+        m_sceneDirty &&
+        !m_activeSceneDocumentPath.empty();
+
+    const bool revertAvailable =
+        editMode &&
+        sceneDocumentTarget &&
+        m_sceneDirty &&
+        !m_activeSceneDocumentPath.empty();
+
+    //
+    // Do not silently discard dirty Scene state
+    // when loading another Scene asset.
+    //
+
+    const bool loadSelectedAvailable =
+        editMode &&
+        sceneDocumentTarget &&
+        selectedSceneAvailable &&
+        !m_sceneDirty;
+
+    if (m_sceneDirty)
+    {
+        ImGui::Text(
+            "Scene: Modified"
+        );
+    }
+    else
+    {
+        ImGui::TextDisabled(
+            "Scene: Saved"
+        );
+    }
+
+    if (m_tileMapEditorPanel.IsDirty())
+    {
+        ImGui::SameLine();
+
+        ImGui::Text(
+            "| TileMap: Modified"
+        );
+    }
+    else if (m_tileMapEditorPanel.IsOpen())
+    {
+        ImGui::SameLine();
+
+        ImGui::TextDisabled(
+            "| TileMap: Saved"
+        );
+    }
+
+    //
+    // Save Scene
+    //
+
+    ImGui::BeginDisabled(
+        !saveAvailable
+    );
+
+    const bool saveRequested =
+        ImGui::Button(
+            "Save Scene"
+        );
+
+    ImGui::EndDisabled();
+
+    //
+    // Revert Scene
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        !revertAvailable
+    );
+
+    const bool revertRequested =
+        ImGui::Button(
+            "Revert Scene"
+        );
+
+    ImGui::EndDisabled();
+
+    //
+    // Load selected Scene
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        !loadSelectedAvailable
+    );
+
+    const bool loadSelectedRequested =
+        ImGui::Button(
+            "Load Selected Scene"
+        );
+
+    ImGui::EndDisabled();
+
+    //
+    // Execute only after scopes close.
+    //
+
+    if (saveRequested &&
+        sceneDocumentTarget)
+    {
+        m_lastSceneSaveSucceeded =
+            false;
+
+        m_lastSceneSaveFailed =
+            false;
+
+        if (sceneDocumentTarget->
+            SaveSceneDocument(
+                m_activeSceneDocumentPath
+            ))
+        {
+            m_sceneDirty =
+                false;
+
+            m_lastSceneSaveSucceeded =
+                true;
+        }
+        else
+        {
+            m_lastSceneSaveFailed =
+                true;
+        }
+    }
+
+    if (revertRequested &&
+        sceneDocumentTarget)
+    {
+        m_lastSceneLoadSucceeded =
+            false;
+
+        m_lastSceneLoadFailed =
+            false;
+
+        if (sceneDocumentTarget->
+            LoadSceneDocument(
+                m_activeSceneDocumentPath
+            ))
+        {
+            m_sceneDirty =
+                false;
+
+            ClearEntitySelection();
+
+            m_lastSceneLoadSucceeded =
+                true;
+        }
+        else
+        {
+            m_lastSceneLoadFailed =
+                true;
+        }
+    }
+
+    if (loadSelectedRequested &&
+        sceneDocumentTarget &&
+        selectedAsset)
+    {
+        m_lastSceneLoadSucceeded =
+            false;
+
+        m_lastSceneLoadFailed =
+            false;
+
+        if (sceneDocumentTarget->
+            LoadSceneDocument(
+                selectedAsset->path
+            ))
+        {
+            m_activeSceneDocumentPath =
+                selectedAsset->path;
+
+            m_sceneDirty =
+                false;
+
+            ClearEntitySelection();
+
+            //
+            // A different Scene may reference an
+            // entirely different TileMap.
+            //
+
+            m_tileMapEditorPanel.Close();
+
+            m_tilePalettePanel.Close();
+
+            m_lastSceneLoadSucceeded =
+                true;
+        }
+        else
+        {
+            m_lastSceneLoadFailed =
+                true;
+        }
+    }
+
+    if (m_sceneDirty &&
+        selectedSceneAvailable)
+    {
+        ImGui::TextDisabled(
+            "Save or Revert the current Scene "
+            "before loading another Scene."
+        );
+    }
+
+    if (!sceneDocumentTarget)
+    {
+        ImGui::TextDisabled(
+            "The active Scene does not support "
+            "document persistence."
+        );
+    }
+
+    if (m_lastSceneSaveSucceeded)
+    {
+        ImGui::TextDisabled(
+            "Scene save succeeded."
+        );
+    }
+
+    if (m_lastSceneSaveFailed)
+    {
+        ImGui::TextDisabled(
+            "Scene save failed."
+        );
+    }
+
+    if (m_lastSceneLoadSucceeded)
+    {
+        ImGui::TextDisabled(
+            "Scene load/revert succeeded."
+        );
+    }
+
+    if (m_lastSceneLoadFailed)
+    {
+        ImGui::TextDisabled(
+            "Scene load/revert failed."
+        );
+    }
+}
+
+void EditorSystem::
 DrawWorkspaceTabs(
     Engine& engine
 )
@@ -344,6 +681,10 @@ DrawWorkspaceTabs(
     {
         return;
     }
+
+    //
+    // Project Settings
+    //
 
     if (ImGui::BeginTabItem(
         "Project Settings"
@@ -357,6 +698,10 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
+
+    //
+    // Assets
+    //
 
     if (ImGui::BeginTabItem(
         "Assets"
@@ -445,6 +790,10 @@ DrawWorkspaceTabs(
         ImGui::EndTabItem();
     }
 
+    //
+    // Animation
+    //
+
     ImGuiTabItemFlags
         animationTabFlags =
         ImGuiTabItemFlags_None;
@@ -472,6 +821,10 @@ DrawWorkspaceTabs(
     m_selectAnimationTabRequested =
         false;
 
+    //
+    // Audio
+    //
+
     if (ImGui::BeginTabItem(
         "Audio"
     ))
@@ -483,6 +836,10 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
+
+    //
+    // Runtime TileMap
+    //
 
     if (ImGui::BeginTabItem(
         "TileMap"
@@ -505,6 +862,10 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
+
+    //
+    // Tileset
+    //
 
     ImGuiTabItemFlags
         tilesetTabFlags =
@@ -531,6 +892,10 @@ DrawWorkspaceTabs(
     m_selectTilesetTabRequested =
         false;
 
+    //
+    // Tile Palette
+    //
+
     if (ImGui::BeginTabItem(
         "Tile Palette"
     ))
@@ -544,6 +909,10 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
+
+    //
+    // TileMap Editor
+    //
 
     ImGuiTabItemFlags
         tileMapEditorTabFlags =
@@ -589,6 +958,10 @@ DrawWorkspaceTabs(
     m_selectTileMapEditorTabRequested =
         false;
 
+    //
+    // Hierarchy
+    //
+
     if (ImGui::BeginTabItem(
         "Hierarchy"
     ))
@@ -609,6 +982,10 @@ DrawWorkspaceTabs(
 
         ImGui::EndTabItem();
     }
+
+    //
+    // Inspector
+    //
 
     if (ImGui::BeginTabItem(
         "Inspector"
@@ -631,7 +1008,8 @@ DrawWorkspaceTabs(
 
         if (entity)
         {
-            m_inspectorPanel.
+            const bool sceneChanged =
+                m_inspectorPanel.
                 DrawContents(
                     *entity,
                     m_assetDatabase,
@@ -639,6 +1017,24 @@ DrawWorkspaceTabs(
                     engine.GetResourceManager(),
                     IsEditMode()
                 );
+
+            if (sceneChanged)
+            {
+                m_sceneDirty =
+                    true;
+
+                m_lastSceneSaveSucceeded =
+                    false;
+
+                m_lastSceneSaveFailed =
+                    false;
+
+                m_lastSceneLoadSucceeded =
+                    false;
+
+                m_lastSceneLoadFailed =
+                    false;
+            }
         }
         else
         {

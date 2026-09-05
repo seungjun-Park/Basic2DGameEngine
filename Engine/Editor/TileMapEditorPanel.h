@@ -34,6 +34,9 @@ public:
     bool IsOpen() const noexcept;
 
     [[nodiscard]]
+    bool IsDirty() const noexcept;
+
+    [[nodiscard]]
     const std::wstring&
         GetDocumentPath() const noexcept;
 
@@ -49,9 +52,18 @@ public:
     bool HasSelectedLayer() const noexcept;
 
 private:
+    bool LoadFromDisk(
+        const std::wstring& path,
+        ResourceManager& resourceManager
+    );
+
+    bool Save();
+
     bool Reload(
         ResourceManager& resourceManager
     );
+
+    void Revert();
 
     void DrawDocumentInfo();
 
@@ -95,6 +107,18 @@ private:
     std::uint64_t
         GetTilesetTileCount() const noexcept;
 
+    [[nodiscard]]
+    static bool AreEqual(
+        const TileMapData& lhs,
+        const TileMapData& rhs
+    ) noexcept;
+
+    [[nodiscard]]
+    static bool AreLayersEqual(
+        const TileLayer& lhs,
+        const TileLayer& rhs
+    ) noexcept;
+
     static const char*
         GetLayerTypeName(
             TileLayerType type
@@ -121,7 +145,10 @@ private:
         m_documentPath;
 
     TileMapData
-        m_data{};
+        m_savedData{};
+
+    TileMapData
+        m_draftData{};
 
     TilesetData
         m_tilesetData{};
@@ -143,7 +170,25 @@ private:
     bool m_showGrid =
         true;
 
+    bool m_runtimeInSync =
+        false;
+
     bool m_lastOpenFailed =
+        false;
+
+    bool m_openBlockedByDirty =
+        false;
+
+    bool m_lastSaveSucceeded =
+        false;
+
+    bool m_lastSaveFailed =
+        false;
+
+    bool m_lastReloadSucceeded =
+        false;
+
+    bool m_lastReloadFailed =
         false;
 
     bool m_lastRuntimeApplySucceeded =

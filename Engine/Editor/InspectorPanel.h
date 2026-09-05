@@ -9,7 +9,7 @@ class ResourceManager;
 class InspectorPanel
 {
 public:
-    void DrawContents(
+    bool DrawContents(
         Entity& entity,
         const AssetDatabase& assetDatabase,
         const std::wstring& selectedAssetPath,
@@ -18,17 +18,17 @@ public:
     );
 
 private:
-    void DrawTransform(
+    bool DrawTransform(
         Entity& entity,
         bool editable
     );
 
-    void DrawSprite(
+    bool DrawSprite(
         Entity& entity,
         bool editable
     );
 
-    void DrawAssetAssignment(
+    bool DrawAssetAssignment(
         Entity& entity,
         const AssetDatabase& assetDatabase,
         const std::wstring& selectedAssetPath,

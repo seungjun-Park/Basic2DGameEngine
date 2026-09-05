@@ -102,6 +102,10 @@ public:
 private:
     void DrawToolbar();
 
+    void DrawSceneDocumentControls(
+        Engine& engine
+    );
+
     void DrawWorkspaceTabs(
         Engine& engine
     );
@@ -137,11 +141,29 @@ private:
     std::wstring
         m_selectedAssetPath;
 
+    std::wstring
+        m_activeSceneDocumentPath;
+
     EntityHandle
         m_selectedEntityHandle{};
 
     Mode m_mode =
         Mode::Edit;
+
+    bool m_sceneDirty =
+        false;
+
+    bool m_lastSceneSaveSucceeded =
+        false;
+
+    bool m_lastSceneSaveFailed =
+        false;
+
+    bool m_lastSceneLoadSucceeded =
+        false;
+
+    bool m_lastSceneLoadFailed =
+        false;
 
     bool m_selectAnimationTabRequested =
         false;

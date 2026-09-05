@@ -111,6 +111,9 @@ bool TileMapEditorPanel::Open(
     m_lastOpenFailed =
         false;
 
+    m_openBlockedByDirty =
+        false;
+
     if (path.empty())
     {
         m_lastOpenFailed =
@@ -118,6 +121,563 @@ bool TileMapEditorPanel::Open(
 
         return false;
     }
+
+    //
+    // Selecting the already open document must not
+    // discard its draft.
+    //
+
+    if (IsOpen() &&
+        path == m_documentPath)
+    {
+        return true;
+    }
+
+    if (IsOpen() &&
+        IsDirty())
+    {
+        m_openBlockedByDirty =
+            true;
+
+        return false;
+    }
+
+    return
+        LoadFromDisk(
+            path,
+            resourceManager
+        );
+}
+
+void TileMapEditorPanel::Close()
+noexcept
+{
+    m_documentPath.clear();
+
+    m_savedData =
+        TileMapData{};
+
+    m_draftData =
+        TileMapData{};
+
+    m_tilesetData =
+        TilesetData{};
+
+    m_texture =
+        nullptr;
+
+    m_selectedLayerIndex =
+        InvalidLayerIndex;
+
+    m_collisionBrush =
+        SolidCollisionTile;
+
+    m_canvasCellSize =
+        48.0f;
+
+    m_showGrid =
+        true;
+
+    m_runtimeInSync =
+        false;
+
+    m_lastOpenFailed =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
+    m_lastSaveSucceeded =
+        false;
+
+    m_lastSaveFailed =
+        false;
+
+    m_lastReloadSucceeded =
+        false;
+
+    m_lastReloadFailed =
+        false;
+
+    m_lastRuntimeApplySucceeded =
+        false;
+
+    m_lastRuntimeApplyFailed =
+        false;
+}
+
+void TileMapEditorPanel::DrawContents(
+    ResourceManager& resourceManager,
+    TileId paletteTileId,
+    const std::wstring& paletteTilesetPath,
+    bool allowEditing,
+    ITileMapRuntimeTarget* runtimeTarget
+)
+{
+    if (!IsOpen())
+    {
+        ImGui::TextDisabled(
+            "No TileMap document is open."
+        );
+
+        if (m_lastOpenFailed)
+        {
+            ImGui::TextDisabled(
+                "The last TileMap open "
+                "request failed."
+            );
+        }
+
+        return;
+    }
+
+    //
+    // Frame-local snapshots.
+    //
+    // Never re-evaluate these after Save/Revert
+    // inside BeginDisabled/EndDisabled pairs.
+    //
+
+    const bool dirty =
+        IsDirty();
+
+    const bool draftValid =
+        TileMapSerializer::Validate(
+            m_draftData
+        ) &&
+        ValidateAgainstTileset(
+            m_draftData,
+            m_tilesetData,
+            *m_texture
+        );
+
+    const bool runtimeUsesDocument =
+        runtimeTarget &&
+        runtimeTarget->IsUsingTileMap(
+            m_documentPath
+        );
+
+    const bool saveAvailable =
+        allowEditing &&
+        dirty &&
+        draftValid;
+
+    const bool revertAvailable =
+        allowEditing &&
+        dirty;
+
+    const bool reloadAvailable =
+        allowEditing &&
+        !dirty;
+
+    const bool runtimeApplyAvailable =
+        allowEditing &&
+        runtimeUsesDocument &&
+        draftValid;
+
+    //
+    // Save
+    //
+
+    ImGui::BeginDisabled(
+        !saveAvailable
+    );
+
+    const bool saveRequested =
+        ImGui::Button(
+            "Save"
+        );
+
+    ImGui::EndDisabled();
+
+    //
+    // Revert
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        !revertAvailable
+    );
+
+    const bool revertRequested =
+        ImGui::Button(
+            "Revert"
+        );
+
+    ImGui::EndDisabled();
+
+    //
+    // Reload
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        !reloadAvailable
+    );
+
+    const bool reloadRequested =
+        ImGui::Button(
+            "Reload From Disk"
+        );
+
+    ImGui::EndDisabled();
+
+    //
+    // Runtime apply
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        !runtimeApplyAvailable
+    );
+
+    const bool applyRuntimeRequested =
+        ImGui::Button(
+            "Apply Runtime"
+        );
+
+    ImGui::EndDisabled();
+
+    //
+    // Close
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        dirty
+    );
+
+    const bool closeRequested =
+        ImGui::Button(
+            "Close"
+        );
+
+    ImGui::EndDisabled();
+
+    //
+    // Discard
+    //
+
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(
+        !dirty
+    );
+
+    const bool discardRequested =
+        ImGui::Button(
+            "Discard & Close"
+        );
+
+    ImGui::EndDisabled();
+
+    //
+    // Execute mutations only after all ImGui
+    // disabled scopes have been closed.
+    //
+
+    if (saveRequested)
+    {
+        Save();
+    }
+
+    if (revertRequested)
+    {
+        Revert();
+    }
+
+    if (reloadRequested)
+    {
+        Reload(
+            resourceManager
+        );
+    }
+
+    if (applyRuntimeRequested &&
+        runtimeTarget)
+    {
+        m_lastRuntimeApplySucceeded =
+            false;
+
+        m_lastRuntimeApplyFailed =
+            false;
+
+        if (runtimeTarget->
+            ApplyTileMapData(
+                m_documentPath,
+                m_draftData
+            ))
+        {
+            m_runtimeInSync =
+                true;
+
+            m_lastRuntimeApplySucceeded =
+                true;
+        }
+        else
+        {
+            m_runtimeInSync =
+                false;
+
+            m_lastRuntimeApplyFailed =
+                true;
+        }
+    }
+
+    if (closeRequested)
+    {
+        Close();
+
+        return;
+    }
+
+    if (discardRequested)
+    {
+        Close();
+
+        return;
+    }
+
+    //
+    // Status
+    //
+
+    if (IsDirty())
+    {
+        ImGui::Text(
+            "Status: Modified"
+        );
+    }
+    else
+    {
+        ImGui::TextDisabled(
+            "Status: Saved"
+        );
+    }
+
+    if (m_runtimeInSync)
+    {
+        ImGui::SameLine();
+
+        ImGui::TextDisabled(
+            "| Runtime: In Sync"
+        );
+    }
+    else
+    {
+        ImGui::SameLine();
+
+        ImGui::TextDisabled(
+            "| Runtime: Apply Required"
+        );
+    }
+
+    if (!allowEditing)
+    {
+        ImGui::TextDisabled(
+            "TileMap document editing is "
+            "disabled in Play Mode."
+        );
+    }
+
+    if (!runtimeTarget)
+    {
+        ImGui::TextDisabled(
+            "The active Scene does not support "
+            "runtime TileMap rebuild."
+        );
+    }
+    else if (!runtimeUsesDocument)
+    {
+        ImGui::TextDisabled(
+            "The active Scene is not using "
+            "this TileMap document."
+        );
+    }
+
+    if (m_openBlockedByDirty)
+    {
+        ImGui::TextDisabled(
+            "Open blocked: save, revert, "
+            "or discard the current document first."
+        );
+    }
+
+    if (m_lastOpenFailed)
+    {
+        ImGui::TextDisabled(
+            "TileMap open failed."
+        );
+    }
+
+    if (m_lastSaveSucceeded)
+    {
+        ImGui::TextDisabled(
+            "Save succeeded."
+        );
+    }
+
+    if (m_lastSaveFailed)
+    {
+        ImGui::TextDisabled(
+            "Save failed."
+        );
+    }
+
+    if (m_lastReloadSucceeded)
+    {
+        ImGui::TextDisabled(
+            "Reload succeeded."
+        );
+    }
+
+    if (m_lastReloadFailed)
+    {
+        ImGui::TextDisabled(
+            "Reload failed. Existing document "
+            "was preserved."
+        );
+    }
+
+    if (m_lastRuntimeApplySucceeded)
+    {
+        ImGui::TextDisabled(
+            "Runtime TileMap rebuild succeeded."
+        );
+    }
+
+    if (m_lastRuntimeApplyFailed)
+    {
+        ImGui::TextDisabled(
+            "Runtime TileMap rebuild failed. "
+            "Previous runtime state was preserved."
+        );
+    }
+
+    ImGui::Separator();
+
+    DrawDocumentInfo();
+
+    ImGui::Separator();
+
+    //
+    // Layer list
+    //
+
+    if (ImGui::BeginChild(
+        "##TileMapLayerList",
+        ImVec2(
+            220.0f,
+            0.0f
+        ),
+        true
+    ))
+    {
+        DrawLayers();
+    }
+
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+
+    //
+    // Workspace
+    //
+
+    if (ImGui::BeginChild(
+        "##TileMapEditorWorkspace",
+        ImVec2(
+            0.0f,
+            0.0f
+        ),
+        true
+    ))
+    {
+        DrawSelectedLayerInfo();
+
+        if (HasSelectedLayer())
+        {
+            ImGui::Separator();
+
+            DrawCanvas(
+                paletteTileId,
+                paletteTilesetPath,
+                allowEditing
+            );
+        }
+    }
+
+    ImGui::EndChild();
+}
+
+bool TileMapEditorPanel::IsOpen()
+const noexcept
+{
+    return
+        !m_documentPath.empty() &&
+        m_texture != nullptr;
+}
+
+bool TileMapEditorPanel::IsDirty()
+const noexcept
+{
+    if (!IsOpen())
+    {
+        return false;
+    }
+
+    return
+        !AreEqual(
+            m_savedData,
+            m_draftData
+        );
+}
+
+const std::wstring&
+TileMapEditorPanel::
+GetDocumentPath() const noexcept
+{
+    return
+        m_documentPath;
+}
+
+const std::wstring&
+TileMapEditorPanel::
+GetTilesetPath() const noexcept
+{
+    return
+        m_draftData.tilesetPath;
+}
+
+std::size_t
+TileMapEditorPanel::
+GetSelectedLayerIndex() const noexcept
+{
+    return
+        m_selectedLayerIndex;
+}
+
+bool TileMapEditorPanel::
+HasSelectedLayer() const noexcept
+{
+    return
+        m_selectedLayerIndex !=
+        InvalidLayerIndex &&
+        m_selectedLayerIndex <
+        m_draftData.layers.size();
+}
+
+bool TileMapEditorPanel::LoadFromDisk(
+    const std::wstring& path,
+    ResourceManager& resourceManager
+)
+{
+    m_lastOpenFailed =
+        false;
 
     auto mapData =
         TileMapSerializer::Load(
@@ -170,10 +730,17 @@ bool TileMapEditorPanel::Open(
         return false;
     }
 
+    //
+    // Commit after complete validation.
+    //
+
     m_documentPath =
         path;
 
-    m_data =
+    m_savedData =
+        *mapData;
+
+    m_draftData =
         std::move(
             *mapData
         );
@@ -186,7 +753,7 @@ bool TileMapEditorPanel::Open(
     m_texture =
         texture;
 
-    if (m_data.layers.empty())
+    if (m_draftData.layers.empty())
     {
         m_selectedLayerIndex =
             InvalidLayerIndex;
@@ -200,7 +767,25 @@ bool TileMapEditorPanel::Open(
     m_collisionBrush =
         SolidCollisionTile;
 
+    //
+    // We deliberately do not assume that a
+    // ResourceManager-cached runtime TileMap is
+    // identical to the document just loaded.
+    //
+
+    m_runtimeInSync =
+        false;
+
     m_lastOpenFailed =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
+    m_lastSaveSucceeded =
+        false;
+
+    m_lastSaveFailed =
         false;
 
     m_lastRuntimeApplySucceeded =
@@ -212,33 +797,156 @@ bool TileMapEditorPanel::Open(
     return true;
 }
 
-void TileMapEditorPanel::Close()
-noexcept
+bool TileMapEditorPanel::Save()
 {
-    m_documentPath.clear();
+    m_lastSaveSucceeded =
+        false;
 
-    m_data =
-        TileMapData{};
+    m_lastSaveFailed =
+        false;
 
-    m_tilesetData =
-        TilesetData{};
+    if (!IsOpen() ||
+        !m_texture)
+    {
+        m_lastSaveFailed =
+            true;
 
-    m_texture =
-        nullptr;
+        return false;
+    }
 
-    m_selectedLayerIndex =
-        InvalidLayerIndex;
+    if (!TileMapSerializer::Validate(
+        m_draftData
+    ) ||
+        !ValidateAgainstTileset(
+            m_draftData,
+            m_tilesetData,
+            *m_texture
+        ))
+    {
+        m_lastSaveFailed =
+            true;
 
-    m_collisionBrush =
-        SolidCollisionTile;
+        return false;
+    }
 
-    m_canvasCellSize =
-        48.0f;
+    if (!TileMapSerializer::Save(
+        m_draftData,
+        m_documentPath
+    ))
+    {
+        m_lastSaveFailed =
+            true;
 
-    m_showGrid =
+        return false;
+    }
+
+    m_savedData =
+        m_draftData;
+
+    m_lastSaveSucceeded =
         true;
 
-    m_lastOpenFailed =
+    m_lastSaveFailed =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
+    return true;
+}
+
+bool TileMapEditorPanel::Reload(
+    ResourceManager& resourceManager
+)
+{
+    m_lastReloadSucceeded =
+        false;
+
+    m_lastReloadFailed =
+        false;
+
+    if (!IsOpen())
+    {
+        m_lastReloadFailed =
+            true;
+
+        return false;
+    }
+
+    if (IsDirty())
+    {
+        m_openBlockedByDirty =
+            true;
+
+        m_lastReloadFailed =
+            true;
+
+        return false;
+    }
+
+    const std::wstring path =
+        m_documentPath;
+
+    if (!LoadFromDisk(
+        path,
+        resourceManager
+    ))
+    {
+        m_lastReloadFailed =
+            true;
+
+        return false;
+    }
+
+    m_lastReloadSucceeded =
+        true;
+
+    m_lastReloadFailed =
+        false;
+
+    return true;
+}
+
+void TileMapEditorPanel::Revert()
+{
+    if (!IsOpen() ||
+        !IsDirty())
+    {
+        return;
+    }
+
+    m_draftData =
+        m_savedData;
+
+    if (m_draftData.layers.empty())
+    {
+        m_selectedLayerIndex =
+            InvalidLayerIndex;
+    }
+    else if (
+        m_selectedLayerIndex >=
+        m_draftData.layers.size())
+    {
+        m_selectedLayerIndex =
+            0;
+    }
+
+    //
+    // Runtime may currently contain a previously
+    // applied draft, so conservatively require
+    // another Apply Runtime.
+    //
+
+    m_runtimeInSync =
+        false;
+
+    m_openBlockedByDirty =
+        false;
+
+    m_lastSaveSucceeded =
+        false;
+
+    m_lastSaveFailed =
         false;
 
     m_lastRuntimeApplySucceeded =
@@ -246,271 +954,6 @@ noexcept
 
     m_lastRuntimeApplyFailed =
         false;
-}
-
-void TileMapEditorPanel::DrawContents(
-    ResourceManager& resourceManager,
-    TileId paletteTileId,
-    const std::wstring& paletteTilesetPath,
-    bool allowEditing,
-    ITileMapRuntimeTarget* runtimeTarget
-)
-{
-    if (!IsOpen())
-    {
-        ImGui::TextDisabled(
-            "No TileMap document is open."
-        );
-
-        if (m_lastOpenFailed)
-        {
-            ImGui::TextDisabled(
-                "The last TileMap open "
-                "request failed."
-            );
-        }
-
-        return;
-    }
-
-    const bool runtimeUsesDocument =
-        runtimeTarget &&
-        runtimeTarget->IsUsingTileMap(
-            m_documentPath
-        );
-
-    const bool runtimeApplyAvailable =
-        allowEditing &&
-        runtimeUsesDocument &&
-        TileMapSerializer::Validate(
-            m_data
-        );
-
-    //
-    // Toolbar
-    //
-
-    const bool reloadRequested =
-        ImGui::Button(
-            "Reload"
-        );
-
-    ImGui::SameLine();
-
-    ImGui::BeginDisabled(
-        !runtimeApplyAvailable
-    );
-
-    const bool applyRuntimeRequested =
-        ImGui::Button(
-            "Apply Runtime"
-        );
-
-    ImGui::EndDisabled();
-
-    ImGui::SameLine();
-
-    const bool closeRequested =
-        ImGui::Button(
-            "Close"
-        );
-
-    if (reloadRequested)
-    {
-        Reload(
-            resourceManager
-        );
-    }
-
-    if (applyRuntimeRequested &&
-        runtimeTarget)
-    {
-        m_lastRuntimeApplySucceeded =
-            false;
-
-        m_lastRuntimeApplyFailed =
-            false;
-
-        if (runtimeTarget->
-            ApplyTileMapData(
-                m_documentPath,
-                m_data
-            ))
-        {
-            m_lastRuntimeApplySucceeded =
-                true;
-        }
-        else
-        {
-            m_lastRuntimeApplyFailed =
-                true;
-        }
-    }
-
-    if (closeRequested)
-    {
-        Close();
-
-        return;
-    }
-
-    if (m_lastOpenFailed)
-    {
-        ImGui::TextDisabled(
-            "Reload failed. Current document "
-            "was preserved."
-        );
-    }
-
-    if (!allowEditing)
-    {
-        ImGui::TextDisabled(
-            "Tile painting and runtime apply "
-            "are disabled in Play Mode."
-        );
-    }
-
-    if (!runtimeTarget)
-    {
-        ImGui::TextDisabled(
-            "The active Scene does not support "
-            "runtime TileMap rebuild."
-        );
-    }
-    else if (!runtimeUsesDocument)
-    {
-        ImGui::TextDisabled(
-            "The active Scene is not using "
-            "this TileMap document."
-        );
-    }
-
-    if (m_lastRuntimeApplySucceeded)
-    {
-        ImGui::TextDisabled(
-            "Runtime TileMap rebuild succeeded."
-        );
-    }
-
-    if (m_lastRuntimeApplyFailed)
-    {
-        ImGui::TextDisabled(
-            "Runtime TileMap rebuild failed. "
-            "The previous runtime state was preserved."
-        );
-    }
-
-    ImGui::TextDisabled(
-        "Apply Runtime does not save JSON."
-    );
-
-    ImGui::Separator();
-
-    DrawDocumentInfo();
-
-    ImGui::Separator();
-
-    if (ImGui::BeginChild(
-        "##TileMapLayerList",
-        ImVec2(
-            220.0f,
-            0.0f
-        ),
-        true
-    ))
-    {
-        DrawLayers();
-    }
-
-    ImGui::EndChild();
-
-    ImGui::SameLine();
-
-    if (ImGui::BeginChild(
-        "##TileMapEditorWorkspace",
-        ImVec2(
-            0.0f,
-            0.0f
-        ),
-        true
-    ))
-    {
-        DrawSelectedLayerInfo();
-
-        if (HasSelectedLayer())
-        {
-            ImGui::Separator();
-
-            DrawCanvas(
-                paletteTileId,
-                paletteTilesetPath,
-                allowEditing
-            );
-        }
-    }
-
-    ImGui::EndChild();
-}
-
-bool TileMapEditorPanel::IsOpen()
-const noexcept
-{
-    return
-        !m_documentPath.empty() &&
-        m_texture != nullptr;
-}
-
-const std::wstring&
-TileMapEditorPanel::
-GetDocumentPath() const noexcept
-{
-    return
-        m_documentPath;
-}
-
-const std::wstring&
-TileMapEditorPanel::
-GetTilesetPath() const noexcept
-{
-    return
-        m_data.tilesetPath;
-}
-
-std::size_t
-TileMapEditorPanel::
-GetSelectedLayerIndex() const noexcept
-{
-    return
-        m_selectedLayerIndex;
-}
-
-bool TileMapEditorPanel::
-HasSelectedLayer() const noexcept
-{
-    return
-        m_selectedLayerIndex !=
-        InvalidLayerIndex &&
-        m_selectedLayerIndex <
-        m_data.layers.size();
-}
-
-bool TileMapEditorPanel::Reload(
-    ResourceManager& resourceManager
-)
-{
-    if (m_documentPath.empty())
-    {
-        return false;
-    }
-
-    const std::wstring path =
-        m_documentPath;
-
-    return
-        Open(
-            path,
-            resourceManager
-        );
 }
 
 void TileMapEditorPanel::
@@ -523,7 +966,7 @@ DrawDocumentInfo()
 
     const std::string tilesetPath =
         ToUtf8(
-            m_data.tilesetPath
+            m_draftData.tilesetPath
         );
 
     const std::string texturePath =
@@ -544,19 +987,19 @@ DrawDocumentInfo()
 
     ImGui::Text(
         "Map Size: %d x %d",
-        m_data.width,
-        m_data.height
+        m_draftData.width,
+        m_draftData.height
     );
 
     ImGui::Text(
         "Tile Size: %d x %d",
-        m_data.tileWidth,
-        m_data.tileHeight
+        m_draftData.tileWidth,
+        m_draftData.tileHeight
     );
 
     ImGui::Text(
         "Layer Count: %zu",
-        m_data.layers.size()
+        m_draftData.layers.size()
     );
 
     ImGui::TextWrapped(
@@ -582,7 +1025,7 @@ void TileMapEditorPanel::DrawLayers()
 
     ImGui::Separator();
 
-    if (m_data.layers.empty())
+    if (m_draftData.layers.empty())
     {
         ImGui::TextDisabled(
             "No layers."
@@ -593,11 +1036,11 @@ void TileMapEditorPanel::DrawLayers()
 
     for (std::size_t index = 0;
         index <
-        m_data.layers.size();
+        m_draftData.layers.size();
         ++index)
     {
         const TileLayer& layer =
-            m_data.layers[
+            m_draftData.layers[
                 index
             ];
 
@@ -645,7 +1088,7 @@ DrawSelectedLayerInfo()
     }
 
     const TileLayer& layer =
-        m_data.layers[
+        m_draftData.layers[
             m_selectedLayerIndex
         ];
 
@@ -711,7 +1154,7 @@ void TileMapEditorPanel::DrawCanvas(
     }
 
     TileLayer& layer =
-        m_data.layers[
+        m_draftData.layers[
             m_selectedLayerIndex
         ];
 
@@ -745,7 +1188,7 @@ void TileMapEditorPanel::DrawCanvas(
         const bool paletteMatches =
             !paletteTilesetPath.empty() &&
             paletteTilesetPath ==
-            m_data.tilesetPath;
+            m_draftData.tilesetPath;
 
         if (paletteTileId ==
             InvalidTileId)
@@ -769,8 +1212,8 @@ void TileMapEditorPanel::DrawCanvas(
             InvalidTileId)
         {
             ImGui::TextDisabled(
-                "The Tile Palette uses a "
-                "different Tileset."
+                "The Tile Palette uses "
+                "a different Tileset."
             );
         }
 
@@ -831,8 +1274,8 @@ void TileMapEditorPanel::DrawCanvas(
 
     ImGui::Separator();
 
-    if (m_data.width <= 0 ||
-        m_data.height <= 0)
+    if (m_draftData.width <= 0 ||
+        m_draftData.height <= 0)
     {
         ImGui::TextDisabled(
             "Invalid map dimensions."
@@ -843,7 +1286,7 @@ void TileMapEditorPanel::DrawCanvas(
 
     const double canvasWidthDouble =
         static_cast<double>(
-            m_data.width
+            m_draftData.width
             ) *
         static_cast<double>(
             m_canvasCellSize
@@ -851,7 +1294,7 @@ void TileMapEditorPanel::DrawCanvas(
 
     const double canvasHeightDouble =
         static_cast<double>(
-            m_data.height
+            m_draftData.height
             ) *
         static_cast<double>(
             m_canvasCellSize
@@ -884,7 +1327,6 @@ void TileMapEditorPanel::DrawCanvas(
         static_cast<float>(
             canvasWidthDouble
         ),
-
         static_cast<float>(
             canvasHeightDouble
         )
@@ -936,11 +1378,11 @@ void TileMapEditorPanel::DrawCanvas(
     if (drawList)
     {
         for (int y = 0;
-            y < m_data.height;
+            y < m_draftData.height;
             ++y)
         {
             for (int x = 0;
-                x < m_data.width;
+                x < m_draftData.width;
                 ++x)
             {
                 const std::size_t tileIndex =
@@ -948,7 +1390,7 @@ void TileMapEditorPanel::DrawCanvas(
                         y
                         ) *
                     static_cast<std::size_t>(
-                        m_data.width
+                        m_draftData.width
                         ) +
                     static_cast<std::size_t>(
                         x
@@ -1084,9 +1526,9 @@ void TileMapEditorPanel::DrawCanvas(
                 cellX >= 0 &&
                 cellY >= 0 &&
                 cellX <
-                m_data.width &&
+                m_draftData.width &&
                 cellY <
-                m_data.height;
+                m_draftData.height;
 
             if (inside)
             {
@@ -1131,7 +1573,7 @@ void TileMapEditorPanel::DrawCanvas(
                         cellY
                         ) *
                     static_cast<std::size_t>(
-                        m_data.width
+                        m_draftData.width
                         ) +
                     static_cast<std::size_t>(
                         cellX
@@ -1221,14 +1663,14 @@ void TileMapEditorPanel::PaintCell(
 
     if (x < 0 ||
         y < 0 ||
-        x >= m_data.width ||
-        y >= m_data.height)
+        x >= m_draftData.width ||
+        y >= m_draftData.height)
     {
         return;
     }
 
     TileLayer& layer =
-        m_data.layers[
+        m_draftData.layers[
             m_selectedLayerIndex
         ];
 
@@ -1237,7 +1679,7 @@ void TileMapEditorPanel::PaintCell(
             y
             ) *
         static_cast<std::size_t>(
-            m_data.width
+            m_draftData.width
             ) +
         static_cast<std::size_t>(
             x
@@ -1295,9 +1737,14 @@ void TileMapEditorPanel::PaintCell(
     layer.tiles[index] =
         newValue;
 
-    //
-    // Runtime is now stale relative to draft.
-    //
+    m_runtimeInSync =
+        false;
+
+    m_lastSaveSucceeded =
+        false;
+
+    m_lastSaveFailed =
+        false;
 
     m_lastRuntimeApplySucceeded =
         false;
@@ -1402,7 +1849,9 @@ ValidateAgainstTileset(
                 }
             }
         }
-        else
+        else if (
+            layer.type ==
+            TileLayerType::Collision)
         {
             for (TileId tileId :
             layer.tiles)
@@ -1416,6 +1865,10 @@ ValidateAgainstTileset(
                     return false;
                 }
             }
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -1436,7 +1889,7 @@ CanPaintRenderTile(
 
     if (paletteTilesetPath.empty() ||
         paletteTilesetPath !=
-        m_data.tilesetPath)
+        m_draftData.tilesetPath)
     {
         return false;
     }
@@ -1484,6 +1937,11 @@ CalculateTileUV(
             tileId
             ) >
         tileCount)
+    {
+        return result;
+    }
+
+    if (m_tilesetData.columns <= 0)
     {
         return result;
     }
@@ -1635,6 +2093,63 @@ GetTilesetTileCount() const noexcept
             );
 }
 
+bool TileMapEditorPanel::AreEqual(
+    const TileMapData& lhs,
+    const TileMapData& rhs
+) noexcept
+{
+    if (lhs.width !=
+        rhs.width ||
+        lhs.height !=
+        rhs.height ||
+        lhs.tileWidth !=
+        rhs.tileWidth ||
+        lhs.tileHeight !=
+        rhs.tileHeight ||
+        lhs.tilesetPath !=
+        rhs.tilesetPath ||
+        lhs.layers.size() !=
+        rhs.layers.size())
+    {
+        return false;
+    }
+
+    for (std::size_t index = 0;
+        index <
+        lhs.layers.size();
+        ++index)
+    {
+        if (!AreLayersEqual(
+            lhs.layers[index],
+            rhs.layers[index]
+        ))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool TileMapEditorPanel::
+AreLayersEqual(
+    const TileLayer& lhs,
+    const TileLayer& rhs
+) noexcept
+{
+    return
+        lhs.name ==
+        rhs.name &&
+        lhs.type ==
+        rhs.type &&
+        lhs.renderLayer ==
+        rhs.renderLayer &&
+        lhs.visible ==
+        rhs.visible &&
+        lhs.tiles ==
+        rhs.tiles;
+}
+
 const char*
 TileMapEditorPanel::
 GetLayerTypeName(
@@ -1697,9 +2212,7 @@ TileMapEditorPanel::ToUtf8(
 
     if (value.size() >
         static_cast<std::size_t>(
-            std::numeric_limits<
-            int
-            >::max()
+            std::numeric_limits<int>::max()
             ))
     {
         return {};

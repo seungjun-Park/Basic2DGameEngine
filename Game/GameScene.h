@@ -4,6 +4,7 @@
 
 #include "Engine/Audio/AudioPlaybackHandle.h"
 #include "Engine/Event/EventBus.h"
+#include "Engine/Scene/ISceneDocumentTarget.h"
 #include "Engine/Scene/Scene.h"
 #include "Engine/Serialization/SceneData.h"
 #include "Engine/Tile/ITileMapRuntimeTarget.h"
@@ -31,7 +32,8 @@ class AudioClip;
 
 class GameScene :
     public Scene,
-    public ITileMapRuntimeTarget
+    public ITileMapRuntimeTarget,
+    public ISceneDocumentTarget
 {
 public:
     explicit GameScene(
@@ -68,6 +70,14 @@ public:
     bool SaveSerializedEntities(
         const std::wstring& path
     );
+
+    bool SaveSceneDocument(
+        const std::wstring& path
+    ) override;
+
+    bool LoadSceneDocument(
+        const std::wstring& path
+    ) override;
 
     [[nodiscard]]
     bool IsUsingTileMap(
